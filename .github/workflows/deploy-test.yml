@@ -1,0 +1,63 @@
+name: Deploy to Production and Test Environments
+
+on:
+  push:
+    branches:
+      - main
+      - main_test
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+        env:
+          CI: true
+
+      - name: Build for Production
+        if: github.ref == 'refs/heads/main'
+        run: npm run build
+        env:
+          CI: true
+          REACT_APP_API_URL: https://speakerdrive.com/api
+
+      - name: Build for Test
+        if: github.ref == 'refs/heads/main_test'
+        run: npm run build
+        env:
+          CI: true
+          REACT_APP_API_URL: https://test.speakerdrive.com/api
+
+      - name: Deploy to Production
+        if: github.ref == 'refs/heads/main'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: speakerdrive.com
+          username: ${{ secrets.PROD_FTP_USERNAME }}
+          password: ${{ secrets.PROD_FTP_PASSWORD }}
+          local-dir: ./build/
+          server-dir: /
+
+      - name: Deploy to Test
+        if: github.ref == 'refs/heads/main_test'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: test.speakerdrive.com
+          username: ${{ secrets.TEST_FTP_USERNAME }}
+          password: ${{ secrets.TEST_FTP_PASSWORD }}
+          local-dir: ./build/
+          server-dir: /
