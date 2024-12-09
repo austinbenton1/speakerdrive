@@ -1,0 +1,48 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  password       String
+  user_type      String    // Admin or Client
+  company        Int?      // Foreign key to Company
+  user_role      String?
+  fname          String?
+  lname          String?
+  contact_number String?
+  address        String?
+  last_login     DateTime?
+  online         Int       @default(0)
+  status         String?
+  companyRef     Company?  @relation(fields: [company], references: [id])
+
+  @@map("users")
+}
+
+model Company {
+  id                    Int     @id @default(autoincrement())
+  company_name          String
+  company_address       String?
+  company_contact_number String?
+  company_email         String?
+  company_email_key     String?
+  users                User[]
+
+  @@map("companies")
+}
+
+model PasswordResetToken {
+  email     String   @id
+  token     String
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
