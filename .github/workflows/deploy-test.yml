@@ -49,7 +49,7 @@ jobs:
           server: speakerdrive.com
           username: ${{ secrets.PROD_FTP_USERNAME }}
           password: ${{ secrets.PROD_FTP_PASSWORD }}
-          local-dir: ./build/
+          local-dir: ./dist/
           server-dir: /
 
       - name: Deploy to Test
@@ -59,5 +59,5 @@ jobs:
           server: test.speakerdrive.com
           username: ${{ secrets.TEST_FTP_USERNAME }}
           password: ${{ secrets.TEST_FTP_PASSWORD }}
-          local-dir: ./build/
+          local-dir: ./dist/
           server-dir: /
