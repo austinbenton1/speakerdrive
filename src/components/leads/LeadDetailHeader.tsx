@@ -4,6 +4,8 @@ import { ArrowLeft, Mail, Link as LinkIcon, PenLine, Copy, ExternalLink, Check }
 import type { SpeakerLead } from '../../types';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 import EmailComposer from '../email/EmailComposer';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../lib/store';
 
 interface LeadDetailHeaderProps {
   lead: SpeakerLead;
@@ -13,7 +15,9 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
   const { unlockLead, isLeadUnlocked } = useLeadUnlock();
   const [copied, setCopied] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [isUnlockClicked, setIsUnlockClicked] = useState(false);
   const isUnlocked = isLeadUnlocked(lead.id);
+  const { user } = useAuthStore();
 
   // Dummy data for demonstration
   const dummyEmail = 'contact@organization.com';
@@ -26,6 +30,39 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
+    }
+  };
+
+  const recordUnlockedLead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('unlocked_leads')
+        .insert([
+          {
+            user_id: user.id,
+            lead_id: lead.id
+          }
+        ]);
+
+      if (error) {
+        console.error('Error recording unlocked lead:', error);
+      }
+    } catch (err) {
+      console.error('Failed to record unlocked lead:', err);
+    }
+  };
+
+  const handleUnlockClick = async () => {
+    if (!isUnlockClicked) {
+      unlockLead(lead.id);
+      setIsUnlockClicked(true);
+      await recordUnlockedLead();
+    } else {
+      // Copy the value when clicked again
+      const valueToUnlock = lead.unlockType === 'Event URL' ? dummyUrl : dummyEmail;
+      handleCopy(valueToUnlock);
     }
   };
 
@@ -85,25 +122,24 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
                   <PenLine className="w-4 h-4 mr-2" />
                   Write Cold Intro
                 </button>
-
                 {!isUnlocked ? (
                   <button 
-                    onClick={() => unlockLead(lead.id)}
-                    className="inline-flex items-center px-6 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-[#0066FF] hover:bg-[#0052CC] transition-all duration-200"
+                    onClick={handleUnlockClick}
+                    className="inline-flex items-center px-6 py-2.5 border rounded-lg text-sm font-medium text-white bg-[#0066FF] hover:bg-[#0052CC] transition-all duration-200"
                   >
-                    {lead.unlockType === 'Contact Email' && (
+                    {lead.unlockType === 'Unlock '+'Contact Email' && (
                       <>
                         <Mail className="w-4 h-4 mr-2" />
                         Unlock Contact Email
                       </>
                     )}
-                    {lead.unlockType === 'Event Email' && (
+                    {lead.unlockType === 'Unlock '+'Event Email' && (
                       <>
                         <Mail className="w-4 h-4 mr-2" />
                         Unlock Event Email
                       </>
                     )}
-                    {lead.unlockType === 'Event URL' && (
+                    {lead.unlockType === 'Unlock '+'Event URL' && (
                       <>
                         <LinkIcon className="w-4 h-4 mr-2" />
                         Unlock Event URL
@@ -112,49 +148,35 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
                   </button>
                 ) : (
                   <div className="flex items-center space-x-3">
-                    {(lead.unlockType === 'Contact Email' || lead.unlockType === 'Event Email') && (
-                      <div className="flex items-center space-x-2 px-4 py-2.5 bg-[#00B341]/5 border border-[#00B341]/10 rounded-lg">
-                        <Mail className="w-4 h-4 text-[#00B341]" />
-                        <span className="text-sm text-gray-700">{dummyEmail}</span>
-                        <button
-                          onClick={() => handleCopy(dummyEmail)}
-                          className="p-1 text-[#00B341] hover:text-[#009938] rounded-md hover:bg-[#00B341]/10"
-                        >
-                          {copied ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
+                    {(lead.unlockType === 'Unlock '+'Contact Email' || lead.unlockType === 'Event Email') && (
+                      <button
+                        onClick={handleUnlockClick}
+                        className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg transition-all duration-200
+                          ${isUnlockClicked 
+                            ? 'bg-white border border-[#0066FF] text-[#0066FF]' 
+                            : 'bg-[#0066FF] text-white border border-transparent'}`}
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        {isUnlockClicked ? dummyEmail : 'Unlock Email'}
+                        {copied && isUnlockClicked && (
+                          <span className="ml-2 text-xs bg-[#0066FF]/10 px-2 py-1 rounded">Copied!</span>
+                        )}
+                      </button>
                     )}
-                    {lead.unlockType === 'Event URL' && (
-                      <div className="flex items-center space-x-2 px-4 py-2.5 bg-[#0066FF]/5 border border-[#0066FF]/10 rounded-lg">
-                        <LinkIcon className="w-4 h-4 text-[#0066FF]" />
-                        <span className="text-sm text-gray-700 truncate max-w-[200px]">
-                          {dummyUrl}
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleCopy(dummyUrl)}
-                            className="p-1 text-[#0066FF] hover:text-[#0052CC] rounded-md hover:bg-[#0066FF]/10"
-                          >
-                            {copied ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-                          <a
-                            href={dummyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 text-[#0066FF] hover:text-[#0052CC] rounded-md hover:bg-[#0066FF]/10"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </div>
-                      </div>
+                    {lead.unlockType === 'Unlock '+'Event URL' && (
+                      <button
+                        onClick={handleUnlockClick}
+                        className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg transition-all duration-200
+                          ${isUnlockClicked 
+                            ? 'bg-white border border-[#0066FF] text-[#0066FF]' 
+                            : 'bg-[#0066FF] text-white border border-transparent'}`}
+                      >
+                        <LinkIcon className="w-4 h-4 mr-2" />
+                        {isUnlockClicked ? dummyUrl : 'Unlock URL'}
+                        {copied && isUnlockClicked && (
+                          <span className="ml-2 text-xs bg-[#0066FF]/10 px-2 py-1 rounded">Copied!</span>
+                        )}
+                      </button>
                     )}
                   </div>
                 )}
