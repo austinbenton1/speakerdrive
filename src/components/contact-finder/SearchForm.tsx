@@ -1,8 +1,14 @@
 import React, { useRef } from 'react';
 import { Search, Globe } from 'lucide-react';
 
+interface SearchFormData {
+  fullName: string;
+  companyDomain: string;
+  error?: string;
+}
+
 interface SearchFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: SearchFormData) => void;
   isLoading: boolean;
 }
 
@@ -13,38 +19,26 @@ export default function SearchForm({ onSubmit, isLoading }: SearchFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const fullName = fullNameRef.current?.value || '';
-    const companyDomain = companyDomainRef.current?.value || '';
-
     try {
-      const url = new URL('https://piloterr.com/api/v2/email/finder');
-      url.searchParams.append('query', encodeURIComponent(fullName));
-      url.searchParams.append('company_domain', encodeURIComponent(companyDomain));
-
-      console.log('Making API request to:', url.toString());
-      
-      const response = await fetch(url.toString(), {
+      const response = await fetch('https://piloterr.com/api/v2/email/finder', {
         method: 'GET',
-        mode: 'no-cors',
         headers: {
           'x-api-key': '64c79e28-4b4d-477a-ab93-0d034affaecc',
           'Accept': 'application/json'
+        },
+        params: {
+          query: fullNameRef.current?.value || '',
+          company_domain: companyDomainRef.current?.value || ''
         }
       });
 
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', response.status, errorText);
-        throw new Error(`API Error: ${response.status} ${errorText}`);
+        throw new Error(`API Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
       onSubmit(data);
     } catch (error) {
-      console.error('Error fetching email:', error);
       onSubmit({ error: error instanceof Error ? error.message : 'Failed to fetch email' });
     }
   };
