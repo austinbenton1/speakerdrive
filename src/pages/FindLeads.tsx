@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tooltip } from '../components/Tooltip';
+import { Search } from 'lucide-react';
 import { useLeadFilters } from '../hooks/useLeadFilters';
-import { useLeadsData } from '../hooks/useLeadsData';
+import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
 import LeadTypeFilter from '../components/leads/LeadTypeFilter';
 import LeadsTable from '../components/leads/LeadsTable';
@@ -14,14 +14,14 @@ import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import IndustryQuickFilters from '../components/filters/IndustryQuickFilters';
 import LocationFilter from '../components/filters/LocationFilter';
 import QuickStartGuide from '../components/QuickStartGuide';
-import { Search } from 'lucide-react';
-import { locations, industries, timeframes, domainTypes } from '../constants/filters';
+import { industries, domainTypes } from '../constants/filters';
 
 export default function FindLeads() {
   const navigate = useNavigate();
-  const [showGuide, setShowGuide] = useState(true);
-  const [opportunitiesFilter, setOpportunitiesFilter] = useState('');
-  const { leads, loading, error } = useLeadsData();
+  const [showGuide, setShowGuide] = React.useState(true);
+  const [opportunitiesFilter, setOpportunitiesFilter] = React.useState('');
+  const { leads: availableLeads, loading, error } = useAvailableLeads();
+  
   const {
     selectedLeadTypes,
     selectedEventUnlockTypes,
@@ -33,7 +33,7 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
-  const filteredLeads = useLeadsFilter(leads, {
+  const filteredLeads = useLeadsFilter(availableLeads, {
     opportunitiesFilter,
     selectedLeadTypes: selectedLeadTypes.map(type => type === 'Events' ? 'Event' : 'Contact'),
     jobTitle: selectedLeadTypes.length === 1 && selectedLeadTypes[0] === 'Contacts' ? filters.jobTitle : undefined,
@@ -46,6 +46,22 @@ export default function FindLeads() {
     pastSpeakers: filters.pastSpeakers,
     searchAll: filters.searchAll
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);
@@ -70,22 +86,17 @@ export default function FindLeads() {
 
   return (
     <div className="flex h-full bg-gray-50">
-      {/* Left Sidebar Filters */}
       <div className="w-64 bg-white p-4 overflow-y-auto">
         <div className="flex items-center gap-2 mb-6">
           <Search className="w-5 h-5 text-gray-400" />
           <h2 className="text-lg font-semibold text-gray-900">Find Leads</h2>
         </div>
 
-        {/* Opportunities Filter */}
-        <div className="mb-6">
-          <OpportunitiesFilter
-            value={opportunitiesFilter}
-            onChange={setOpportunitiesFilter}
-          />
-        </div>
+        <OpportunitiesFilter
+          value={opportunitiesFilter}
+          onChange={setOpportunitiesFilter}
+        />
 
-        {/* Lead Type Filter */}
         <LeadTypeFilter
           selectedLeadTypes={selectedLeadTypes}
           selectedEventUnlockTypes={selectedEventUnlockTypes}
@@ -95,7 +106,6 @@ export default function FindLeads() {
           setFilters={setFilters}
         />
 
-        {/* Industry Category */}
         <FilterSection
           title="Industry Category"
           isOpen={openSections.industry}
@@ -115,7 +125,6 @@ export default function FindLeads() {
           />
         </FilterSection>
 
-        {/* Domain Type */}
         <FilterSection
           title="Domain Type"
           isOpen={openSections.domain}
@@ -135,7 +144,6 @@ export default function FindLeads() {
           />
         </FilterSection>
 
-        {/* Location Filter */}
         <LocationFilter
           selectedLocations={filters.location}
           onLocationSelect={handleLocationSelect}
@@ -143,25 +151,6 @@ export default function FindLeads() {
           onToggle={() => toggleSection('location')}
         />
 
-        {/* Date Added */}
-        <FilterSection
-          title="Date Added"
-          isOpen={openSections.timeframe}
-          onToggle={() => toggleSection('timeframe')}
-        >
-          <MultiSelect
-            options={timeframes}
-            selected={filters.timeframe}
-            onChange={(value) => {
-              const newTimeframes = filters.timeframe.includes(value)
-                ? filters.timeframe.filter(t => t !== value)
-                : [...filters.timeframe, value];
-              setFilters(prev => ({ ...prev, timeframe: newTimeframes }));
-            }}
-          />
-        </FilterSection>
-
-        {/* Additional Filters */}
         <FilterSection
           title="Additional Filters"
           isOpen={openSections.moreFilters}
@@ -190,15 +179,12 @@ export default function FindLeads() {
         </FilterSection>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* Quick Start Guide */}
           {showGuide && (
             <QuickStartGuide onDismiss={() => setShowGuide(false)} />
           )}
 
-          {/* Industry Quick Filters */}
           <SearchContainer>
             <div className="space-y-4">
               <h3 className="text-[14px] font-medium text-gray-700">Industry Category</h3>
@@ -215,22 +201,11 @@ export default function FindLeads() {
             </div>
           </SearchContainer>
 
-          {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-lg">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-red-600">{error}</p>
-              </div>
-            ) : (
-              <LeadsTable 
-                leads={filteredLeads} 
-                onLeadClick={handleLeadClick}
-              />
-            )}
+          <div className="bg-white border border-gray-200 rounded-lg mt-6">
+            <LeadsTable 
+              leads={filteredLeads}
+              onLeadClick={handleLeadClick}
+            />
           </div>
         </div>
       </div>

@@ -1,92 +1,89 @@
 import React, { useState } from 'react';
-import { Star } from 'lucide-react';
-import type { SpeakerLead } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { Search, Loader } from 'lucide-react';
+import { useUnlockedLeads } from '../hooks/useUnlockedLeads';
+import UnlockedLeadsList from '../components/leads/UnlockedLeadsList';
 
-// Mock data for saved/starred leads
-const savedLeads: SpeakerLead[] = [
-  {
-    id: '3',
-    name: 'Healthcare Innovation Summit',
-    focus: 'Digital Health',
-    contactType: 'Direct',
-    industryCategory: 'Healthcare',
-    engagementBrief: 'Seeking speakers on healthcare technology',
-    addedDate: '2024-03-10',
-    isUnlocked: true,
-    eventUrl: 'https://example.com/health-summit',
-    contactEmail: 'speakers@healthsummit.com',
-    eventPurpose: 'Discussing digital transformation in healthcare',
-    hostOrganization: 'Healthcare Tech Association',
-    targetAudience: 'Healthcare professionals, Technology leaders'
-  }
+const tabs = [
+  { id: 'all', label: 'All' },
+  { id: 'contacted', label: 'Contacted' },
+  { id: 'pending', label: 'Pending' },
 ];
 
 export default function Leads() {
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'contacted' | 'pending'>('all');
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const { leads, loading, error } = useUnlockedLeads();
+
+  const filteredLeads = leads.filter(lead => {
+    if (!searchQuery) return true;
+    const searchTerms = searchQuery.toLowerCase().split(' ');
+    return searchTerms.every(term =>
+      lead.name.toLowerCase().includes(term) ||
+      lead.industry.toLowerCase().includes(term) ||
+      lead.focus.toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">My Leads</h1>
-        <p className="text-gray-600">Manage your saved speaking opportunities</p>
+        <p className="text-gray-600">Manage your unlocked speaking opportunities</p>
       </div>
 
       <div className="bg-white rounded-lg shadow">
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px" aria-label="Tabs">
-            {['all', 'contacted', 'pending'].map((status) => (
+            {tabs.map((tab) => (
               <button
-                key={status}
-                onClick={() => setSelectedStatus(status as typeof selectedStatus)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`
                   relative min-w-0 flex-1 overflow-hidden py-4 px-4 text-center text-sm font-medium
-                  ${selectedStatus === status
+                  ${activeTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'
                   }
                 `}
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {tab.label}
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="p-6">
-          {savedLeads.map((lead) => (
-            <div
-              key={lead.id}
-              className="flex items-center justify-between p-4 border-b border-gray-200 last:border-0"
-            >
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">{lead.name}</h3>
-                <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                  <span>{lead.industryCategory}</span>
-                  <span>•</span>
-                  <span>{lead.focus}</span>
-                  <span>•</span>
-                  <span>{lead.addedDate}</span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button className="text-yellow-500 hover:text-yellow-600">
-                  <Star className="w-5 h-5 fill-current" />
-                </button>
-                <button className="btn-primary">
-                  View Details
-                </button>
-              </div>
+        <div className="p-4">
+          <div className="max-w-md mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search unlocked leads..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40"
+              />
             </div>
-          ))}
+          </div>
 
-          {savedLeads.length === 0 && (
-            <div className="text-center py-12">
-              <Star className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No saved leads</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Start saving interesting opportunities to track them here
-              </p>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-red-600">{error}</p>
+              <button
+                onClick={() => navigate('/find-leads')}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Find New Leads
+              </button>
+            </div>
+          ) : (
+            <UnlockedLeadsList leads={filteredLeads} />
           )}
         </div>
       </div>

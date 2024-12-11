@@ -11,6 +11,7 @@ export interface Lead {
   event_info: string;
   event_name: string;
   location: string;
+  unlock_value?: string;
 }
 
 export interface SpeakerLead {
@@ -29,6 +30,16 @@ export interface SpeakerLead {
   addedDate: string;
   eventInfo?: string;
   detailedInfo?: string;
+  unlockValue?: string;
+}
+
+export interface UnlockedLead {
+  id: string;
+  name: string;
+  focus: string;
+  industry: string;
+  image: string;
+  unlockDate: Date;
 }
 
 export interface FilterOptions {

@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase, fetchWithRetry } from '../lib/supabase';
-
-export interface Lead {
-  id: string;
-  image_url: string;
-  lead_name: string;
-  focus: string;
-  lead_type: 'Event' | 'Contact';
-  unlock_type: 'Contact Email' | 'Event Email' | 'Event URL';
-  industry: string;
-  domain_type: string;
-  organization: string;
-  event_info: string;
-}
+import { supabase } from '../lib/supabase';
+import type { Lead } from '../types';
 
 export function useLeadsData() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -22,11 +10,9 @@ export function useLeadsData() {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const { data, error: fetchError } = await fetchWithRetry(async () => {
-          return await supabase
-            .from('leads')
-            .select('*');
-        });
+        const { data, error: fetchError } = await supabase
+          .from('leads')
+          .select('*');
 
         if (fetchError) throw fetchError;
         setLeads(data || []);
@@ -50,7 +36,7 @@ export function useLeadsData() {
           table: 'leads' 
         }, 
         (payload) => {
-          // Refresh the leads data when changes occur
+          // Update the local leads data when changes occur
           fetchLeads();
       })
       .subscribe();

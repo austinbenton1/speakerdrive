@@ -6,6 +6,7 @@ import { usePagination } from '../../hooks/usePagination';
 import UnlockButton from './UnlockButton';
 import TableHeader from './TableHeader';
 import TablePagination from './TablePagination';
+import EmptyState from './EmptyState';
 
 interface Props {
   leads: Lead[];
@@ -77,6 +78,10 @@ export default function LeadsTable({ leads, onLeadClick }: Props) {
   });
 
   const paginatedLeads = paginate(sortedLeads);
+
+  if (leads.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

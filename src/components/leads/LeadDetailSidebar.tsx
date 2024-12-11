@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Link as LinkIcon, Building, Calendar, MapPin, Globe, Copy, ExternalLink, Check, ThumbsUp, Clock, X, Info, ArrowUpRight } from 'lucide-react';
+import { Mail, Link as LinkIcon, Building, Calendar, MapPin, Globe, Copy, ExternalLink, Check, ThumbsUp, Clock, X, Info, ArrowUpRight, Building2 } from 'lucide-react';
 import type { SpeakerLead } from '../../types';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 
@@ -35,17 +35,17 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
       show: true,
     },
     {
+      icon: Building2,
+      label: 'Organization',
+      value: lead.organization || 'Not specified',
+      show: true,
+    },
+    {
       icon: Info,
       label: 'More Info',
       value: 'View Online',
       link: dummyUrl,
       show: true,
-    },
-    {
-      icon: Building,
-      label: 'Organization',
-      value: lead.hostOrganization,
-      show: !!lead.hostOrganization,
     },
     {
       icon: Globe,

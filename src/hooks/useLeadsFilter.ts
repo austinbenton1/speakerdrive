@@ -15,25 +15,13 @@ interface FilterParams {
   searchAll: string;
 }
 
-export function useLeadsFilter(leads: Lead[], { 
-  opportunitiesFilter, 
-  selectedLeadTypes,
-  jobTitle,
-  targetAudience,
-  selectedEventUnlockTypes = [],
-  selectedIndustries,
-  selectedLocations,
-  selectedDomains,
-  organization,
-  pastSpeakers,
-  searchAll
-}: FilterParams) {
+export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
   return useMemo(() => {
-    let filteredLeads = leads;
+    let filteredLeads = [...leads];
 
-    // Filter by search term
-    if (opportunitiesFilter) {
-      const searchTerm = opportunitiesFilter.toLowerCase();
+    // Filter by opportunities search term
+    if (filters.opportunitiesFilter) {
+      const searchTerm = filters.opportunitiesFilter.toLowerCase();
       filteredLeads = filteredLeads.filter(lead => {
         const searchFields = [
           lead.lead_name,
@@ -51,79 +39,79 @@ export function useLeadsFilter(leads: Lead[], {
     }
 
     // Filter by lead type
-    if (selectedLeadTypes.length > 0) {
+    if (filters.selectedLeadTypes.length > 0) {
       filteredLeads = filteredLeads.filter(lead => {
         const normalizedLeadType = lead.lead_type.toLowerCase();
-        return selectedLeadTypes.some(type => type.toLowerCase() === normalizedLeadType);
+        return filters.selectedLeadTypes.some(type => type.toLowerCase() === normalizedLeadType);
       });
 
-      // Apply type-specific filters only if a single type is selected
-      if (selectedLeadTypes.length === 1) {
-        if (selectedLeadTypes[0] === 'Contact' && jobTitle) {
+      // Apply type-specific filters
+      if (filters.selectedLeadTypes.length === 1) {
+        if (filters.selectedLeadTypes[0] === 'Contact' && filters.jobTitle) {
           filteredLeads = filteredLeads.filter(lead => 
-            lead.focus?.toLowerCase().includes(jobTitle.toLowerCase())
+            lead.focus?.toLowerCase().includes(filters.jobTitle!.toLowerCase())
           );
-        } else if (selectedLeadTypes[0] === 'Event' && targetAudience) {
+        } else if (filters.selectedLeadTypes[0] === 'Event' && filters.targetAudience) {
           filteredLeads = filteredLeads.filter(lead => 
-            lead.focus?.toLowerCase().includes(targetAudience.toLowerCase())
+            lead.focus?.toLowerCase().includes(filters.targetAudience!.toLowerCase())
           );
         }
       }
 
       // Apply unlock type filter for Events
-      if (selectedEventUnlockTypes.length === 1 && selectedLeadTypes[0] === 'Event') {
+      if (filters.selectedEventUnlockTypes?.length === 1 && filters.selectedLeadTypes[0] === 'Event') {
         filteredLeads = filteredLeads.filter(lead => 
-          selectedEventUnlockTypes[0] === (lead.unlock_type.replace("Unlock ", ""))
+          filters.selectedEventUnlockTypes![0] === (lead.unlock_type.replace("Unlock ", ""))
         );
       }
     }
 
-    // Filter by industry if any industries are selected
-    if (selectedIndustries.length > 0) {
+    // Filter by industry
+    if (filters.selectedIndustries.length > 0) {
       filteredLeads = filteredLeads.filter(lead =>
-        selectedIndustries.some(industry => 
+        filters.selectedIndustries.some(industry => 
           lead.industry.toLowerCase() === industry.toLowerCase()
         )
       );
     }
 
-    // Filter by location if any locations are selected
-    if (selectedLocations.length > 0) {
+    // Filter by location
+    if (filters.selectedLocations.length > 0) {
       filteredLeads = filteredLeads.filter(lead =>
-        selectedLocations.some(location => 
+        filters.selectedLocations.some(location => 
           lead.location?.toLowerCase() === location.toLowerCase()
         )
       );
     }
 
-    // Filter by domain type if any domains are selected
-    if (selectedDomains.length > 0) {
+    // Filter by domain type
+    if (filters.selectedDomains.length > 0) {
       filteredLeads = filteredLeads.filter(lead =>
-        selectedDomains.some(domain => 
+        filters.selectedDomains.some(domain => 
           lead.domain_type.toLowerCase() === domain.toLowerCase()
         )
       );
     }
 
     // Filter by organization name
-    if (organization) {
-      const orgSearch = organization.toLowerCase();
+    if (filters.organization) {
+      const orgSearch = filters.organization.toLowerCase();
       filteredLeads = filteredLeads.filter(lead =>
         lead.organization?.toLowerCase().includes(orgSearch)
       );
     }
 
-    // Filter by past speakers & experts (event info)
-    if (pastSpeakers) {
-      const speakersSearch = pastSpeakers.toLowerCase();
+    // Filter by past speakers & experts
+    if (filters.pastSpeakers) {
+      const speakersSearch = filters.pastSpeakers.toLowerCase();
       filteredLeads = filteredLeads.filter(lead =>
         lead.event_info?.toLowerCase().includes(speakersSearch)
       );
     }
 
     // Global search across all fields
-    if (searchAll) {
-      const globalSearch = searchAll.toLowerCase();
+    if (filters.searchAll) {
+      const globalSearch = filters.searchAll.toLowerCase();
       filteredLeads = filteredLeads.filter(lead => {
         const searchFields = [
           lead.lead_name,
@@ -143,18 +131,5 @@ export function useLeadsFilter(leads: Lead[], {
     }
 
     return filteredLeads;
-  }, [
-    leads, 
-    opportunitiesFilter, 
-    selectedLeadTypes, 
-    jobTitle, 
-    targetAudience, 
-    selectedEventUnlockTypes,
-    selectedIndustries,
-    selectedLocations,
-    selectedDomains,
-    organization,
-    pastSpeakers,
-    searchAll
-  ]);
+  }, [leads, filters]);
 }

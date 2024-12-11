@@ -19,7 +19,8 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         location,
         created_at,
         event_info,
-        detailed_info
+        detailed_info,
+        unlock_value
       `)
       .eq('id', id)
       .single();
@@ -43,7 +44,8 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       location: data.location,
       addedDate: data.created_at,
       eventInfo: data.event_info,
-      detailedInfo: data.detailed_info
+      detailedInfo: data.detailed_info,
+      unlockValue: data.unlock_value
     };
   } catch (error) {
     console.error('Error fetching lead:', error);

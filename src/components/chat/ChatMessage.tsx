@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { formatTime } from '../../utils/date';
 
 interface ChatMessageProps {
   content: string;
@@ -45,7 +46,7 @@ export default function ChatMessage({ content, isAi, timestamp, status }: ChatMe
             {isAi ? 'SpeakerDrive AI' : 'You'}
           </span>
           <span className="text-xs text-gray-500">
-            {timestamp.toLocaleTimeString()}
+            {formatTime(timestamp)}
           </span>
           {getStatusIcon()}
         </div>

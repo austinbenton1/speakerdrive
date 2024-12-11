@@ -1,14 +1,55 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sendChatMessage } from '../lib/api/chatbot';
 
-const ChatInterface = () => {
+interface Message {
+  content: string;
+  isBot: boolean;
+  timestamp: Date;
+  status?: 'sending' | 'sent' | 'error';
+}
+
+export default function ChatConversation() {
   const [message, setMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [isComposing, setIsComposing] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = () => {
-    setIsSending(true);
-    setTimeout(() => setIsSending(false), 1000);
+  const handleSend = async () => {
+    if (!message.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      content: message.trim(),
+      isBot: false,
+      timestamp: new Date(),
+      status: 'sending'
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await sendChatMessage(message.trim());
+      
+      // Update user message status
+      setMessages(prev => prev.map(msg => 
+        msg === userMessage ? { ...msg, status: 'sent' } : msg
+      ));
+
+      // Add bot response
+      setMessages(prev => [...prev, {
+        content: response.response,
+        isBot: true,
+        timestamp: new Date()
+      }]);
+    } catch (error) {
+      // Update user message status to error
+      setMessages(prev => prev.map(msg => 
+        msg === userMessage ? { ...msg, status: 'error' } : msg
+      ));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Character count animation setup
@@ -22,7 +63,7 @@ const ChatInterface = () => {
   return (
     <div style={{ background: '#EDEEF0' }} className="min-h-screen p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-2xl">
-        {/* Header section remains the same */}
+        {/* Header section */}
         <div className="mb-8">
           <h1 
             style={{
@@ -36,7 +77,7 @@ const ChatInterface = () => {
             }}
             className="text-4xl font-bold"
           >
-            Hey, Expert
+            Ask SpeakerDrive
           </h1>
           <p className="text-[#4B5563] text-lg mb-6 leading-relaxed">
             I'm here to help you add value to your clients and win more engagements.
@@ -46,6 +87,38 @@ const ChatInterface = () => {
           </h2>
         </div>
 
+        {/* Messages Container */}
+        {messages.length > 0 && (
+          <div className="mb-6 space-y-4">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`p-4 rounded-lg ${
+                  msg.isBot 
+                    ? 'bg-white border border-gray-200'
+                    : 'bg-blue-50 border border-blue-100'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium text-gray-900">
+                    {msg.isBot ? 'SpeakerDrive AI' : 'You'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {msg.timestamp.toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-gray-700">{msg.content}</p>
+                {msg.status === 'error' && (
+                  <p className="text-sm text-red-600 mt-2">
+                    Failed to send message. Please try again.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Input Container */}
         <div 
           className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden transform-gpu"
           style={{
@@ -57,12 +130,8 @@ const ChatInterface = () => {
               className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
               placeholder="Try asking: 'What strategies can help me win more client projects?'"
               value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-                // Trigger composing state for short duration
-                setIsComposing(true);
-                setTimeout(() => setIsComposing(false), 500);
-              }}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={isLoading}
             />
           </div>
           
@@ -93,23 +162,23 @@ const ChatInterface = () => {
                 <span 
                   className="transition-colors duration-300"
                   style={{ 
-                    color: getCharCountColor(message.length),
-                    transform: isComposing ? 'scale(1.1)' : 'scale(1)',
-                    transition: 'transform 0.2s ease'
+                    color: getCharCountColor(message.length)
                   }}
                 >
                   {message.length}/1000
                 </span>
                 <button 
                   onClick={handleSend}
+                  disabled={!message.trim() || isLoading}
                   style={{
                     background: '#0066FF',
-                    transform: isSending ? 'scale(0.95)' : 'scale(1)',
+                    opacity: (!message.trim() || isLoading) ? 0.5 : 1,
+                    transform: isLoading ? 'scale(0.95)' : 'scale(1)',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                   className="text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00B341]"
                 >
-                  <svg className={`w-4 h-4 transition-transform duration-300 ${isSending ? 'scale-110' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg className="w-4 h-4 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14m-5-5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
@@ -132,6 +201,4 @@ const ChatInterface = () => {
       </div>
     </div>
   );
-};
-
-export default ChatInterface;
+}
