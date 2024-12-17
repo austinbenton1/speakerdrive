@@ -38,6 +38,17 @@ export default function SearchResult({
     }
   };
 
+  const getStatusText = () => {
+    switch (status) {
+      case 'valid':
+        return 'Valid';
+      case 'invalid':
+        return 'Invalid';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -45,7 +56,12 @@ export default function SearchResult({
           <Mail className="w-5 h-5 text-gray-400" />
           <h3 className="text-lg font-medium text-gray-900">Email Found</h3>
         </div>
-        {getStatusIcon()}
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-medium ${getStatusColor()}`}>
+            {getStatusText()}
+          </span>
+          {getStatusIcon()}
+        </div>
       </div>
 
       <div className="space-y-3">

@@ -77,11 +77,7 @@ export default function EditableField({
             ${!disabled && 'group-hover:border-gray-200 group-hover:bg-gray-50 cursor-pointer'}
           `}
         >
-          {type === 'textarea' ? (
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{value || 'Click to edit'}</p>
-          ) : (
-            <p className="text-sm text-gray-900">{value || 'Click to edit'}</p>
-          )}
+          <p className="text-sm text-gray-900">{value || 'Click to edit'}</p>
         </div>
         {!disabled && (
           <span className="absolute inset-y-0 right-2 hidden group-hover:flex items-center text-xs text-gray-400">
@@ -94,29 +90,16 @@ export default function EditableField({
 
   return (
     <div className="space-y-2">
-      {type === 'textarea' ? (
-        <textarea
-          value={tempValue}
-          onChange={(e) => setTempValue(e.target.value)}
-          className={`
-            w-full px-3 py-2 border rounded-md shadow-sm text-sm
-            focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            ${error ? 'border-red-300' : 'border-gray-300'}
-          `}
-          rows={4}
-        />
-      ) : (
-        <input
-          type={type}
-          value={tempValue}
-          onChange={(e) => setTempValue(e.target.value)}
-          className={`
-            w-full px-3 py-2 border rounded-md shadow-sm text-sm
-            focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            ${error ? 'border-red-300' : 'border-gray-300'}
-          `}
-        />
-      )}
+      <input
+        type={type}
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        className={`
+          w-full px-3 py-2 border rounded-md shadow-sm text-sm
+          focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          ${error ? 'border-red-300' : 'border-gray-300'}
+        `}
+      />
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>

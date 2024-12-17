@@ -4,14 +4,12 @@ export interface Lead {
   lead_name: string;
   focus: string;
   lead_type: 'Event' | 'Contact';
-  unlock_type: 'Contact Email' | 'Event Email' | 'Event URL';
   industry: string;
   domain_type: string;
   organization: string;
   event_info: string;
   event_name: string;
   location: string;
-  unlock_value?: string;
 }
 
 export interface SpeakerLead {
@@ -19,27 +17,23 @@ export interface SpeakerLead {
   image: string;
   name: string;
   focus: string;
-  unlockType: 'Contact Email' | 'Event Email' | 'Event URL';
   industryCategory: string;
   domainType: string;
   leadType: 'Event' | 'Contact';
-  isUnlocked: boolean;
   eventName: string;
   organization: string;
+  organizationType: string;
   location?: string;
   addedDate: string;
   eventInfo?: string;
   detailedInfo?: string;
-  unlockValue?: string;
-}
-
-export interface UnlockedLead {
-  id: string;
-  name: string;
-  focus: string;
-  industry: string;
-  image: string;
-  unlockDate: Date;
+  infoUrl?: string;
+  eventFormat?: string;
+  tooltipLocation?: string;
+  tooltipIndustryCategory?: string;
+  tooltipEventFormat?: string;
+  tooltipOrganization?: string;
+  tooltipOrganizationType?: string;
 }
 
 export interface FilterOptions {

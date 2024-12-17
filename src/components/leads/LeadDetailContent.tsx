@@ -50,6 +50,22 @@ export default function LeadDetailContent({ lead }: LeadDetailContentProps) {
 
   return (
     <div className="col-span-2 space-y-6">
+      <Section icon={FileText} title="Opportunity Profile">
+        <div className="space-y-6">
+          {detailedInfoBlocks.length > 0 ? (
+            detailedInfoBlocks.map((block, index) => (
+              <ContentBlock
+                key={index}
+                title={block.title}
+                content={block.content}
+              />
+            ))
+          ) : (
+            <ContentBlock content="No opportunity profile available" />
+          )}
+        </div>
+      </Section>
+
       <Section icon={Calendar} title="Event Information">
         <div className="space-y-6">
           {eventInfoBlocks.length > 0 ? (
@@ -62,22 +78,6 @@ export default function LeadDetailContent({ lead }: LeadDetailContentProps) {
             ))
           ) : (
             <ContentBlock content="No event information available" />
-          )}
-        </div>
-      </Section>
-
-      <Section icon={FileText} title="Detailed Information">
-        <div className="space-y-6">
-          {detailedInfoBlocks.length > 0 ? (
-            detailedInfoBlocks.map((block, index) => (
-              <ContentBlock
-                key={index}
-                title={block.title}
-                content={block.content}
-              />
-            ))
-          ) : (
-            <ContentBlock content="No detailed information available" />
           )}
         </div>
       </Section>

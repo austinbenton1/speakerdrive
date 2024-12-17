@@ -3,14 +3,14 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { Lead } from '../../types';
 import { useTableSort, type SortField } from '../../hooks/useTableSort';
 import { usePagination } from '../../hooks/usePagination';
-import UnlockButton from './UnlockButton';
+import { useLeadVisit } from '../../hooks/useLeadVisit';
 import TableHeader from './TableHeader';
 import TablePagination from './TablePagination';
+import LeadTableRow from './LeadTableRow';
 import EmptyState from './EmptyState';
 
 interface Props {
   leads: Lead[];
-  onLeadClick?: (leadId: string) => void;
 }
 
 const SortIcon = ({ field, sortField, sortDirection }: { field: SortField, sortField: SortField | null, sortDirection: 'asc' | 'desc' | null }) => {
@@ -53,16 +53,13 @@ const HeaderCell = ({
   </th>
 );
 
-export default function LeadsTable({ leads, onLeadClick }: Props) {
+export default function LeadsTable({ leads }: Props) {
   const { sortField, sortDirection, toggleSort } = useTableSort();
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
+  const { visitLead, isRecording } = useLeadVisit();
+
   const stickyColumnStyle = "bg-white/95 backdrop-blur-sm";
   const stickyColumnShadow = "shadow-[8px_0_16px_-6px_rgba(0,0,0,0.2)]";
-
-  const truncateText = (text: string, maxLength: number = 50) => {
-    if (!text) return '';
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
 
   const sortedLeads = [...leads].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
@@ -84,7 +81,7 @@ export default function LeadsTable({ leads, onLeadClick }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden ${isRecording ? 'opacity-75' : ''}`}>
       <TableHeader 
         pageSize={pageSize} 
         onPageSizeChange={setPageSize} 
@@ -104,18 +101,21 @@ export default function LeadsTable({ leads, onLeadClick }: Props) {
                 sortField={sortField}
                 sortDirection={sortDirection}
                 onSort={toggleSort}
-                className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow}`}
+                className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow} min-w-[400px]`}
               >
                 Name
               </HeaderCell>
-              <HeaderCell field="focus" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
+              <HeaderCell 
+                field="focus" 
+                sortField={sortField} 
+                sortDirection={sortDirection} 
+                onSort={toggleSort}
+                className="max-w-[300px] w-[300px]"
+              >
                 Focus
               </HeaderCell>
               <HeaderCell field="lead_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Lead Type
-              </HeaderCell>
-              <HeaderCell field="unlock_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Unlock Type
               </HeaderCell>
               <HeaderCell field="industry" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Industry Category
@@ -129,15 +129,6 @@ export default function LeadsTable({ leads, onLeadClick }: Props) {
               <HeaderCell field="event_info" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Event Info
               </HeaderCell>
-              <HeaderCell 
-                field="event_name" 
-                sortField={sortField} 
-                sortDirection={sortDirection} 
-                onSort={toggleSort}
-                hidden={true}
-              >
-                Event Name
-              </HeaderCell>
               <HeaderCell field="location" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Location
               </HeaderCell>
@@ -145,57 +136,13 @@ export default function LeadsTable({ leads, onLeadClick }: Props) {
           </thead>
           <tbody className="bg-white">
             {paginatedLeads.map((lead) => (
-              <tr
+              <LeadTableRow
                 key={lead.id}
-                onClick={() => onLeadClick?.(lead.id)}
-                className="hover:bg-gray-50 cursor-pointer"
-              >
-                <td className={`sticky left-0 z-10 ${stickyColumnStyle} px-3 py-3 whitespace-nowrap`}>
-                  <img 
-                    src={lead.image_url} 
-                    alt={lead.lead_name}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                </td>
-                <td className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow} px-3 py-3 whitespace-nowrap`}>
-                  <div className="text-[13.5px] font-medium text-gray-900 truncate max-w-[200px]">{lead.lead_name}</div>
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <div className="text-[13.5px] text-gray-500">{lead.focus}</div>
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
-                    {lead.lead_type}
-                  </span>
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <UnlockButton type={lead.unlock_type} />
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
-                    {lead.industry}
-                  </span>
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
-                    {lead.domain_type}
-                  </span>
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap text-[13.5px] text-gray-500">
-                  {lead.organization || 'N/A'}
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap text-[13.5px] text-gray-500">
-                  {truncateText(lead.event_info || 'Unlock to view event details')}
-                </td>
-                <td className="hidden px-3 py-3 whitespace-nowrap text-[13.5px] text-gray-500">
-                  {lead.event_name}
-                </td>
-                <td className="px-3 py-3 whitespace-nowrap">
-                  <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
-                    {lead.location || 'N/A'}
-                  </span>
-                </td>
-              </tr>
+                lead={lead}
+                onClick={() => visitLead(lead.id)}
+                stickyColumnStyle={stickyColumnStyle}
+                stickyColumnShadow={stickyColumnShadow}
+              />
             ))}
           </tbody>
         </table>

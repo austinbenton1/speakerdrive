@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const mainNavItems = [
@@ -12,6 +12,7 @@ const mainNavItems = [
     { label: 'Ask SpeakerDrive', path: '/chat/conversation' }
   ]},
   { icon: UserSearch, label: 'Contact Finder', path: '/contact-finder' },
+  { icon: Users, label: 'Users', path: '/users' },
 ];
 
 const bottomNavItems = [
@@ -25,7 +26,7 @@ const settingsItems = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedItem, setExpandedItem] = React.useState<string | null>(null);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {

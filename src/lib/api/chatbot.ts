@@ -5,13 +5,14 @@ interface ChatbotResponse {
 
 export async function sendChatMessage(message: string): Promise<ChatbotResponse> {
   try {
-    const url = 'https://n8n.speakerdrive.com/webhook-test/chatbot';
-    const params = new URLSearchParams({ name: message });
+    const url = 'https://n8n.speakerdrive.com/webhook-test/ai-data';
+    const params = new URLSearchParams({ message });
 
     const response = await fetch(`${url}?${params}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'chatbotspeakerdrive12$$',
+        'Username': 'webhooktest123',
+        'Password': 'qwe123',
         'Content-Type': 'application/json'
       }
     });

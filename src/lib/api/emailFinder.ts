@@ -12,21 +12,25 @@ interface EmailFinderResponse {
 }
 
 export async function findEmail({ query, company_domain }: EmailFinderParams): Promise<EmailFinderResponse> {
-  try {
-    const params = new URLSearchParams({ query, company_domain });
-    const response = await fetch(`/api/email-finder/find?${params}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+  const params = new URLSearchParams({ query, company_domain });
+  const response = await fetch(`/api/email-finder/find?${params}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error('Failed to find email');
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const errorData = JSON.parse(errorText);
+      throw new Error(errorData.error || 'Failed to find email');
+      } catch (errorText) {
+      throw new Error(`Server Error: ${response.status} - ${errorText}`);
     }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error finding email:', error);
-    throw error;
   }
+
+  const data = await response.json();
+  return data;
 }

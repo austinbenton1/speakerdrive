@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { AlertCircle, Loader } from 'lucide-react';
 import { useLeadDetails } from '../hooks/useLeadDetails';
+import { useLeadUnlock } from '../hooks/useLeadUnlock';
 import LeadDetailHeader from '../components/leads/LeadDetailHeader';
 import LeadDetailContent from '../components/leads/LeadDetailContent';
 import LeadDetailSidebar from '../components/leads/LeadDetailSidebar';
-import { AlertCircle, Loader } from 'lucide-react';
 
 export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { lead, isLoading, error } = useLeadDetails(id || '');
+  const { 
+    isUnlocked,
+    isUnlocking,
+    unlockValue,
+    error: unlockError,
+    handleUnlock,
+    checkUnlockStatus
+  } = useLeadUnlock(id || '');
+
+  // Check unlock status when component mounts
+  useEffect(() => {
+    if (id) {
+      checkUnlockStatus();
+    }
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -59,7 +75,22 @@ export default function LeadDetails() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <LeadDetailHeader lead={lead} />
+      {unlockError && (
+        <div className="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+            <p className="text-sm text-red-700">{unlockError}</p>
+          </div>
+        </div>
+      )}
+
+      <LeadDetailHeader 
+        lead={lead}
+        onUnlock={handleUnlock}
+        isUnlocking={isUnlocking}
+        isUnlocked={isUnlocked}
+        unlockValue={unlockValue}
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-3 gap-8">

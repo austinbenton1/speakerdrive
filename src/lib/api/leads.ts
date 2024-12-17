@@ -15,12 +15,20 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         industry,
         domain_type,
         organization,
+        organization_type,
         event_name,
         location,
         created_at,
         event_info,
         detailed_info,
-        unlock_value
+        unlock_value,
+        info_url,
+        event_format,
+        tooltip_location,
+        tooltip_industry_category,
+        tooltip_event_format,
+        tooltip_organization,
+        tooltip_organization_type
       `)
       .eq('id', id)
       .single();
@@ -41,11 +49,19 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       isUnlocked: false,
       eventName: data.event_name,
       organization: data.organization,
+      organizationType: data.organization_type,
       location: data.location,
       addedDate: data.created_at,
       eventInfo: data.event_info,
       detailedInfo: data.detailed_info,
-      unlockValue: data.unlock_value
+      unlockValue: data.unlock_value,
+      infoUrl: data.info_url,
+      eventFormat: data.event_format,
+      tooltipLocation: data.tooltip_location,
+      tooltipIndustryCategory: data.tooltip_industry_category,
+      tooltipEventFormat: data.tooltip_event_format,
+      tooltipOrganization: data.tooltip_organization,
+      tooltipOrganizationType: data.tooltip_organization_type
     };
   } catch (error) {
     console.error('Error fetching lead:', error);

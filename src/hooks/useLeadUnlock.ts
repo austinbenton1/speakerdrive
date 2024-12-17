@@ -1,54 +1,68 @@
-import { create } from 'zustand';
+import { useState, useEffect } from 'react';
 import { unlockLead, checkLeadUnlocked } from '../lib/api/unlocks';
+import type { UnlockStatus } from '../types/unlocks';
 
-interface LeadUnlockState {
-  unlockedLeads: Record<string, boolean>;
-  isUnlocking: Record<string, boolean>;
-  unlockError: Record<string, string | null>;
-  unlockLead: (leadId: string) => Promise<void>;
-  isLeadUnlocked: (leadId: string) => boolean;
-  checkUnlockStatus: (leadId: string) => Promise<void>;
+interface UseLeadUnlockResult {
+  isUnlocked: boolean;
+  isUnlocking: boolean;
+  unlockValue: string | null;
+  error: string | null;
+  handleUnlock: () => Promise<void>;
+  checkUnlockStatus: () => Promise<void>;
 }
 
-export const useLeadUnlock = create<LeadUnlockState>((set, get) => ({
-  unlockedLeads: {},
-  isUnlocking: {},
-  unlockError: {},
-  unlockLead: async (leadId: string) => {
-    // Set unlocking state
-    set((state) => ({
-      isUnlocking: { ...state.isUnlocking, [leadId]: true },
-      unlockError: { ...state.unlockError, [leadId]: null }
-    }));
+export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [unlockValue, setUnlockValue] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Check unlock status on mount and when leadId changes
+  useEffect(() => {
+    if (leadId) {
+      checkUnlockStatus();
+    }
+  }, [leadId]);
+
+  const checkUnlockStatus = async () => {
+    try {
+      const status = await checkLeadUnlocked(leadId);
+      setIsUnlocked(status.isUnlocked);
+      setUnlockValue(status.unlockValue || null);
+    } catch (err) {
+      console.error('Error checking unlock status:', err);
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!leadId || isUnlocking) return;
 
     try {
-      const { error } = await unlockLead(leadId);
+      setIsUnlocking(true);
+      setError(null);
+
+      const { success, error } = await unlockLead(leadId);
       
-      if (error) {
-        set((state) => ({
-          unlockError: { ...state.unlockError, [leadId]: error.message }
-        }));
-        return;
+      if (!success) {
+        throw new Error(error || 'Failed to unlock lead');
       }
 
-      set((state) => ({
-        unlockedLeads: { ...state.unlockedLeads, [leadId]: true }
-      }));
+      // Check updated status after successful unlock
+      await checkUnlockStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unlock lead');
+      console.error('Error unlocking lead:', err);
     } finally {
-      set((state) => ({
-        isUnlocking: { ...state.isUnlocking, [leadId]: false }
-      }));
+      setIsUnlocking(false);
     }
-  },
-  isLeadUnlocked: (leadId: string) => {
-    return get().unlockedLeads[leadId] || false;
-  },
-  checkUnlockStatus: async (leadId: string) => {
-    const isUnlocked = await checkLeadUnlocked(leadId);
-    if (isUnlocked) {
-      set((state) => ({
-        unlockedLeads: { ...state.unlockedLeads, [leadId]: true }
-      }));
-    }
-  }
-}));
+  };
+
+  return {
+    isUnlocked,
+    isUnlocking,
+    unlockValue,
+    error,
+    handleUnlock,
+    checkUnlockStatus
+  };
+}

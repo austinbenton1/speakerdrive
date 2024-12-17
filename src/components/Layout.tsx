@@ -1,90 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
-import { useAvatarStore } from '../lib/store';
-
-interface UserProfile {
-  id: string;
-  display_name?: string;
-  email: string;
-  user_role?: string;
-  avatar_url?: string | null;
-}
+import { useProfile } from '../hooks/useProfile';
+import LoadingSpinner from './common/LoadingSpinner';
 
 export default function Layout() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const avatarUrl = useAvatarStore((state) => state.avatarUrl);
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session?.user) {
-          navigate('/login');
-          return;
-        }
-
-        // Fetch profile data including avatar_url
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        setUser({
-          id: session.user.id,
-          display_name: session.user.user_metadata?.display_name,
-          email: session.user.email || '',
-          user_role: session.user.user_metadata?.user_role || 'Member',
-          avatar_url: profile?.avatar_url
-        });
-
-        // Set initial avatar URL in global store
-        useAvatarStore.getState().setAvatarUrl(profile?.avatar_url || null);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        navigate('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getUser();
-  }, [navigate]);
-
-  const getDisplayName = () => {
-    if (user?.display_name) return user.display_name;
-
-    // If no name is available, format the email
-    if (user?.email) {
-      const [username] = user.email.split('@');
-      // Capitalize first letter of each word
-      return username
-        .split(/[._-]/)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-    }
-
-    return 'User';
-  };
-
-  const getUserRole = () => {
-    return user?.user_role || 'Member';
-  };
+  const { profile, loading, error } = useProfile();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingSpinner />
       </div>
     );
   }
+
+  if (error || !profile) {
+    navigate('/login');
+    return null;
+  }
+
+  const getDisplayName = () => {
+    if (profile.display_name) return profile.display_name;
+
+    // If no name is available, format the email
+    const [username] = profile.email.split('@');
+    // Capitalize first letter of each word
+    return username
+      .split(/[._-]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -97,9 +45,9 @@ export default function Layout() {
             className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
           >
             <div className="flex-shrink-0">
-              {(avatarUrl || user?.avatar_url) ? (
+              {profile.avatar_url ? (
                 <img
-                  src={avatarUrl || user?.avatar_url}
+                  src={profile.avatar_url}
                   alt={getDisplayName()}
                   className="w-8 h-8 rounded-full border border-gray-200 shadow-sm object-cover"
                   onError={(e) => {
@@ -119,7 +67,7 @@ export default function Layout() {
                 {getDisplayName()}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {getUserRole()}
+                {profile.user_type}
               </p>
             </div>
           </div>

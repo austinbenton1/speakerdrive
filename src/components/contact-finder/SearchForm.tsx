@@ -7,8 +7,8 @@ interface SearchFormProps {
 }
 
 export default function SearchForm({ onSubmit, isLoading }: SearchFormProps) {
-  const [fullName, setFullName] = useState('Austin Benton');
-  const [companyDomain, setCompanyDomain] = useState('speakerdrive.com');
+  const [fullName, setFullName] = useState('');
+  const [companyDomain, setCompanyDomain] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

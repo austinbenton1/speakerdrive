@@ -8,6 +8,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
+import UsersManagement from './pages/UsersManagement';
 import Leads from './pages/Leads';
 import LeadDetails from './pages/LeadDetails';
 import Layout from './components/Layout';
@@ -61,6 +62,7 @@ function App() {
           <Route path="/leads/:id" element={<LeadDetails />} />
           <Route path="/contact-finder" element={<ContactFinder />} />
           <Route path="/settings" element={<UserManagement />} />
+          <Route path="/users" element={<UsersManagement />} />
           <Route path="/profile-test" element={<ProfileTest />} />
           <Route path="/chat" element={<InstantIntel />} />
           <Route path="/chat/sales-coach" element={<SalesCoach />} />

@@ -12,7 +12,8 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
     const { data: unlockedLeads, error: unlockedError } = await supabase
       .from('unlocked_leads')
       .select('lead_id')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('unlocked', true);
 
     if (unlockedError) throw unlockedError;
 

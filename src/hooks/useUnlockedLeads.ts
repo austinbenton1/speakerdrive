@@ -30,6 +30,7 @@ export function useUnlockedLeads() {
             )
           `)
           .eq('user_id', session.user.id)
+          .eq('unlocked', true)
           .order('created_at', { ascending: false });
 
         if (fetchError) throw fetchError;
