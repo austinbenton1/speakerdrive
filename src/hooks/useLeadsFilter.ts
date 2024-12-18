@@ -9,7 +9,8 @@ interface FilterParams {
   selectedEventUnlockTypes?: string[];
   selectedIndustries: string[];
   selectedLocations: string[];
-  selectedDomains: string[];
+  selectedEventFormats: string[];
+  selectedOrgTypes: string[];
   organization: string;
   pastSpeakers: string;
   searchAll: string;
@@ -84,11 +85,20 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       );
     }
 
-    // Filter by domain type
-    if (filters.selectedDomains.length > 0) {
+    // Filter by event format
+    if (filters.selectedEventFormats.length > 0) {
       filteredLeads = filteredLeads.filter(lead =>
-        filters.selectedDomains.some(domain => 
-          lead.domain_type.toLowerCase() === domain.toLowerCase()
+        filters.selectedEventFormats.some(format => 
+          lead.event_format?.toLowerCase() === format.toLowerCase()
+        )
+      );
+    }
+
+    // Filter by organization type
+    if (filters.selectedOrgTypes.length > 0) {
+      filteredLeads = filteredLeads.filter(lead =>
+        filters.selectedOrgTypes.some(orgType => 
+          lead.organization_type?.toLowerCase() === orgType.toLowerCase()
         )
       );
     }
@@ -120,7 +130,6 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
           lead.organization,
           lead.event_info,
           lead.event_name,
-          lead.domain_type,
           lead.location
         ];
 

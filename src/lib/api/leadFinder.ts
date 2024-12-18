@@ -30,9 +30,11 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
         industry,
         domain_type,
         organization,
+        organization_type,
         event_info,
         event_name,
-        location
+        location,
+        event_format
       `)
       .not('id', 'in', `(${(unlockedLeads || []).map(ul => ul.lead_id).join(',')})`);
 
@@ -49,9 +51,11 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
       industry: lead.industry,
       domain_type: lead.domain_type,
       organization: lead.organization,
+      organization_type: lead.organization_type,
       event_info: lead.event_info,
       event_name: lead.event_name,
-      location: lead.location
+      location: lead.location,
+      event_format: lead.event_format
     }));
   } catch (error) {
     console.error('Error fetching available leads:', error);

@@ -7,6 +7,7 @@ export interface Lead {
   industry: string;
   domain_type: string;
   organization: string;
+  organization_type: string;
   event_info: string;
   event_name: string;
   location: string;
@@ -46,5 +47,6 @@ export interface FilterOptions {
   location: string[];
   industry: string[];
   timeframe: string[];
-  domain: string[];
+  eventFormat: string[];
+  organizationType: string[];
 }

@@ -13,8 +13,10 @@ import SearchContainer from '../components/SearchContainer';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import IndustryQuickFilters from '../components/filters/IndustryQuickFilters';
 import LocationFilter from '../components/filters/LocationFilter';
+import EventFormatFilter from '../components/filters/EventFormatFilter';
+import OrganizationTypeFilter from '../components/filters/OrganizationTypeFilter';
 import QuickStartGuide from '../components/QuickStartGuide';
-import { industries, domainTypes } from '../constants/filters';
+import { industries, eventFormats, organizationTypes } from '../constants/filters';
 
 export default function FindLeads() {
   const navigate = useNavigate();
@@ -41,7 +43,8 @@ export default function FindLeads() {
     selectedEventUnlockTypes: selectedLeadTypes.length === 1 && selectedLeadTypes[0] === 'Events' ? selectedEventUnlockTypes : undefined,
     selectedIndustries: filters.industry,
     selectedLocations: filters.location,
-    selectedDomains: filters.domain,
+    selectedEventFormats: filters.eventFormat || [],
+    selectedOrgTypes: filters.organizationType || [],
     organization: filters.organization,
     pastSpeakers: filters.pastSpeakers,
     searchAll: filters.searchAll
@@ -71,10 +74,6 @@ export default function FindLeads() {
     setFilters(prev => ({ ...prev, industry: [] }));
   };
 
-  const handleUnselectAllDomains = () => {
-    setFilters(prev => ({ ...prev, domain: [] }));
-  };
-
   const handleLocationSelect = (location: string) => {
     setFilters(prev => ({
       ...prev,
@@ -84,28 +83,53 @@ export default function FindLeads() {
     }));
   };
 
+  const handleEventFormatSelect = (format: string) => {
+    setFilters(prev => ({
+      ...prev,
+      eventFormat: prev.eventFormat.includes(format)
+        ? prev.eventFormat.filter(f => f !== format)
+        : [...prev.eventFormat, format],
+    }));
+  };
+
+  const handleOrgTypeSelect = (orgType: string) => {
+    setFilters(prev => ({
+      ...prev,
+      organizationType: prev.organizationType.includes(orgType)
+        ? prev.organizationType.filter(t => t !== orgType)
+        : [...prev.organizationType, orgType],
+    }));
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       <div className="w-64 bg-white p-4 overflow-y-auto">
-        <div className="flex items-center gap-2 mb-6">
-          <Search className="w-5 h-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">Find Leads</h2>
-        </div>
-
+        {/* 1. Opportunities filter */}
         <OpportunitiesFilter
           value={opportunitiesFilter}
           onChange={setOpportunitiesFilter}
         />
 
+        {/* 2. Lead Type filter & sub-filters */}
         <LeadTypeFilter
           selectedLeadTypes={selectedLeadTypes}
           selectedEventUnlockTypes={selectedEventUnlockTypes}
           filters={filters}
+          setFilters={setFilters}
           toggleLeadType={toggleLeadType}
           toggleEventUnlockType={toggleEventUnlockType}
-          setFilters={setFilters}
         />
 
+        {/* 3. Event Format filter */}
+        <EventFormatFilter
+          selectedFormats={filters.eventFormat}
+          onFormatSelect={handleEventFormatSelect}
+          isOpen={openSections.eventFormat}
+          onToggle={() => toggleSection('eventFormat')}
+          onUnselectAll={() => setFilters(prev => ({ ...prev, eventFormat: [] }))}
+        />
+
+        {/* 4. Industry Category filter */}
         <FilterSection
           title="Industry Category"
           isOpen={openSections.industry}
@@ -125,25 +149,16 @@ export default function FindLeads() {
           />
         </FilterSection>
 
-        <FilterSection
-          title="Domain Type"
-          isOpen={openSections.domain}
-          onToggle={() => toggleSection('domain')}
-          onUnselectAll={handleUnselectAllDomains}
-          showUnselectAll={filters.domain.length > 0}
-        >
-          <MultiSelect
-            options={domainTypes}
-            selected={filters.domain}
-            onChange={(value) => {
-              const newDomains = filters.domain.includes(value)
-                ? filters.domain.filter(d => d !== value)
-                : [...filters.domain, value];
-              setFilters(prev => ({ ...prev, domain: newDomains }));
-            }}
-          />
-        </FilterSection>
+        {/* 5. Organization Type filter */}
+        <OrganizationTypeFilter
+          selectedOrgTypes={filters.organizationType}
+          onOrgTypeSelect={handleOrgTypeSelect}
+          isOpen={openSections.organizationType}
+          onToggle={() => toggleSection('organizationType')}
+          onUnselectAll={() => setFilters(prev => ({ ...prev, organizationType: [] }))}
+        />
 
+        {/* 6. Location filter */}
         <LocationFilter
           selectedLocations={filters.location}
           onLocationSelect={handleLocationSelect}
@@ -151,30 +166,45 @@ export default function FindLeads() {
           onToggle={() => toggleSection('location')}
         />
 
+        {/* 7. Additional filter & sub-filters */}
         <FilterSection
           title="Additional Filters"
           isOpen={openSections.moreFilters}
           onToggle={() => toggleSection('moreFilters')}
         >
           <div className="space-y-4">
-            <FilterSearch
-              label="Organization"
-              value={filters.organization}
-              onChange={(value) => setFilters(prev => ({ ...prev, organization: value }))}
-              placeholder="Search organization..."
-            />
-            <FilterSearch
-              label="Past Speakers & Experts"
-              value={filters.pastSpeakers}
-              onChange={(value) => setFilters(prev => ({ ...prev, pastSpeakers: value }))}
-              placeholder="Search past speakers & experts..."
-            />
-            <FilterSearch
-              label="Search SpeakerDrive (All)"
-              value={filters.searchAll}
-              onChange={(value) => setFilters(prev => ({ ...prev, searchAll: value }))}
-              placeholder="Search SpeakerDrive (All)..."
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Organization
+              </label>
+              <FilterSearch
+                value={filters.organization}
+                onChange={(value) => setFilters(prev => ({ ...prev, organization: value }))}
+                placeholder="Search organizations..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Past Speakers
+              </label>
+              <FilterSearch
+                value={filters.pastSpeakers}
+                onChange={(value) => setFilters(prev => ({ ...prev, pastSpeakers: value }))}
+                placeholder="Search past speakers..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Search All
+              </label>
+              <FilterSearch
+                value={filters.searchAll}
+                onChange={(value) => setFilters(prev => ({ ...prev, searchAll: value }))}
+                placeholder="Search all fields..."
+              />
+            </div>
           </div>
         </FilterSection>
       </div>

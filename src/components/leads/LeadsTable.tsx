@@ -117,14 +117,20 @@ export default function LeadsTable({ leads }: Props) {
               <HeaderCell field="lead_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Lead Type
               </HeaderCell>
+              <HeaderCell field="unlock_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
+                Unlock Type
+              </HeaderCell>
               <HeaderCell field="industry" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Industry Category
               </HeaderCell>
-              <HeaderCell field="domain_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Domain Type
+              <HeaderCell field="event_format" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
+                Event Format
               </HeaderCell>
               <HeaderCell field="organization" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Organization
+              </HeaderCell>
+              <HeaderCell field="organization_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
+                Organization Type
               </HeaderCell>
               <HeaderCell field="event_info" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Event Info

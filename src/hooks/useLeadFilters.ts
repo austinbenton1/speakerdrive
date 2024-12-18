@@ -14,14 +14,16 @@ export function useLeadFilters() {
     location: [],
     industry: [],
     timeframe: [],
-    domain: [],
+    eventFormat: [],
+    organizationType: [],
   });
   const [openSections, setOpenSections] = useState({
     location: false,
     industry: false,
     timeframe: false,
-    domain: false,
     moreFilters: false,
+    eventFormat: false,
+    organizationType: false,
   });
 
   const toggleLeadType = (type: string) => {
