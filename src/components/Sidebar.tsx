@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users, Image } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const mainNavItems = [
@@ -17,6 +17,7 @@ const mainNavItems = [
 
 const bottomNavItems = [
   { icon: Unlock, label: 'Unlocked Leads', path: '/leads' },
+  { icon: Image, label: 'Store Image', path: '/store-image' },
 ];
 
 const settingsItems = [
