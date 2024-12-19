@@ -9,6 +9,7 @@ export interface RecordedLead {
   event_name: string;
   unlocked_at: string;
   unlocked: boolean;
+  image_url?: string;
 }
 
 export interface LeadQueryResult {
@@ -23,5 +24,6 @@ export interface LeadQueryResult {
     unlock_type: string;
     organization: string;
     event_name: string;
+    image_url?: string;
   };
 }

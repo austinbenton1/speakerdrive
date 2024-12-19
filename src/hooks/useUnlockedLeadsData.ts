@@ -27,7 +27,8 @@ export function useUnlockedLeadsData() {
               lead_type,
               unlock_type,
               organization,
-              event_name
+              event_name,
+              image_url
             )
           `)
           .eq('user_id', user.id)
@@ -45,6 +46,7 @@ export function useUnlockedLeadsData() {
           unlock_type: item.leads.unlock_type,
           organization: item.leads.organization,
           event_name: item.leads.event_name,
+          image_url: item.leads.image_url,
           unlocked_at: item.unlocked_at,
           unlocked: item.unlocked
         })) || [];

@@ -29,10 +29,20 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
         {leads.map((lead) => (
           <tr key={lead.id} className="hover:bg-gray-50">
             <td className="px-6 py-4">
-              <div className="space-y-1">
-                <div className="font-medium text-gray-900">{lead.name}</div>
-                <div className="text-xs text-gray-500">{lead.industry}</div>
-                <div className="text-xs text-gray-500">{lead.focus}</div>
+              <div className="flex items-center space-x-3">
+                <img 
+                  src={lead.image || 'https://www.gravatar.com/avatar/?d=mp'} 
+                  alt={lead.name}
+                  className="h-[45px] w-[45px] rounded-lg object-cover flex-shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://www.gravatar.com/avatar/?d=mp';
+                  }}
+                />
+                <div className="space-y-0.5">
+                  <div className="font-medium text-gray-900">{lead.name}</div>
+                  <div className="text-xs text-gray-500">{lead.industry}</div>
+                  <div className="text-xs text-gray-500">{lead.focus}</div>
+                </div>
               </div>
             </td>
             <td className="px-6 py-4 text-sm text-gray-500">

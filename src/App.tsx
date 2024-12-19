@@ -2,7 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -62,14 +63,26 @@ function App() {
           <Route path="/find-leads" element={<FindLeads />} />
           <Route path="/leads" element={<Leads />} />
           <Route path="/leads/:id" element={<LeadDetails />} />
-          <Route path="/store-image" element={<StoreImagePage />} />
           <Route path="/contact-finder" element={<ContactFinder />} />
           <Route path="/settings" element={<UserManagement />} />
-          <Route path="/users" element={<UsersManagement />} />
+          <Route path="/users" element={
+            <ProtectedRoute requiredRole="Admin">
+              <UsersManagement />
+            </ProtectedRoute>
+          } />
           <Route path="/profile-test" element={<ProfileTest />} />
           <Route path="/chat" element={<InstantIntel />} />
           <Route path="/chat/sales-coach" element={<SalesCoach />} />
           <Route path="/chat/conversation" element={<ChatConversation />} />
+          <Route path="/store-image" element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <Layout>
+                  <StoreImagePage />
+                </Layout>
+              </AdminRoute>
+            </ProtectedRoute>
+          } />
         </Route>
 
         {/* Fallback route */}

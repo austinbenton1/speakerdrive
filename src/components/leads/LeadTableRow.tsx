@@ -31,19 +31,19 @@ export default function LeadTableRow({
           className="h-8 w-8 rounded-full object-cover"
         />
       </td>
-      <td className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow} px-3 py-3 whitespace-nowrap`}>
-        <div 
-          className="text-[13.5px] font-medium text-gray-900 truncate max-w-[400px]"
-          title={lead.lead_name}
-        >
+      <td 
+        className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow} px-3 py-3 whitespace-nowrap`}
+        title={lead.lead_name}
+      >
+        <div className="text-[13.5px] font-medium text-gray-900 truncate max-w-[400px]">
           {lead.lead_name}
         </div>
       </td>
-      <td className="px-3 py-3 whitespace-nowrap max-w-[300px] w-[300px]">
-        <div 
-          className="text-[13.5px] text-gray-500 truncate"
-          title={lead.focus}
-        >
+      <td 
+        className="px-3 py-3 whitespace-nowrap max-w-[300px] w-[300px]"
+        title={lead.focus}
+      >
+        <div className="text-[13.5px] text-gray-500 truncate">
           {lead.focus}
         </div>
       </td>
@@ -106,19 +106,24 @@ export default function LeadTableRow({
           {lead.event_format || 'N/A'}
         </div>
       </td>
-      <td className="px-3 py-3 whitespace-nowrap text-[13.5px] text-gray-500">
-        {lead.organization || 'N/A'}
+      <td 
+        className="px-3 py-3 whitespace-nowrap"
+        title={lead.organization}
+      >
+        <div className="text-[13.5px] text-gray-500 truncate max-w-[200px]">
+          {lead.organization}
+        </div>
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
         <div className="text-[13.5px] text-gray-500">
           {lead.organization_type || 'N/A'}
         </div>
       </td>
-      <td className="px-3 py-3 whitespace-nowrap text-[13.5px] text-gray-500">
-        <div 
-          className="truncate"
-          title={lead.event_info || 'No event details available'}
-        >
+      <td 
+        className="px-3 py-3 whitespace-nowrap"
+        title={lead.event_info}
+      >
+        <div className="text-[13.5px] text-gray-500 truncate max-w-[200px]">
           {truncateText(lead.event_info || 'No event details available')}
         </div>
       </td>

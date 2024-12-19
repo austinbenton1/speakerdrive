@@ -6,7 +6,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 
 export default function UsersManagement() {
-  const { users, loading, error } = useUsers();
+  const { users, loading, error, refreshUsers } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<'all' | 'Admin' | 'Client'>('all');
 
@@ -35,6 +35,7 @@ export default function UsersManagement() {
         selectedRole={selectedRole}
         onSearchChange={setSearchTerm}
         onRoleChange={setSelectedRole}
+        refreshUsers={refreshUsers}
       />
     </div>
   );

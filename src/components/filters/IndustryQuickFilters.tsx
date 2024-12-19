@@ -11,7 +11,7 @@ const TOP_INDUSTRIES = [
   { name: 'Technology & Media', icon: Monitor },
   { name: 'Leadership & Corporate Development', icon: Users },
   { name: 'Health, Wellness & Sustainability', icon: Heart },
-  { name: 'Finance, Business & Corporate Services', icon: Building },
+  { name: 'Finance, Business & Cooperative Services', icon: Building },
   { name: 'Education & Training', icon: GraduationCap }
 ];
 

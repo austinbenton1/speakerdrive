@@ -17,16 +17,16 @@ export const locations = [
 ];
 
 export const industries = [
-  'Technology',
-  'Healthcare',
-  'Finance',
-  'Education',
-  'Manufacturing',
-  'Retail',
-  'Media',
-  'Government',
-  'Non-Profit',
-  'Other'
+  'Technology & Media',
+  'Education & Training',
+  'General Business & Entrepreneurship',
+  'Finance, Business & Cooperative Services',
+  'Community, Culture & Inclusion',
+  'Leadership & Corporate Development',
+  'NonProfit, Associations & Public Sector',
+  'Sales & Consumer Services',
+  'Healthcare professionals and stakeholders',
+  'Health, Wellness & Sustainability'
 ];
 
 export const timeframes = [

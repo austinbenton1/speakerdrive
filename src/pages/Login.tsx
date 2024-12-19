@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
 import { loginSchema, type LoginFormData } from '../types/auth';
+import { checkUserBanStatus } from '../services/userService';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -44,6 +45,14 @@ export default function Login() {
 
       if (!signInData.session) {
         setError('Failed to sign in. Please try again.');
+        return;
+      }
+
+      // Check if user is banned
+      const { isBanned, bannedAt } = await checkUserBanStatus(signInData.user.id);
+      if (isBanned) {
+        await supabase.auth.signOut(); // Sign out the banned user
+        setError('Your account has been banned. Please contact support for assistance.');
         return;
       }
 

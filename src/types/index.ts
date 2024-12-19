@@ -37,6 +37,15 @@ export interface SpeakerLead {
   tooltipOrganizationType?: string;
 }
 
+export interface UnlockedLead {
+  id: string;
+  name: string;
+  focus: string;
+  industry: string;
+  image: string;
+  unlockDate: Date;
+}
+
 export interface FilterOptions {
   targetAudience: string;
   jobTitle: string;

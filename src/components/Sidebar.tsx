@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users, Image } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
+import { useAdminRole } from '../hooks/useAdminRole';
 
 const mainNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -12,7 +14,6 @@ const mainNavItems = [
     { label: 'Ask SpeakerDrive', path: '/chat/conversation' }
   ]},
   { icon: UserSearch, label: 'Contact Finder', path: '/contact-finder' },
-  { icon: Users, label: 'Users', path: '/users' },
 ];
 
 const bottomNavItems = [
@@ -27,6 +28,8 @@ const settingsItems = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isAdmin } = useAdminRole();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const handleLogout = async () => {
@@ -94,6 +97,14 @@ export default function Sidebar() {
     );
   };
 
+  // Filter bottom nav items based on admin role
+  const filteredBottomNavItems = bottomNavItems.filter(item => {
+    if (item.label === 'Store Image') {
+      return isAdmin;
+    }
+    return true;
+  });
+
   return (
     <div className="w-52 h-screen bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4">
@@ -109,6 +120,21 @@ export default function Sidebar() {
         {mainNavItems.map((item) => (
           <NavLink key={item.path} item={item} />
         ))}
+        {user?.user_type === 'Admin' && (
+          <Link
+            to="/users"
+            className={`
+              block px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              ${location.pathname === '/users'
+                ? 'text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+              }
+            `}
+          >
+            <Users className="w-4 h-4 mr-2.5 flex-shrink-0" />
+            Users
+          </Link>
+        )}
       </nav>
 
       {/* Flex spacer */}
@@ -116,9 +142,11 @@ export default function Sidebar() {
       
       {/* Unlocked Leads */}
       <div className="px-3">
-        {bottomNavItems.map((item) => (
-          <NavLink key={item.path} item={item} />
-        ))}
+        <div className="space-y-1">
+          {filteredBottomNavItems.map((item) => (
+            <NavLink key={item.path} item={item} />
+          ))}
+        </div>
       </div>
 
       {/* Divider */}

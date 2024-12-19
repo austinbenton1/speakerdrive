@@ -35,14 +35,19 @@ export function useUnlockedLeads() {
 
         if (fetchError) throw fetchError;
 
-        const formattedLeads = data?.map(item => ({
-          id: item.lead_id,
-          name: item.leads.lead_name,
-          focus: item.leads.focus,
-          industry: item.leads.industry,
-          image: item.leads.image_url,
-          unlockDate: new Date(item.created_at),
-        })) || [];
+        const formattedLeads = data?.map(item => {
+          console.log('Lead data:', item.leads); // Debug log
+          return {
+            id: item.lead_id,
+            name: item.leads.lead_name,
+            focus: item.leads.focus,
+            industry: item.leads.industry,
+            image: item.leads.image_url,
+            unlockDate: new Date(item.created_at),
+          };
+        }) || [];
+
+        console.log('Formatted leads:', formattedLeads); // Debug log
 
         setLeads(formattedLeads);
       } catch (err) {

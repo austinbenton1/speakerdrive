@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { UserProfile } from '../../types/users';
 import UserFilters from './UserFilters';
 import UserTable from './UserTable';
@@ -8,44 +8,46 @@ import { useUserActions } from '../../hooks/useUserActions';
 interface UserManagementContentProps {
   users: UserProfile[];
   searchTerm: string;
-  selectedRole: 'all' | 'Admin' | 'Client';
   onSearchChange: (value: string) => void;
-  onRoleChange: (role: 'all' | 'Admin' | 'Client') => void;
+  refreshUsers: () => void;
 }
 
 export default function UserManagementContent({
   users,
   searchTerm,
-  selectedRole,
   onSearchChange,
-  onRoleChange,
+  refreshUsers,
 }: UserManagementContentProps) {
-  const { handleAddUser, handleEditUser, handleDeleteUser } = useUserActions();
+  const { handleAddUser, handleBanUser, handleUnbanUser } = useUserActions();
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.display_name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.user_type === selectedRole;
-    return matchesSearch && matchesRole;
+    return matchesSearch;
   });
 
   return (
-    <>
+    <div className="p-4">
       <div className="mb-6 flex items-center justify-between">
         <UserFilters
           searchTerm={searchTerm}
-          selectedRole={selectedRole}
           onSearchChange={onSearchChange}
-          onRoleChange={onRoleChange}
+          onAddUser={handleAddUser}
         />
         <AddUserButton onClick={handleAddUser} />
       </div>
 
       <UserTable
         users={filteredUsers}
-        onEdit={handleEditUser}
-        onDelete={handleDeleteUser}
+        onBan={async (userId) => {
+          await handleBanUser(userId);
+          await refreshUsers();
+        }}
+        onUnban={async (userId) => {
+          await handleUnbanUser(userId);
+          await refreshUsers();
+        }}
       />
-    </>
+    </div>
   );
 }
