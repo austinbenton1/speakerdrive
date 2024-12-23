@@ -7,7 +7,8 @@ import { findEmail } from '../lib/api/emailFinder';
 
 interface SearchResult {
   email: string;
-  status: 'valid' | 'invalid' | 'unknown';
+  status: 'success' | 'error' | 'warning';
+  message: string;
   first_name: string;
   last_name: string;
   company_domain: string;
@@ -19,21 +20,24 @@ export default function ContactFinder() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const handleSearch = async (data: { fullName: string; companyDomain: string }) => {
+  const handleSearch = async (data: { firstName: string; lastName: string; companyDomain: string }) => {
     try {
       setIsSearching(true);
       setError(null);
       setCurrentStep(2);
 
-      const response = await findEmail({
-        query: data.fullName,
-        company_domain: data.companyDomain
-      });
-
-      setResult(response);
-      setCurrentStep(3);
+      const response = await findEmail(data);
+      
+      if (response.status === 'error') {
+        setError(response.message);
+        setCurrentStep(1);
+      } else {
+        setResult(response);
+        setCurrentStep(3);
+      }
     } catch (err) {
-      setError('Failed to find email address. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to find email address. Please try again.';
+      setError(errorMessage);
       setCurrentStep(1);
     } finally {
       setIsSearching(false);
@@ -80,11 +84,12 @@ export default function ContactFinder() {
           <SearchForm onSubmit={handleSearch} isLoading={isSearching} />
         </div>
 
-        {result && (
+        {result && result.status !== 'error' && (
           <div className="mt-6">
             <SearchResult
               email={result.email}
               status={result.status}
+              message={result.message}
               firstName={result.first_name}
               lastName={result.last_name}
               companyDomain={result.company_domain}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Mail, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Mail } from 'lucide-react';
 
 interface SearchResultProps {
   email: string;
-  status: 'valid' | 'invalid' | 'unknown';
+  status: 'success' | 'error' | 'warning' | 'catch_all' | 'valid' | 'not_found';
+  message: string;
   firstName: string;
   lastName: string;
   companyDomain: string;
@@ -11,88 +12,102 @@ interface SearchResultProps {
 
 export default function SearchResult({ 
   email, 
-  status, 
+  status,
+  message,
   firstName, 
   lastName, 
   companyDomain 
 }: SearchResultProps) {
-  const getStatusColor = () => {
+  const getStatusConfig = () => {
     switch (status) {
+      case 'success':
       case 'valid':
-        return 'text-green-500';
-      case 'invalid':
-        return 'text-red-500';
+        return {
+          icon: <CheckCircle2 className="w-6 h-6 text-green-500" />,
+          textColor: 'text-green-700',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          messageStyle: {
+            textColor: 'text-green-700',
+            bgColor: 'bg-green-50'
+          },
+          badge: 'Valid'
+        };
+      case 'catch_all':
+        return {
+          icon: <CheckCircle2 className="w-6 h-6 text-green-500" />,
+          textColor: 'text-green-700',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          messageStyle: {
+            textColor: 'text-yellow-700',
+            bgColor: 'bg-yellow-50'
+          },
+          badge: 'Catch-all'
+        };
+      case 'error':
+      case 'not_found':
+        return {
+          icon: <XCircle className="w-6 h-6 text-red-500" />,
+          textColor: 'text-red-700',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          messageStyle: {
+            textColor: 'text-red-700',
+            bgColor: 'bg-red-50'
+          },
+          badge: 'Not Found'
+        };
       default:
-        return 'text-gray-400';
+        return {
+          icon: <AlertCircle className="w-6 h-6 text-gray-500" />,
+          textColor: 'text-gray-700',
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200',
+          messageStyle: {
+            textColor: 'text-gray-700',
+            bgColor: 'bg-gray-50'
+          },
+          badge: 'Unknown'
+        };
     }
   };
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'valid':
-        return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case 'invalid':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <HelpCircle className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (status) {
-      case 'valid':
-        return 'Valid';
-      case 'invalid':
-        return 'Invalid';
-      default:
-        return 'Unknown';
-    }
-  };
+  const statusConfig = getStatusConfig();
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Mail className="w-5 h-5 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900">Email Found</h3>
+    <div className={`rounded-lg ${statusConfig.bgColor} ${statusConfig.borderColor} border p-6 shadow-sm transition-all duration-200 hover:shadow-md`}>
+      <div className="flex items-start space-x-4">
+        <div className="flex-shrink-0">
+          {statusConfig.icon}
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${getStatusColor()}`}>
-            {getStatusText()}
-          </span>
-          {getStatusIcon()}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-500">Email Address</label>
-          <p className={`mt-1 text-lg font-medium ${getStatusColor()}`}>{email}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-500">First Name</label>
-            <p className="mt-1 text-gray-900">{firstName}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.messageStyle.bgColor} ${statusConfig.messageStyle.textColor}`}>
+              {status === 'catch_all' 
+                ? "Email found successfully, but reliability cannot be verified."
+                : message}
+            </span>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-500">Last Name</label>
-            <p className="mt-1 text-gray-900">{lastName}</p>
+          {email && (
+            <div className="mb-4">
+              <div className="flex items-center space-x-2">
+                <Mail className={`w-4 h-4 ${statusConfig.textColor}`} />
+                <p className="text-sm text-gray-600">
+                  Email: <span className={`font-semibold ${statusConfig.textColor}`}>{email}</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Name:</span> {firstName} {lastName}
+            </p>
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Domain:</span> {companyDomain}
+            </p>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-500">Company Domain</label>
-          <p className="mt-1 text-gray-900">{companyDomain}</p>
-        </div>
-
-        <div className="pt-4">
-          <button
-            onClick={() => navigator.clipboard.writeText(email)}
-            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Copy Email Address
-          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import React from 'react';
 import StoredImagesTable from '../components/stored-images/StoredImagesTable';
 import { useStoredImages } from '../hooks/useStoredImages';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorAlert from '../components/common/ErrorAlert';
 
 export default function StoreImagePage() {
   const { images, loading, error } = useStoredImages();
@@ -8,30 +10,25 @@ export default function StoreImagePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingSpinner />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
-        </div>
+      <div className="p-8">
+        <ErrorAlert message={error} />
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Non-Persistent Images</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          View and manage images that need to be stored permanently
-        </p>
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Stored Images</h1>
+        <p className="text-gray-600">View and manage your stored images</p>
       </div>
-
       <StoredImagesTable images={images} />
     </div>
   );

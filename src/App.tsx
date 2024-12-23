@@ -66,8 +66,10 @@ function App() {
           <Route path="/contact-finder" element={<ContactFinder />} />
           <Route path="/settings" element={<UserManagement />} />
           <Route path="/users" element={
-            <ProtectedRoute requiredRole="Admin">
-              <UsersManagement />
+            <ProtectedRoute>
+              <AdminRoute>
+                <UsersManagement />
+              </AdminRoute>
             </ProtectedRoute>
           } />
           <Route path="/profile-test" element={<ProfileTest />} />
@@ -77,9 +79,7 @@ function App() {
           <Route path="/store-image" element={
             <ProtectedRoute>
               <AdminRoute>
-                <Layout>
-                  <StoreImagePage />
-                </Layout>
+                <StoreImagePage />
               </AdminRoute>
             </ProtectedRoute>
           } />

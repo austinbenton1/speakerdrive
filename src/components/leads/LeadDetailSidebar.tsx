@@ -29,6 +29,20 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
 
   const quickInfoItems: QuickInfoItem[] = [
     {
+      icon: Presentation,
+      label: 'Event Name',
+      value: lead.eventName,
+      tooltip: lead.tooltipEventName,
+      show: !!lead.eventName,
+    },
+    {
+      icon: Globe,
+      label: 'Event URL',
+      value: lead.eventUrl,
+      tooltip: lead.tooltipEventUrl,
+      show: !!lead.eventUrl,
+    },
+    {
       icon: Building2,
       label: 'Industry Category',
       value: lead.industryCategory,
@@ -88,7 +102,7 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
                           <button className="w-4 h-4 text-gray-400">
                             <HelpCircle className="w-full h-full" />
                           </button>
-                          <div className="invisible group-hover:visible absolute z-[100] left-0 mt-2 w-[280px] p-3 bg-white border border-gray-100 rounded-lg shadow-lg">
+                          <div className="invisible group-hover:visible absolute z-[100] right-0 mt-2 w-[280px] p-3 bg-white border border-gray-100 rounded-lg shadow-lg">
                             <p className="text-sm text-gray-600 whitespace-normal">{item.tooltip}</p>
                           </div>
                         </div>

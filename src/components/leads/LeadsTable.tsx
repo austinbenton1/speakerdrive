@@ -93,17 +93,14 @@ export default function LeadsTable({ leads }: Props) {
         <table className="min-w-full">
           <thead className="bg-white border-b border-gray-200">
             <tr>
-              <th scope="col" className={`sticky left-0 z-10 ${stickyColumnStyle} px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12`}>
-                Image
-              </th>
               <HeaderCell
-                field="lead_name"
+                field="event_name"
                 sortField={sortField}
                 sortDirection={sortDirection}
                 onSort={toggleSort}
-                className={`sticky left-[3.5rem] z-10 ${stickyColumnStyle} ${stickyColumnShadow} min-w-[400px]`}
+                className={`sticky left-0 z-10 ${stickyColumnStyle} ${stickyColumnShadow} min-w-[500px] w-[500px]`}
               >
-                Name
+                Event
               </HeaderCell>
               <HeaderCell 
                 field="focus" 
@@ -112,22 +109,16 @@ export default function LeadsTable({ leads }: Props) {
                 onSort={toggleSort}
                 className="max-w-[300px] w-[300px]"
               >
-                Focus
+                Target Audience
               </HeaderCell>
               <HeaderCell field="lead_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Lead Type
-              </HeaderCell>
-              <HeaderCell field="unlock_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Unlock Type
               </HeaderCell>
               <HeaderCell field="industry" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Industry Category
               </HeaderCell>
               <HeaderCell field="event_format" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Event Format
-              </HeaderCell>
-              <HeaderCell field="organization" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Organization
               </HeaderCell>
               <HeaderCell field="organization_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Organization Type

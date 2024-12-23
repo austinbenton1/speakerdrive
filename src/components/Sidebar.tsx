@@ -21,6 +21,10 @@ const bottomNavItems = [
   { icon: Image, label: 'Store Image', path: '/store-image' },
 ];
 
+const adminItems = [
+  { icon: Users, label: 'Users Management', path: '/users' },
+];
+
 const settingsItems = [
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
@@ -120,27 +124,12 @@ export default function Sidebar() {
         {mainNavItems.map((item) => (
           <NavLink key={item.path} item={item} />
         ))}
-        {user?.user_type === 'Admin' && (
-          <Link
-            to="/users"
-            className={`
-              block px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              ${location.pathname === '/users'
-                ? 'text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-              }
-            `}
-          >
-            <Users className="w-4 h-4 mr-2.5 flex-shrink-0" />
-            Users
-          </Link>
-        )}
       </nav>
 
       {/* Flex spacer */}
       <div className="flex-1" />
       
-      {/* Unlocked Leads */}
+      {/* Bottom Navigation Items */}
       <div className="px-3">
         <div className="space-y-1">
           {filteredBottomNavItems.map((item) => (
@@ -148,6 +137,17 @@ export default function Sidebar() {
           ))}
         </div>
       </div>
+
+      {/* Admin Items */}
+      {isAdmin && (
+        <div className="px-3">
+          <div className="space-y-1">
+            {adminItems.map((item) => (
+              <NavLink key={item.path} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="border-t border-gray-200 my-2" />

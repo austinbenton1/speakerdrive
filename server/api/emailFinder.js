@@ -3,65 +3,77 @@ import 'dotenv/config';
 import fetch from 'node-fetch';
 
 const router = express.Router();
+const LEADMAGIC_API_KEY = '4f18d12a98720d1af9b86d90d568f405';
 
-async function findEmail(query, companyDomain) {
-  if (!process.env.PILOTERR_API_KEY) {
-    throw new Error('PILOTERR_API_KEY environment variable is not set');
-  }
-
+async function findEmail(firstName, lastName, companyDomain) {
   try {
-    const encodedQuery = encodeURIComponent(query);
-    const encodedDomain = encodeURIComponent(companyDomain);
+    const url = 'https://api.leadmagic.io/email-finder';
     
-    const url = `https://piloterr.com/api/v2/email/finder?query=${encodedQuery}&company_domain=${encodedDomain}`;
+    if (!firstName || !lastName || !companyDomain) {
+      throw new Error('Missing required parameters');
+    }
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'x-api-key': process.env.PILOTERR_API_KEY,
-      }
+        'X-API-Key': LEADMAGIC_API_KEY
+      },
+      body: JSON.stringify({
+        first_name: firstName,
+        last_name: lastName,
+        domain: companyDomain
+      })
     });
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      throw new Error(`Unexpected response type: ${contentType}`);
-    }
+    const data = await response.json();
 
     if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        throw new Error(errorData.error || `API Error: ${response.status}`);
-      } catch (e) {
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
+      throw new Error(data.message || `API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    return {
+      ...data,
+      status: data.status || 'success',
+      message: data.message || 'Email found successfully',
+      email: data.email || '',
+      first_name: firstName,
+      last_name: lastName,
+      company_domain: companyDomain
+    };
   } catch (error) {
     throw error;
   }
 }
 
-router.get('/find', async (req, res) => {
+router.post('/find', express.json(), async (req, res) => {
   try {
-    const { query, company_domain } = req.query;
+    const { firstName, lastName, companyDomain } = req.body;
 
-    if (!query || !company_domain) {
-      return res.status(400).json({ 
-        error: 'Missing required parameters' 
+    if (!firstName || !lastName || !companyDomain) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required parameters. Please provide firstName, lastName, and companyDomain.',
+        error: 'Missing required parameters',
+        email: '',
+        first_name: firstName || '',
+        last_name: lastName || '',
+        company_domain: companyDomain || ''
       });
     }
 
-    const result = await findEmail(query, company_domain);
+    const result = await findEmail(firstName, lastName, companyDomain);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ 
-      error: error.message || 'Failed to find email. Please try again.' 
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Failed to find email address',
+      error: error.message,
+      email: '',
+      first_name: req.body.firstName || '',
+      last_name: req.body.lastName || '',
+      company_domain: req.body.companyDomain || ''
     });
   }
 });

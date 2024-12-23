@@ -22,6 +22,7 @@ export function useUnlockedLeads() {
             id,
             created_at,
             lead_id,
+            lead_id,
             leads!inner (
               lead_name,
               focus,
@@ -36,7 +37,6 @@ export function useUnlockedLeads() {
         if (fetchError) throw fetchError;
 
         const formattedLeads = data?.map(item => {
-          console.log('Lead data:', item.leads); // Debug log
           return {
             id: item.lead_id,
             name: item.leads.lead_name,
@@ -47,11 +47,8 @@ export function useUnlockedLeads() {
           };
         }) || [];
 
-        console.log('Formatted leads:', formattedLeads); // Debug log
-
         setLeads(formattedLeads);
       } catch (err) {
-        console.error('Error fetching unlocked leads:', err);
         setError('Failed to load unlocked leads');
       } finally {
         setLoading(false);

@@ -17,9 +17,9 @@ export function useAdminRole() {
 
       try {
         const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
           .single();
 
         if (error) {
@@ -28,7 +28,7 @@ export function useAdminRole() {
           return;
         }
 
-        setIsAdmin(data?.role === 'admin');
+        setIsAdmin(data?.user_type === 'Admin');
       } catch (error) {
         console.error('Error in admin role check:', error);
         setIsAdmin(false);

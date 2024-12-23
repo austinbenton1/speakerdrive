@@ -3,34 +3,49 @@ interface EmailFinderParams {
   company_domain: string;
 }
 
-interface EmailFinderResponse {
+export interface EmailFinderResponse {
   email: string;
-  status: 'valid' | 'invalid' | 'unknown';
-  last_name: string;
+  status: 'success' | 'error' | 'warning' | 'catch_all' | 'valid' | 'not_found';
+  message: string;
   first_name: string;
+  last_name: string;
   company_domain: string;
 }
 
-export async function findEmail({ query, company_domain }: EmailFinderParams): Promise<EmailFinderResponse> {
-  const params = new URLSearchParams({ query, company_domain });
-  const response = await fetch(`/api/email-finder/find?${params}`, {
-    method: 'GET',
+export interface EmailFinderRequest {
+  firstName: string;
+  lastName: string;
+  companyDomain: string;
+}
+
+export async function findEmail(data: EmailFinderRequest): Promise<EmailFinderResponse> {
+  // Use relative URL to let Vite handle the proxy
+  const response = await fetch('/api/email-finder/find', {
+    method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      companyDomain: data.companyDomain.trim().toLowerCase()
+    })
   });
 
+  const responseData = await response.json();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const errorData = JSON.parse(errorText);
-      throw new Error(errorData.error || 'Failed to find email');
-      } catch (errorText) {
-      throw new Error(`Server Error: ${response.status} - ${errorText}`);
-    }
+    return {
+      ...responseData,
+      status: 'error',
+      message: responseData.message || 'Failed to find email address',
+      email: '',
+      first_name: data.firstName,
+      last_name: data.lastName,
+      company_domain: data.companyDomain
+    };
   }
 
-  const data = await response.json();
-  return data;
+  return responseData;
 }
