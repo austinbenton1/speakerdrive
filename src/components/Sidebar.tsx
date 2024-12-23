@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users, Image } from 'lucide-react';
+import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users, Image, Building2, UserRound, UserCog } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAdminRole } from '../hooks/useAdminRole';
@@ -14,6 +14,9 @@ const mainNavItems = [
     { label: 'Ask SpeakerDrive', path: '/chat/conversation' }
   ]},
   { icon: UserSearch, label: 'Contact Finder', path: '/contact-finder' },
+  { icon: Building2, label: 'Company Finder', path: '/company-finder' },
+  { icon: UserRound, label: 'Role Finder', path: '/role-finder' },
+  { icon: UserCog, label: 'Profile Finder', path: '/profile-finder' }
 ];
 
 const bottomNavItems = [
