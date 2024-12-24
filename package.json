@@ -7,7 +7,8 @@
     "dev": "vite",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "build": "tsc && vite build",
+    "build": "npm run install:functions && tsc && vite build",
+    "install:functions": "cd netlify/functions && npm install",
     "lint": "eslint .",
     "preview": "vite preview"
   },
