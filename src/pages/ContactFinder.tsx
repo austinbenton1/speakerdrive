@@ -4,20 +4,12 @@ import StepIndicator from '../components/contact-finder/StepIndicator';
 import SearchForm from '../components/contact-finder/SearchForm';
 import SearchResult from '../components/contact-finder/SearchResult';
 import { findEmail } from '../lib/api/emailFinder';
-
-interface SearchResult {
-  email: string;
-  status: 'success' | 'error' | 'warning';
-  message: string;
-  first_name: string;
-  last_name: string;
-  company_domain: string;
-}
+import type { EmailFinderResponse } from '../lib/api/emailFinder';
 
 export default function ContactFinder() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<SearchResult | null>(null);
+  const [result, setResult] = useState<EmailFinderResponse | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
   const handleSearch = async (data: { firstName: string; lastName: string; companyDomain: string }) => {
@@ -31,6 +23,7 @@ export default function ContactFinder() {
       if (response.status === 'error') {
         setError(response.message);
         setCurrentStep(1);
+        setResult(null);
       } else {
         setResult(response);
         setCurrentStep(3);
@@ -39,6 +32,7 @@ export default function ContactFinder() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to find email address. Please try again.';
       setError(errorMessage);
       setCurrentStep(1);
+      setResult(null);
     } finally {
       setIsSearching(false);
     }
@@ -99,11 +93,8 @@ export default function ContactFinder() {
 
         <div className="mt-4 text-center">
           <div className="flex items-center justify-center text-gray-600 text-xs">
-            <Mail className="w-4 h-4 mr-1.5" />
-            <span>Need help?</span>
-            <a href="#" className="ml-1 text-blue-600 hover:text-blue-700">
-              Get support
-            </a>
+            <Mail className="w-3 h-3 mr-1" />
+            <span>All email addresses are verified in real-time</span>
           </div>
         </div>
       </div>

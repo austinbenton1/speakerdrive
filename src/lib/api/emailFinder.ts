@@ -3,48 +3,58 @@ interface EmailFinderParams {
   company_domain: string;
 }
 
-export interface EmailFinderResponse {
-  email: string;
-  status: 'success' | 'error' | 'warning' | 'catch_all' | 'valid' | 'not_found';
-  message: string;
-  first_name: string;
-  last_name: string;
-  company_domain: string;
-}
-
 export interface EmailFinderRequest {
   firstName: string;
   lastName: string;
   companyDomain: string;
 }
 
+export interface EmailFinderResponse {
+  email: string;
+  first_name: string;
+  last_name: string;
+  company_domain: string;
+  status: 'success' | 'error' | 'warning';
+  message: string;
+}
+
+const LEADMAGIC_API_KEY = '4f18d12a98720d1af9b86d90d568f405';
+
 export async function findEmail(data: EmailFinderRequest): Promise<EmailFinderResponse> {
   try {
-    // Use relative URL that works in both dev and production
-    const endpoint = import.meta.env.PROD 
-      ? '/.netlify/functions/email-finder'
-      : '/api/email-finder/find';
+    const requestBody = {
+      first_name: data.firstName.trim(),
+      last_name: data.lastName.trim(),
+      domain: data.companyDomain.trim().toLowerCase()
+    };
 
-    const response = await fetch(endpoint, {
+    const response = await fetch('https://api.leadmagic.io/email-finder', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'X-API-Key': LEADMAGIC_API_KEY
       },
-      body: JSON.stringify({
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        companyDomain: data.companyDomain.trim().toLowerCase()
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const responseData = await response.json();
 
     if (!response.ok) {
       return {
-        ...responseData,
         status: 'error',
         message: responseData.message || 'Failed to find email address',
+        email: '',
+        first_name: data.firstName,
+        last_name: data.lastName,
+        company_domain: data.companyDomain
+      };
+    }
+
+    if (!responseData || !responseData.email) {
+      return {
+        status: 'error',
+        message: 'No email address found',
         email: '',
         first_name: data.firstName,
         last_name: data.lastName,
@@ -55,7 +65,10 @@ export async function findEmail(data: EmailFinderRequest): Promise<EmailFinderRe
     return {
       ...responseData,
       status: 'success',
-      message: 'Email found successfully'
+      message: 'Email found successfully',
+      first_name: data.firstName,
+      last_name: data.lastName,
+      company_domain: data.companyDomain
     };
   } catch (error) {
     return {
