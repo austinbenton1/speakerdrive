@@ -19,33 +19,52 @@ export interface EmailFinderRequest {
 }
 
 export async function findEmail(data: EmailFinderRequest): Promise<EmailFinderResponse> {
-  // Use relative URL to let Vite handle the proxy
-  const response = await fetch('/api/email-finder/find', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
-      companyDomain: data.companyDomain.trim().toLowerCase()
-    })
-  });
+  try {
+    // Use relative URL that works in both dev and production
+    const endpoint = import.meta.env.PROD 
+      ? '/.netlify/functions/email-finder'
+      : '/api/email-finder/find';
 
-  const responseData = await response.json();
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        companyDomain: data.companyDomain.trim().toLowerCase()
+      })
+    });
 
-  if (!response.ok) {
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      return {
+        ...responseData,
+        status: 'error',
+        message: responseData.message || 'Failed to find email address',
+        email: '',
+        first_name: data.firstName,
+        last_name: data.lastName,
+        company_domain: data.companyDomain
+      };
+    }
+
     return {
       ...responseData,
+      status: 'success',
+      message: 'Email found successfully'
+    };
+  } catch (error) {
+    return {
       status: 'error',
-      message: responseData.message || 'Failed to find email address',
+      message: error instanceof Error ? error.message : 'Failed to find email address',
       email: '',
       first_name: data.firstName,
       last_name: data.lastName,
       company_domain: data.companyDomain
     };
   }
-
-  return responseData;
 }
