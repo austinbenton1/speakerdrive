@@ -1,21 +1,58 @@
 const fetch = require('node-fetch');
 
-exports.handler = async (event, context) => {
+exports.handler = async function(event, context) {
+  // Set CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Handle OPTIONS request (preflight)
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
 
   try {
-    const { firstName, lastName, companyDomain } = JSON.parse(event.body);
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          status: 'error',
+          message: 'Invalid request body',
+          error: 'Failed to parse JSON'
+        })
+      };
+    }
+
+    const { firstName, lastName, companyDomain } = body;
+
+    // Log incoming request data
+    console.log('Request data:', { firstName, lastName, companyDomain });
 
     // Validate required parameters
     if (!firstName || !lastName || !companyDomain) {
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({
           status: 'error',
           message: 'Missing required parameters. Please provide firstName, lastName, and companyDomain.',
@@ -24,12 +61,15 @@ exports.handler = async (event, context) => {
           first_name: firstName || '',
           last_name: lastName || '',
           company_domain: companyDomain || ''
-        }),
+        })
       };
     }
 
+    // Log API key presence
+    console.log('API Key present:', !!process.env.LEADMAGIC_API_KEY);
+
     // Make request to LeadMagic API
-    const response = await fetch('https://api.leadmagic.io/email-finder', {
+    const apiResponse = await fetch('https://api.leadmagic.io/email-finder', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -43,14 +83,21 @@ exports.handler = async (event, context) => {
       })
     });
 
-    const data = await response.json();
+    // Log API response status
+    console.log('API Response status:', apiResponse.status);
 
-    if (!response.ok) {
-      throw new Error(data.message || `API Error: ${response.status}`);
+    const data = await apiResponse.json();
+
+    // Log API response data
+    console.log('API Response data:', data);
+
+    if (!apiResponse.ok) {
+      throw new Error(data.message || `API Error: ${apiResponse.status}`);
     }
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({
         ...data,
         status: data.status || 'success',
@@ -63,8 +110,12 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
+    // Log any errors
+    console.error('Function error:', error);
+
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({
         status: 'error',
         message: error.message || 'Failed to find email address',
