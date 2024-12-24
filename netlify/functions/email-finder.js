@@ -65,8 +65,27 @@ export const handler = async function(event, context) {
       };
     }
 
-    // Log API key presence
-    console.log('API Key present:', !!process.env.LEADMAGIC_API_KEY);
+    // Check if API key is present
+    const apiKey = process.env.LEADMAGIC_API_KEY || '4f18d12a98720d1af9b86d90d568f405';
+    if (!apiKey) {
+      console.error('API Key is missing');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          status: 'error',
+          message: 'API configuration error',
+          error: 'Missing API key',
+          email: '',
+          first_name: firstName,
+          last_name: lastName,
+          company_domain: companyDomain
+        })
+      };
+    }
+
+    // Log API key presence (don't log the actual key)
+    console.log('API Key present:', !!apiKey);
 
     // Make request to LeadMagic API
     const apiResponse = await fetch('https://api.leadmagic.io/email-finder', {
@@ -74,7 +93,7 @@ export const handler = async function(event, context) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-API-Key': process.env.LEADMAGIC_API_KEY
+        'X-API-Key': apiKey
       },
       body: JSON.stringify({
         first_name: firstName,
@@ -88,8 +107,8 @@ export const handler = async function(event, context) {
 
     const data = await apiResponse.json();
 
-    // Log API response data
-    console.log('API Response data:', data);
+    // Log API response data (without sensitive information)
+    console.log('API Response status:', data.status);
 
     if (!apiResponse.ok) {
       throw new Error(data.message || `API Error: ${apiResponse.status}`);
