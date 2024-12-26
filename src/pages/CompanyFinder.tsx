@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Building2, AlertCircle, MapPin, Briefcase, Globe, Award, Users, Link, Users2 } from 'lucide-react';
 import StepIndicator from '../components/company-finder/StepIndicator';
 import { findCompany } from '../lib/api/companyFinder';
@@ -9,9 +9,15 @@ export default function CompanyFinder() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CompanyFinderResponse | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const isSubmitting = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
+    
     const formData = new FormData(e.currentTarget);
     const data = {
       profile_url: formData.get('companyUrl') as string,
@@ -42,6 +48,7 @@ export default function CompanyFinder() {
       setResult(null);
     } finally {
       setIsSearching(false);
+      isSubmitting.current = false;
     }
   };
 
