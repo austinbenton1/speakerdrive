@@ -56,36 +56,14 @@ export async function findCompany(data: CompanyFinderRequest): Promise<CompanyFi
       body: JSON.stringify(requestBody)
     });
 
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      return {
-        status: 'error',
-        message: responseData.message || 'Failed to find company information',
-        companyName: data.company_name,
-        industry: '',
-        websiteUrl: data.profile_url || '',
-        url: '',
-        headquarter: {
-          line1: '',
-          city: '',
-          geographicArea: '',
-          country: ''
-        },
-        specialties: [],
-        employeeCount: 0,
-        similarOrganizations: [],
-        logoResolutionResult: ''
-      };
-    }
-
-    if (!responseData || !responseData.companyName) {
+    // Handle 204 No Content specifically
+    if (response.status === 204) {
       return {
         status: 'error',
         message: 'No company information found',
         companyName: data.company_name,
         industry: '',
-        websiteUrl: data.profile_url || '',
+        websiteUrl: data.company_domain,
         url: '',
         headquarter: {
           line1: '',
@@ -100,10 +78,61 @@ export async function findCompany(data: CompanyFinderRequest): Promise<CompanyFi
       };
     }
 
+    // Only try to parse JSON if we have content
+    const responseData = response.status !== 204 ? await response.json() : null;
+
+    if (!response.ok || !responseData) {
+      return {
+        status: 'error',
+        message: (responseData && responseData.message) || 'Failed to find company information',
+        companyName: data.company_name,
+        industry: '',
+        websiteUrl: data.company_domain,
+        url: '',
+        headquarter: {
+          line1: '',
+          city: '',
+          geographicArea: '',
+          country: ''
+        },
+        specialties: [],
+        employeeCount: 0,
+        similarOrganizations: [],
+        logoResolutionResult: ''
+      };
+    }
+
+    // Ensure all required properties exist with fallbacks
     return {
-      ...responseData,
       status: 'success',
-      message: 'Company information found successfully'
+      message: responseData.message || '',
+      companyName: responseData.companyName || data.company_name,
+      industry: responseData.industry || '',
+      websiteUrl: responseData.websiteUrl || data.company_domain,
+      url: responseData.url || '',
+      headquarter: {
+        line1: responseData.headquarter?.line1 || '',
+        city: responseData.headquarter?.city || '',
+        geographicArea: responseData.headquarter?.geographicArea || '',
+        country: responseData.headquarter?.country || ''
+      },
+      specialties: Array.isArray(responseData.specialties) ? responseData.specialties : [],
+      employeeCount: responseData.employeeCount || 0,
+      similarOrganizations: Array.isArray(responseData.similarOrganizations) 
+        ? responseData.similarOrganizations.map((org: any) => ({
+            logoResolutionResult: org.logoResolutionResult || '',
+            name: org.name || '',
+            url: org.url || '',
+            industry: org.industry || '',
+            headquarter: {
+              line1: org.headquarter?.line1 || '',
+              city: org.headquarter?.city || '',
+              geographicArea: org.headquarter?.geographicArea || '',
+              country: org.headquarter?.country || ''
+            }
+          }))
+        : [],
+      logoResolutionResult: responseData.logoResolutionResult || ''
     };
   } catch (error) {
     return {
@@ -111,7 +140,7 @@ export async function findCompany(data: CompanyFinderRequest): Promise<CompanyFi
       message: error instanceof Error ? error.message : 'Failed to find company information',
       companyName: data.company_name,
       industry: '',
-      websiteUrl: data.profile_url || '',
+      websiteUrl: data.company_domain,
       url: '',
       headquarter: {
         line1: '',
