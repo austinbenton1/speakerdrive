@@ -20,7 +20,6 @@ export default function CompanyFinder() {
     
     const formData = new FormData(e.currentTarget);
     const data = {
-      profile_url: formData.get('companyUrl') as string,
       company_domain: formData.get('companyDomain') as string,
       company_name: formData.get('companyName') as string,
     };
@@ -94,20 +93,6 @@ export default function CompanyFinder() {
         {/* Search form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="companyUrl" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                Business Company URL
-                <span className="ml-2 text-xs text-gray-500">(Optional)</span>
-              </label>
-              <input
-                type="url"
-                name="companyUrl"
-                id="companyUrl"
-                placeholder="https://example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
             <div>
               <label htmlFor="companyDomain" className="block text-sm font-medium text-gray-700 mb-1">
                 Company Domain
