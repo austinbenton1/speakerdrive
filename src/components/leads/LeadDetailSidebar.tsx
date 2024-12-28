@@ -6,7 +6,9 @@ import {
   Building, 
   Presentation, 
   GraduationCap,
-  HelpCircle 
+  HelpCircle,
+  ExternalLink,
+  Link
 } from 'lucide-react';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 import { formatUnlockType } from '../../utils/formatters';
@@ -22,6 +24,8 @@ interface QuickInfoItem {
   value: string | null | undefined;
   tooltip?: string;
   show: boolean;
+  onClick?: () => void;
+  isLink?: boolean;
 }
 
 export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
@@ -36,15 +40,17 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
       show: !!lead.eventName,
     },
     {
-      icon: Globe,
-      label: 'Event URL',
-      value: lead.eventUrl,
-      tooltip: lead.tooltipEventUrl,
+      icon: Link,
+      label: 'Event Link',
+      value: 'View Event',
+      tooltip: 'Click to visit the event page',
       show: !!lead.eventUrl,
+      onClick: () => lead.eventUrl && window.open(lead.eventUrl, '_blank', 'noopener,noreferrer'),
+      isLink: true
     },
     {
       icon: Building2,
-      label: 'Industry Category',
+      label: 'Event Category',
       value: lead.industryCategory,
       tooltip: lead.tooltipIndustryCategory,
       show: true,
@@ -57,61 +63,120 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
       show: !!lead.eventFormat,
     },
     {
+      icon: MapPin,
+      label: 'Event Location',
+      value: lead.location,
+      tooltip: lead.tooltipLocation,
+      show: !!lead.location,
+    },
+  ];
+
+  const organizationItems: QuickInfoItem[] = [
+    {
       icon: Building,
-      label: 'Organization',
+      label: 'Host Organization',
       value: lead.organization || 'Not specified',
       tooltip: lead.tooltipOrganization,
       show: true,
     },
     {
-      icon: Building,
-      label: 'Organization Type',
+      icon: Building2,
+      label: 'Host Organization Type',
       value: lead.organizationType || 'Not specified',
       tooltip: lead.tooltipOrganizationType,
-      show: true,
-    },
-    {
-      icon: MapPin,
-      label: 'Location',
-      value: lead.location || 'Not specified',
-      tooltip: lead.tooltipLocation,
       show: true,
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Quick Info */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h3 className="text-sm font-medium text-gray-900">Quick Information</h3>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {quickInfoItems
-            .filter(item => item.show)
-            .map((item, index) => (
-              <div key={index} className="px-6 py-4">
-                <div className="flex items-center">
-                  <item.icon className="w-4 h-4 text-gray-400 mr-2" />
-                  <div className="flex-grow">
+      {/* Quick Information */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-base font-semibold leading-6 text-gray-900 mb-4">
+            Quick Information
+          </h3>
+          <div className="space-y-4">
+            {quickInfoItems
+              .filter(item => item.show)
+              .map((item, index) => (
+                <div key={index} className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3 flex-grow">
                     <span className="text-sm text-gray-500">{item.label}</span>
                     <div className="flex items-center gap-1">
-                      <p className="text-sm text-gray-900">{item.value}</p>
+                      {item.isLink ? (
+                        <button
+                          onClick={item.onClick}
+                          className="text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200"
+                        >
+                          {item.value}
+                        </button>
+                      ) : (
+                        <span className="text-gray-900">{item.value}</span>
+                      )}
                       {item.tooltip && (
                         <div className="relative group">
                           <button className="w-4 h-4 text-gray-400">
-                            <HelpCircle className="w-full h-full" />
+                            <HelpCircle className="w-4 h-4" />
                           </button>
-                          <div className="invisible group-hover:visible absolute z-[100] right-0 mt-2 w-[280px] p-3 bg-white border border-gray-100 rounded-lg shadow-lg">
-                            <p className="text-sm text-gray-600 whitespace-normal">{item.tooltip}</p>
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                            {item.tooltip}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Organization Information */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-base font-semibold leading-6 text-gray-900 mb-4">
+            Organization Information
+          </h3>
+          <div className="space-y-4">
+            {organizationItems
+              .filter(item => item.show)
+              .map((item, index) => (
+                <div key={index} className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3 flex-grow">
+                    <span className="text-sm text-gray-500">{item.label}</span>
+                    <div className="flex items-center gap-1">
+                      {item.isLink ? (
+                        <button
+                          onClick={item.onClick}
+                          className="text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200"
+                        >
+                          {item.value}
+                        </button>
+                      ) : (
+                        <span className="text-gray-900">{item.value}</span>
+                      )}
+                      {item.tooltip && (
+                        <div className="relative group">
+                          <button className="w-4 h-4 text-gray-400">
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                            {item.tooltip}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </div>

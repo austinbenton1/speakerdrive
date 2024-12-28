@@ -10,6 +10,7 @@ export interface Lead {
   organization_type: string;
   event_info: string;
   event_name: string;
+  event_url?: string;
   location: string;
 }
 
@@ -22,6 +23,7 @@ export interface SpeakerLead {
   domainType: string;
   leadType: 'Event' | 'Contact';
   eventName: string;
+  eventUrl?: string;
   organization: string;
   organizationType: string;
   location?: string;
