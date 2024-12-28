@@ -28,6 +28,8 @@ export interface SpeakerLead {
   addedDate: string;
   eventInfo?: string;
   detailedInfo?: string;
+  valueProfile?: string;
+  outreachPathways?: string;
   infoUrl?: string;
   eventFormat?: string;
   tooltipLocation?: string;
