@@ -12,6 +12,7 @@ export interface Lead {
   event_name: string;
   event_url?: string;
   location: string;
+  job_title?: string;
 }
 
 export interface SpeakerLead {

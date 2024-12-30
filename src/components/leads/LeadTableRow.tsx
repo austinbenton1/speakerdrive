@@ -80,14 +80,15 @@ export default function LeadTableRow({
                 {lead.lead_type === 'Contact' ? (
                   <>
                     <User2 className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate max-w-[200px] font-medium">
-                      {lead.lead_name}
+                    <span className="truncate max-w-[350px]">
+                      <span className="font-medium">{lead.lead_name}</span>
+                      {lead.job_title && <span className="text-gray-500">{`, ${lead.job_title}`}</span>}
                     </span>
                   </>
                 ) : (
                   <>
                     <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate max-w-[200px] font-medium">
+                    <span className="truncate max-w-[350px] font-medium">
                       {lead.organization || 'No organization'}
                     </span>
                   </>
