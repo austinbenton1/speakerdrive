@@ -31,7 +31,8 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         tooltip_industry_category,
         tooltip_event_format,
         tooltip_organization,
-        tooltip_organization_type
+        tooltip_organization_type,
+        subtext
       `)
       .eq('id', id)
       .single();
@@ -67,7 +68,8 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       tooltipIndustryCategory: data.tooltip_industry_category,
       tooltipEventFormat: data.tooltip_event_format,
       tooltipOrganization: data.tooltip_organization,
-      tooltipOrganizationType: data.tooltip_organization_type
+      tooltipOrganizationType: data.tooltip_organization_type,
+      subtext: data.subtext
     };
   } catch (error) {
     console.error('Error fetching lead:', error);

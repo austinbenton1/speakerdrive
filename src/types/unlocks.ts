@@ -1,7 +1,11 @@
 export interface UnlockedLead {
-  name: string;
-  focus: string;
-  unlocked_at: string;
+  id: string;
+  event_name: string;
+  subtext: string | null;
+  industry: string;
+  image: string;
+  unlockDate: Date;
+  lead_type: 'Event' | 'Contact';
 }
 
 export interface UnlockStatus {

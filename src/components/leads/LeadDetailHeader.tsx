@@ -1,13 +1,8 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  LinkedinIcon, 
-  Globe, 
-  ExternalLink
-} from 'lucide-react';
-import type { SpeakerLead } from '../../types';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import LeadDetailHeaderActions from './LeadDetailHeaderActions';
+import type { SpeakerLead } from '../../types';
 
 interface LeadDetailHeaderProps {
   lead: SpeakerLead;
@@ -26,10 +21,6 @@ export default function LeadDetailHeader({
 }: LeadDetailHeaderProps) {
   const navigate = useNavigate();
 
-  const handleInfoUrlClick = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <div className={`bg-gradient-to-b ${
       lead.leadType === 'Contact' 
@@ -37,7 +28,7 @@ export default function LeadDetailHeader({
         : 'from-white via-emerald-50/20 to-emerald-100/10'
     } border-b border-gray-100`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-8">
+        <div className="py-6">
           {/* Back Button */}
           <button 
             onClick={() => navigate(-1)} 
@@ -51,76 +42,44 @@ export default function LeadDetailHeader({
             Back
           </button>
 
-          {/* Lead Header Content */}
-          <div className="mt-8 flex items-center justify-between">
+          {/* Main Content */}
+          <div className="mt-6 flex justify-between items-start gap-8">
             {/* Lead Info */}
-            <div className="flex items-center">
-              <div className="relative">
+            <div className="flex items-start space-x-6 flex-1 min-w-0">
+              <div className="flex-shrink-0">
                 <img
                   src={lead.image}
-                  alt={lead.name}
+                  alt={lead.eventName || lead.name}
                   className={`h-20 w-20 rounded-xl object-cover ring-4 ring-white shadow-lg ${
                     lead.leadType === 'Contact'
                       ? 'ring-blue-100/50'
                       : 'ring-emerald-100/50'
                   }`}
                 />
-                <span className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-sm font-semibold shadow-md ${
-                  lead.leadType === 'Contact'
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-2 ring-blue-100'
-                    : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white ring-2 ring-emerald-100'
-                }`}>
-                  {lead.leadType}
-                </span>
               </div>
-              <div className="ml-8">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-semibold text-gray-900">
-                    {lead.name}
-                  </h1>
-                  {lead.infoUrl && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleInfoUrlClick(lead.infoUrl!)}
-                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1.5 ${
-                          lead.leadType === 'Contact'
-                            ? 'text-blue-600 hover:bg-blue-100/50'
-                            : 'text-emerald-600 hover:bg-emerald-100/50'
-                        }`}
-                        title={lead.leadType === 'Contact' ? 'View LinkedIn Profile' : 'View Website'}
-                      >
-                        {lead.leadType === 'Contact' ? (
-                          <>
-                            <LinkedinIcon className="w-4 h-4" />
-                            <span className="text-sm">LinkedIn</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="w-4 h-4" />
-                            <span className="text-sm">Website</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <span className="text-sm text-gray-500">{lead.focus}</span>
-                </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl font-semibold text-gray-900 leading-tight break-words">
+                  {lead.eventName || lead.name}
+                </h1>
+                {lead.subtext && (
+                  <div className="mt-2">
+                    <span className="text-lg text-gray-600 leading-normal">{lead.subtext}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Header Actions */}
-            <LeadDetailHeaderActions
-              onCreateColdIntro={() => {}}
-              onUnlock={onUnlock}
-              isUnlocking={isUnlocking}
-              isUnlocked={isUnlocked}
-              unlockType={lead.unlockType}
-              unlockValue={unlockValue}
-            />
+            {/* Actions */}
+            <div className="flex-shrink-0">
+              <LeadDetailHeaderActions
+                onCreateColdIntro={() => {}}
+                onUnlock={onUnlock}
+                isUnlocking={isUnlocking}
+                isUnlocked={isUnlocked}
+                unlockType={lead.unlockType}
+                unlockValue={unlockValue}
+              />
+            </div>
           </div>
         </div>
       </div>

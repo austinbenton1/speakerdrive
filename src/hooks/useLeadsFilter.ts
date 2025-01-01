@@ -14,6 +14,7 @@ interface FilterParams {
   organization: string;
   pastSpeakers: string;
   searchAll: string;
+  unlockType?: string;
 }
 
 export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
@@ -137,6 +138,13 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
           field?.toLowerCase().includes(globalSearch)
         );
       });
+    }
+
+    // Quick Lead Type filter - applied last
+    if (filters.unlockType) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.unlock_type === filters.unlockType
+      );
     }
 
     return filteredLeads;

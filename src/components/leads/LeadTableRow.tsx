@@ -75,25 +75,10 @@ export default function LeadTableRow({
             <div className="text-[14px] font-medium text-gray-900 truncate max-w-[400px]">
               {lead.event_name || lead.lead_name}
             </div>
-            <div className="flex items-center space-x-2 text-[13px] text-gray-600 min-w-0">
-              <div className="flex items-center space-x-1 min-w-0">
-                {lead.lead_type === 'Contact' ? (
-                  <>
-                    <User2 className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate max-w-[350px]">
-                      <span className="font-medium">{lead.lead_name}</span>
-                      {lead.job_title && <span className="text-gray-500">{`, ${lead.job_title}`}</span>}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate max-w-[350px] font-medium">
-                      {lead.organization || 'No organization'}
-                    </span>
-                  </>
-                )}
-              </div>
+            <div className="text-[13px] text-gray-500 truncate max-w-[400px]">
+              {lead.subtext}
+            </div>
+            <div className="flex items-center space-x-2 text-[13px] text-gray-600 min-w-0 mt-1">
               <UnlockButton 
                 type={lead.unlock_type} 
                 onClick={(e) => {

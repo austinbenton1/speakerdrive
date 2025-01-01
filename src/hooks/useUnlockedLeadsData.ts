@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { RecordedLead, LeadQueryResult } from '../types/leads';
+import type { RecordedLead } from '../types/leads';
 
 export function useUnlockedLeadsData() {
   const [recordedLeads, setRecordedLeads] = useState<RecordedLead[]>([]);
@@ -21,13 +21,11 @@ export function useUnlockedLeadsData() {
             unlocked_at:created_at,
             unlocked,
             leads (
-              lead_name,
+              event_name,
               focus,
               industry,
               lead_type,
-              unlock_type,
-              organization,
-              event_name,
+              subtext,
               image_url
             )
           `)
@@ -36,16 +34,13 @@ export function useUnlockedLeadsData() {
 
         if (fetchError) throw fetchError;
 
-        // Transform the data to flatten the structure
-        const transformedLeads = (data as LeadQueryResult[])?.map(item => ({
+        const transformedLeads = (data as any[])?.map(item => ({
           lead_id: item.lead_id,
-          lead_name: item.leads.lead_name,
+          event_name: item.leads.event_name,
           focus: item.leads.focus,
           industry: item.leads.industry,
           lead_type: item.leads.lead_type,
-          unlock_type: item.leads.unlock_type,
-          organization: item.leads.organization,
-          event_name: item.leads.event_name,
+          subtext: item.leads.subtext,
           image_url: item.leads.image_url,
           unlocked_at: item.unlocked_at,
           unlocked: item.unlocked

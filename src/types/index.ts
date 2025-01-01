@@ -13,6 +13,8 @@ export interface Lead {
   event_url?: string;
   location: string;
   job_title?: string;
+  subtext?: string;
+  unlock_type: string;
 }
 
 export interface SpeakerLead {
@@ -40,6 +42,7 @@ export interface SpeakerLead {
   tooltipEventFormat?: string;
   tooltipOrganization?: string;
   tooltipOrganizationType?: string;
+  subtext?: string;
 }
 
 export interface UnlockedLead {
@@ -63,4 +66,5 @@ export interface FilterOptions {
   timeframe: string[];
   eventFormat: string[];
   organizationType: string[];
+  unlockType?: string;
 }

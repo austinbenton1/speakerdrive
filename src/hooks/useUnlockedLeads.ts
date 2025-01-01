@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { UnlockedLead } from '../types';
+import type { UnlockedLead } from '../types/unlocks';
 
 export function useUnlockedLeads() {
   const [leads, setLeads] = useState<UnlockedLead[]>([]);
@@ -22,12 +22,12 @@ export function useUnlockedLeads() {
             id,
             created_at,
             lead_id,
-            lead_id,
             leads!inner (
-              lead_name,
-              focus,
+              event_name,
+              subtext,
               industry,
-              image_url
+              image_url,
+              lead_type
             )
           `)
           .eq('user_id', session.user.id)
@@ -36,16 +36,15 @@ export function useUnlockedLeads() {
 
         if (fetchError) throw fetchError;
 
-        const formattedLeads = data?.map(item => {
-          return {
-            id: item.lead_id,
-            name: item.leads.lead_name,
-            focus: item.leads.focus,
-            industry: item.leads.industry,
-            image: item.leads.image_url,
-            unlockDate: new Date(item.created_at),
-          };
-        }) || [];
+        const formattedLeads = data?.map(item => ({
+          id: item.lead_id,
+          event_name: item.leads.event_name,
+          subtext: item.leads.subtext,
+          industry: item.leads.industry,
+          image: item.leads.image_url,
+          lead_type: item.leads.lead_type,
+          unlockDate: new Date(item.created_at),
+        })) || [];
 
         setLeads(formattedLeads);
       } catch (err) {

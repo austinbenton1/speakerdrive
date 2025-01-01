@@ -20,7 +20,6 @@ export default function LeadDetails() {
     checkUnlockStatus
   } = useLeadUnlock(id || '');
 
-  // Check unlock status when component mounts
   useEffect(() => {
     if (id) {
       checkUnlockStatus();
@@ -29,7 +28,7 @@ export default function LeadDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
         <div className="flex flex-col items-center">
           <Loader className="w-8 h-8 text-blue-600 animate-spin" />
           <p className="mt-2 text-sm text-gray-600">Loading lead details...</p>
@@ -40,7 +39,7 @@ export default function LeadDetails() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-medium text-gray-900 mb-2">Error Loading Lead</h2>
@@ -58,7 +57,7 @@ export default function LeadDetails() {
 
   if (!lead) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
         <div className="text-center">
           <h2 className="text-lg font-medium text-gray-900 mb-2">Lead not found</h2>
           <p className="text-sm text-gray-500 mb-4">The lead you're looking for doesn't exist or has been removed.</p>
@@ -74,7 +73,7 @@ export default function LeadDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#EDEEF0' }}>
       {unlockError && (
         <div className="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50">
           <div className="flex items-center">
@@ -93,9 +92,13 @@ export default function LeadDetails() {
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-3 gap-8">
-          <LeadDetailContent lead={lead} />
-          <LeadDetailSidebar lead={lead} />
+        <div className="grid grid-cols-3 gap-6">
+          <div className="col-span-2">
+            <LeadDetailContent lead={lead} />
+          </div>
+          <div>
+            <LeadDetailSidebar lead={lead} />
+          </div>
         </div>
       </div>
     </div>

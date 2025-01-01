@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Building2, User, Calendar, Users } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/date';
-import { Building2, User } from 'lucide-react';
 import type { RecordedLead } from '../../types/leads';
 
 interface RecentUnlockItemProps {
@@ -10,6 +10,8 @@ interface RecentUnlockItemProps {
 
 export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
   const navigate = useNavigate();
+
+  const LeadIcon = lead.lead_type === 'Event' ? Calendar : Users;
 
   return (
     <div 
@@ -20,30 +22,32 @@ export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
         {lead.image_url ? (
           <img
             src={lead.image_url}
-            alt={lead.lead_name}
+            alt={lead.event_name}
             className="w-14 h-14 rounded-md object-cover border border-gray-200"
           />
         ) : (
           <div className="w-14 h-14 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center">
-            <User className="w-6 h-6 text-gray-400" />
+            <LeadIcon className="w-6 h-6 text-gray-400" />
           </div>
         )}
       </div>
       <div className="min-w-0 flex-1 py-3">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600">
-            {lead.lead_name}
+            {lead.event_name}
           </p>
-          <span className="text-xs font-medium text-gray-500">
+          <span className="text-xs font-medium text-gray-500 flex-shrink-0">
             {formatRelativeTime(new Date(lead.unlocked_at))}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="flex items-center text-xs text-gray-500">
-            <Building2 className="w-3.5 h-3.5 mr-1" />
-            {lead.organization || 'No organization'}
+          <div className="flex items-center text-xs text-gray-500 min-w-0">
+            <Building2 className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+            <span className="truncate max-w-[200px]">
+              {lead.subtext || 'No description'}
+            </span>
           </div>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 flex-shrink-0">
             {lead.industry || 'Uncategorized'}
           </span>
         </div>
