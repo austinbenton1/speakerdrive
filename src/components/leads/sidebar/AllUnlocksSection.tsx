@@ -1,28 +1,32 @@
 import React from 'react';
-import { Building2, HelpCircle } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import type { QuickInfoItem } from '../../../types/leads';
 import { SidebarSection } from './SidebarSection';
 
-interface QuickInfoSectionProps {
+interface AllUnlocksSectionProps {
   items: QuickInfoItem[];
 }
 
-export function QuickInfoSection({ items }: QuickInfoSectionProps) {
+export function AllUnlocksSection({ items }: AllUnlocksSectionProps) {
   return (
     <SidebarSection 
-      title="Event Information"
-      icon={Building2}
+      title="All Unlocks For This Event"
+      icon={KeyRound}
     >
       <div className="space-y-4">
         {items
           .filter(item => item.show)
           .map((item, index) => (
             <div key={index} className="flex items-start">
-              <div className="flex-shrink-0">
-                <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-              </div>
-              <div className="ml-3 flex-grow">
-                <span className="text-sm text-gray-500">{item.label}</span>
+              {item.icon && (
+                <div className="flex-shrink-0">
+                  <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                </div>
+              )}
+              <div className={`${item.icon ? 'ml-3' : ''} flex-grow`}>
+                {item.label && (
+                  <span className="text-sm text-gray-500">{item.label}</span>
+                )}
                 <div className="flex items-center gap-1">
                   {item.isLink ? (
                     <button

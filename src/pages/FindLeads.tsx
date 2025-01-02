@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
@@ -12,8 +12,12 @@ import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTy
 
 export default function FindLeads() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showGuide, setShowGuide] = useState(true);
-  const [eventsFilter, setEventsFilter] = useState('');
+  const [eventsFilter, setEventsFilter] = useState(() => {
+    // Initialize with URL parameter if it exists
+    return searchParams.get('event') || '';
+  });
   const [selectedLeadType, setSelectedLeadType] = useState<LeadType>('all');
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   
@@ -21,8 +25,25 @@ export default function FindLeads() {
     filters,
     openSections,
     setFilters,
+    setOpenSections,
     toggleSection,
   } = useLeadFilters();
+
+  // Initialize filters with URL parameters
+  useEffect(() => {
+    const organization = searchParams.get('organization');
+    if (organization) {
+      setFilters(prev => ({
+        ...prev,
+        organization
+      }));
+      // Open the Additional Filters section (correct section name is 'moreFilters')
+      setOpenSections(prev => ({
+        ...prev,
+        moreFilters: true
+      }));
+    }
+  }, [searchParams, setFilters, setOpenSections]);
 
   const handleLeadTypeChange = (type: LeadType) => {
     setSelectedLeadType(type);
@@ -84,6 +105,7 @@ export default function FindLeads() {
         eventsFilter={eventsFilter}
         onEventsFilterChange={setEventsFilter}
         setFilters={setFilters}
+        setOpenSections={setOpenSections}
         toggleSection={toggleSection}
       />
 

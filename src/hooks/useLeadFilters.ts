@@ -61,6 +61,7 @@ export function useLeadFilters() {
     filters,
     openSections,
     setFilters,
+    setOpenSections,
     toggleLeadType,
     toggleEventUnlockType,
     toggleSection,

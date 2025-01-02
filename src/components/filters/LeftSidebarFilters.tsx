@@ -14,6 +14,7 @@ interface LeftSidebarFiltersProps {
   eventsFilter: string;
   onEventsFilterChange: (value: string) => void;
   setFilters: (fn: (prev: FilterOptions) => FilterOptions) => void;
+  setOpenSections: (fn: (prev: Record<string, boolean>) => Record<string, boolean>) => void;
   toggleSection: (section: string) => void;
 }
 
@@ -23,6 +24,7 @@ export default function LeftSidebarFilters({
   eventsFilter,
   onEventsFilterChange,
   setFilters,
+  setOpenSections,
   toggleSection
 }: LeftSidebarFiltersProps) {
   return (

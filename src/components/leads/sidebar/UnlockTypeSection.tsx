@@ -1,17 +1,17 @@
 import React from 'react';
-import { Building2, HelpCircle } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import type { QuickInfoItem } from '../../../types/leads';
 import { SidebarSection } from './SidebarSection';
 
-interface QuickInfoSectionProps {
+interface UnlockTypeSectionProps {
   items: QuickInfoItem[];
 }
 
-export function QuickInfoSection({ items }: QuickInfoSectionProps) {
+export function UnlockTypeSection({ items }: UnlockTypeSectionProps) {
   return (
     <SidebarSection 
-      title="Event Information"
-      icon={Building2}
+      title="Unlock Type"
+      icon={Lock}
     >
       <div className="space-y-4">
         {items

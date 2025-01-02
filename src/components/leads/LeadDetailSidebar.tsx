@@ -1,8 +1,10 @@
 import React from 'react';
-import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase } from 'lucide-react';
+import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase, Lock, Mail, DollarSign, KeyRound } from 'lucide-react';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 import { QuickInfoSection } from './sidebar/QuickInfoSection';
 import { OrganizationSection } from './sidebar/OrganizationSection';
+import { UnlockTypeSection } from './sidebar/UnlockTypeSection';
+import { AllUnlocksSection } from './sidebar/AllUnlocksSection';
 import type { SpeakerLead } from '../../types';
 
 interface LeadDetailSidebarProps {
@@ -105,10 +107,36 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
     ])
   ];
 
+  const unlockTypeItems = [
+    {
+      icon: DollarSign,
+      label: 'Value',
+      value: lead.unlockType?.replace('Unlock ', '') || 'Not specified',
+      show: true,
+    }
+  ];
+
+  const allUnlocksItems = [
+    {
+      value: `View More - ${lead.eventName || lead.name}`,
+      show: true,
+      isLink: true,
+      onClick: () => {
+        const params = new URLSearchParams({
+          event: lead.eventName || lead.name,
+          organization: lead.organization || ''
+        });
+        window.open(`/find-leads?${params.toString()}`, '_blank', 'noopener,noreferrer');
+      }
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <QuickInfoSection items={quickInfoItems} />
+      <UnlockTypeSection items={unlockTypeItems} />
       <OrganizationSection items={organizationItems} />
+      <AllUnlocksSection items={allUnlocksItems} />
     </div>
   );
 }
