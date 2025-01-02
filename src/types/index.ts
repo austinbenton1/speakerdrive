@@ -21,6 +21,7 @@ export interface SpeakerLead {
   id: string;
   image: string;
   name: string;
+  lead_name: string;
   focus: string;
   industryCategory: string;
   domainType: string;
@@ -30,6 +31,8 @@ export interface SpeakerLead {
   organization: string;
   organizationType: string;
   location?: string;
+  job_title?: string;
+  unlockType: string;
   addedDate: string;
   eventInfo?: string;
   detailedInfo?: string;

@@ -81,14 +81,15 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
                 const items: { title?: string; description?: string }[] = [];
                 let currentItem: { title?: string; description?: string } = {};
 
-                parts.forEach((part, index) => {
+                parts.forEach((part) => {
                   if (part.includes('→')) {
                     // If we have a complete item, push it
                     if (currentItem.title || currentItem.description) {
                       items.push(currentItem);
                     }
+                    // Use the entire part including the arrow as the title
                     currentItem = {
-                      title: part.split('→')[0].trim()
+                      title: part.trim()
                     };
                   } else {
                     if (currentItem.description) {

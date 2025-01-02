@@ -32,6 +32,7 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         tooltip_event_format,
         tooltip_organization,
         tooltip_organization_type,
+        job_title,
         subtext
       `)
       .eq('id', id)
@@ -45,6 +46,7 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       id: data.id,
       image: data.image_url,
       name: data.lead_name,
+      lead_name: data.lead_name,
       focus: data.focus,
       unlockType: data.unlock_type,
       industryCategory: data.industry,
@@ -69,6 +71,7 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       tooltipEventFormat: data.tooltip_event_format,
       tooltipOrganization: data.tooltip_organization,
       tooltipOrganizationType: data.tooltip_organization_type,
+      job_title: data.job_title,
       subtext: data.subtext
     };
   } catch (error) {

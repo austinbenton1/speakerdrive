@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon } from 'lucide-react';
+import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase } from 'lucide-react';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 import { QuickInfoSection } from './sidebar/QuickInfoSection';
 import { OrganizationSection } from './sidebar/OrganizationSection';
@@ -11,6 +11,8 @@ interface LeadDetailSidebarProps {
 
 export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
   const { isUnlocked, unlockValue } = useLeadUnlock(lead.id);
+
+  console.log('Lead data in sidebar:', lead); // Debug log
 
   const quickInfoItems = [
     {
@@ -52,30 +54,55 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
     },
   ];
 
+  // Extract job title from subtext (format: "Name, Job Title")
+  const jobTitle = lead.subtext ? lead.subtext.split(', ').slice(1).join(', ') : null;
+
   const organizationItems = [
     {
       icon: Building,
-      label: 'Host Organization',
+      label: 'Organization Name',
       value: lead.organization || 'Not specified',
       tooltip: lead.tooltipOrganization,
       show: true,
     },
     {
-      icon: lead.leadType === 'Contact' ? LinkedinIcon : Globe,
-      label: lead.leadType === 'Contact' ? 'LinkedIn Profile' : 'Website',
-      value: lead.infoUrl ? (lead.leadType === 'Contact' ? 'View Profile' : 'Visit Website') : null,
-      tooltip: lead.leadType === 'Contact' ? 'View LinkedIn Profile' : 'Visit Organization Website',
-      show: !!lead.infoUrl,
-      onClick: () => lead.infoUrl && window.open(lead.infoUrl, '_blank', 'noopener,noreferrer'),
-      isLink: true
-    },
-    {
       icon: Building2,
-      label: 'Host Organization Type',
+      label: 'Organization Type',
       value: lead.organizationType || 'Not specified',
       tooltip: lead.tooltipOrganizationType,
       show: true,
     },
+    ...(lead.leadType === 'Contact' ? [
+      {
+        icon: User,
+        label: 'Aligned Contact Name',
+        value: lead.lead_name || 'Not specified',
+        show: true,
+      },
+      {
+        icon: Briefcase,
+        label: 'Job Title',
+        value: lead.job_title || 'Not specified',
+        show: true,
+      },
+      {
+        icon: LinkedinIcon,
+        label: 'LinkedIn Profile',
+        value: lead.infoUrl ? 'View Profile' : null,
+        show: !!lead.infoUrl,
+        onClick: () => lead.infoUrl && window.open(lead.infoUrl, '_blank', 'noopener,noreferrer'),
+        isLink: true
+      }
+    ] : [
+      {
+        icon: Globe,
+        label: 'Website',
+        value: lead.infoUrl ? 'Visit Website' : null,
+        show: !!lead.infoUrl,
+        onClick: () => lead.infoUrl && window.open(lead.infoUrl, '_blank', 'noopener,noreferrer'),
+        isLink: true
+      }
+    ])
   ];
 
   return (

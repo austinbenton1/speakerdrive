@@ -10,7 +10,7 @@ interface OrganizationSectionProps {
 export function OrganizationSection({ items }: OrganizationSectionProps) {
   return (
     <SidebarSection 
-      title="Organization Information"
+      title="Host Organization"
       icon={Building}
     >
       <div className="space-y-4">
