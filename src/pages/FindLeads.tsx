@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
+import { useUserProfile } from '../hooks/useUserProfile';
+import { supabase } from '../lib/supabase';
 import LeadsTable from '../components/leads/LeadsTable';
 import SearchContainer from '../components/SearchContainer';
 import QuickStartGuide from '../components/QuickStartGuide';
@@ -13,7 +15,19 @@ import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTy
 export default function FindLeads() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showGuide, setShowGuide] = useState(true);
+  const { profile, loading: profileLoading } = useUserProfile();
+  const [showGuide, setShowGuide] = useState(() => {
+    // Show guide by default if profile is not loaded or quick_start_guide_tip is false
+    return !profile?.quick_start_guide_tip;
+  });
+
+  // Update showGuide when profile loads
+  useEffect(() => {
+    if (profile) {
+      setShowGuide(!profile.quick_start_guide_tip);
+    }
+  }, [profile]);
+
   const [eventsFilter, setEventsFilter] = useState(() => {
     // Initialize with URL parameter if it exists
     return searchParams.get('event') || '';
@@ -77,6 +91,27 @@ export default function FindLeads() {
     unlockType: filters.unlockType
   });
 
+  const handleLeadClick = (leadId: string) => {
+    navigate(`/leads/${leadId}`);
+  };
+
+  const handleDismissGuide = async () => {
+    try {
+      // Update the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ quick_start_guide_tip: true })
+        .eq('id', profile?.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setShowGuide(false);
+    } catch (error) {
+      console.error('Error updating quick_start_guide_tip:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -93,10 +128,6 @@ export default function FindLeads() {
     );
   }
 
-  const handleLeadClick = (leadId: string) => {
-    navigate(`/leads/${leadId}`);
-  };
-
   return (
     <div className="flex h-full bg-gray-50">
       <LeftSidebarFilters
@@ -111,8 +142,8 @@ export default function FindLeads() {
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {showGuide && (
-            <QuickStartGuide onDismiss={() => setShowGuide(false)} />
+          {showGuide && !profileLoading && (
+            <QuickStartGuide onDismiss={handleDismissGuide} />
           )}
 
           <SearchContainer>

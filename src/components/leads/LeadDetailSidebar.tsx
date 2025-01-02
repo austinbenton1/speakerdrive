@@ -14,8 +14,6 @@ interface LeadDetailSidebarProps {
 export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
   const { isUnlocked, unlockValue } = useLeadUnlock(lead.id);
 
-  console.log('Lead data in sidebar:', lead); // Debug log
-
   const quickInfoItems = [
     {
       icon: Presentation,

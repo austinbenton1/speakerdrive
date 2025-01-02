@@ -30,7 +30,7 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
           <div>
             <div className="font-medium text-gray-900 text-sm">Quick Start Guide</div>
             <div className="text-gray-600 text-xs mt-0.5">
-              Choose one or more industries below. Optional filters on the left help narrow your results.
+              Choose one of the unlock types below. Optional filters on the left help narrow your results.
             </div>
           </div>
         </div>

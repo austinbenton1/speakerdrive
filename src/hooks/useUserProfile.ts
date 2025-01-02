@@ -51,13 +51,14 @@ export function useUserProfile() {
         }
 
         setProfile({
-          id: session.user.id,
-          name: profileData.display_name || '',
+          id: profileData.id,
+          name: profileData.name,
           display_name: profileData.display_name,
           email: profileData.email,
           services: parsedServices,
           industries: parsedIndustries,
-          avatarUrl: profileData.avatar_url
+          avatarUrl: profileData.avatar_url,
+          quick_start_guide_tip: profileData.quick_start_guide_tip
         });
       } catch (err) {
         console.error('Error loading profile:', err);
