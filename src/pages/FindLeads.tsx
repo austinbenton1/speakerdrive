@@ -3,35 +3,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
-import { useUserProfile } from '../hooks/useUserProfile';
-import { supabase } from '../lib/supabase';
 import LeadsTable from '../components/leads/LeadsTable';
 import SearchContainer from '../components/SearchContainer';
-import QuickStartGuide from '../components/QuickStartGuide';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
+import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTypeConfig';
 
 export default function FindLeads() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile, loading: profileLoading } = useUserProfile();
-  const [showGuide, setShowGuide] = useState(() => {
-    // Show guide by default if profile is not loaded or quick_start_guide_tip is false
-    return !profile?.quick_start_guide_tip;
-  });
-
-  // Update showGuide when profile loads
-  useEffect(() => {
-    if (profile) {
-      setShowGuide(!profile.quick_start_guide_tip);
-    }
-  }, [profile]);
-
-  const [eventsFilter, setEventsFilter] = useState(() => {
-    // Initialize with URL parameter if it exists
-    return searchParams.get('event') || '';
-  });
+  const [eventsFilter, setEventsFilter] = useState(() => searchParams.get('event') || '');
   const [selectedLeadType, setSelectedLeadType] = useState<LeadType>('all');
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   
@@ -51,7 +33,6 @@ export default function FindLeads() {
         ...prev,
         organization
       }));
-      // Open the Additional Filters section (correct section name is 'moreFilters')
       setOpenSections(prev => ({
         ...prev,
         moreFilters: true
@@ -61,19 +42,18 @@ export default function FindLeads() {
 
   const handleLeadTypeChange = (type: LeadType) => {
     setSelectedLeadType(type);
-    // Find the selected lead type configuration
     const selectedType = leadTypes.find(t => t.id === type);
     if (selectedType?.unlockValue) {
-      // Update filters based on unlock value
       setFilters(prev => ({
         ...prev,
-        unlockType: selectedType.unlockValue
+        unlockType: selectedType.unlockValue,
+        jobTitle: selectedType.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : ''
       }));
     } else {
-      // Clear unlock type filter for 'all' type
       setFilters(prev => ({
         ...prev,
-        unlockType: undefined
+        unlockType: undefined,
+        jobTitle: ''
       }));
     }
   };
@@ -88,66 +68,36 @@ export default function FindLeads() {
     organization: filters.organization,
     pastSpeakers: filters.pastSpeakers,
     searchAll: filters.searchAll,
-    unlockType: filters.unlockType
+    unlockType: filters.unlockType,
+    targetAudience: filters.targetAudience,
+    jobTitle: filters.jobTitle
   });
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);
   };
 
-  const handleDismissGuide = async () => {
-    try {
-      // Update the database
-      const { error } = await supabase
-        .from('profiles')
-        .update({ quick_start_guide_tip: true })
-        .eq('id', profile?.id);
-
-      if (error) throw error;
-
-      // Update local state
-      setShowGuide(false);
-    } catch (error) {
-      console.error('Error updating quick_start_guide_tip:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full bg-gray-50">
       <LeftSidebarFilters
         filters={filters}
         openSections={openSections}
-        eventsFilter={eventsFilter}
-        onEventsFilterChange={setEventsFilter}
         setFilters={setFilters}
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
+        selectedUnlockType={filters.unlockType}
       />
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {showGuide && !profileLoading && (
-            <QuickStartGuide onDismiss={handleDismissGuide} />
-          )}
-
           <SearchContainer>
             <div className="space-y-6">
+              <div className="max-w-xl">
+                <OpportunitiesFilter
+                  value={eventsFilter}
+                  onChange={setEventsFilter}
+                />
+              </div>
               <QuickLeadTypeFilter
                 selectedType={selectedLeadType}
                 onTypeChange={handleLeadTypeChange}

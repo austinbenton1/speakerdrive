@@ -50,13 +50,31 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       // Apply type-specific filters
       if (filters.selectedLeadTypes.length === 1) {
         if (filters.selectedLeadTypes[0] === 'Contact' && filters.jobTitle) {
-          filteredLeads = filteredLeads.filter(lead => 
-            lead.focus?.toLowerCase().includes(filters.jobTitle!.toLowerCase())
-          );
+          const jobTitles = filters.jobTitle
+            .split(',')
+            .map(term => term.trim().toLowerCase())
+            .filter(Boolean); // Remove empty strings
+
+          if (jobTitles.length > 0) {
+            filteredLeads = filteredLeads.filter(lead => 
+              jobTitles.some(title => 
+                lead.focus?.toLowerCase().includes(title)
+              )
+            );
+          }
         } else if (filters.selectedLeadTypes[0] === 'Event' && filters.targetAudience) {
-          filteredLeads = filteredLeads.filter(lead => 
-            lead.focus?.toLowerCase().includes(filters.targetAudience!.toLowerCase())
-          );
+          const targetAudiences = filters.targetAudience
+            .split(',')
+            .map(term => term.trim().toLowerCase())
+            .filter(Boolean); // Remove empty strings
+
+          if (targetAudiences.length > 0) {
+            filteredLeads = filteredLeads.filter(lead => 
+              targetAudiences.some(audience => 
+                lead.focus?.toLowerCase().includes(audience)
+              )
+            );
+          }
         }
       }
 
@@ -64,6 +82,38 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       if (filters.selectedEventUnlockTypes?.length === 1 && filters.selectedLeadTypes[0] === 'Event') {
         filteredLeads = filteredLeads.filter(lead => 
           filters.selectedEventUnlockTypes![0] === (lead.unlock_type.replace("Unlock ", ""))
+        );
+      }
+    }
+
+    // Filter by target audience
+    if (filters.targetAudience) {
+      const targetAudiences = filters.targetAudience
+        .split(',')
+        .map(term => term.trim().toLowerCase())
+        .filter(Boolean); // Remove empty strings
+
+      if (targetAudiences.length > 0) {
+        filteredLeads = filteredLeads.filter(lead => 
+          targetAudiences.some(audience => 
+            lead.focus?.toLowerCase().includes(audience)
+          )
+        );
+      }
+    }
+
+    // Filter by job title - only if Unlock Contact Email is selected
+    if (filters.jobTitle && filters.unlockType === 'Unlock Contact Email') {
+      const jobTitles = filters.jobTitle
+        .split(',')
+        .map(term => term.trim().toLowerCase())
+        .filter(Boolean); // Remove empty strings
+
+      if (jobTitles.length > 0) {
+        filteredLeads = filteredLeads.filter(lead => 
+          jobTitles.some(title => 
+            lead.job_title?.toLowerCase().includes(title)
+          )
         );
       }
     }

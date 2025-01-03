@@ -1,4 +1,5 @@
 import React from 'react';
+import { MapPin } from 'lucide-react';
 import FilterSection from './FilterSection';
 import MultiSelect from './MultiSelect';
 import { locations } from '../../constants/filters';
@@ -23,6 +24,7 @@ export default function LocationFilter({
   return (
     <FilterSection
       title="Location"
+      icon={MapPin}
       isOpen={isOpen}
       onToggle={onToggle}
       onUnselectAll={selectedLocations.length > 0 ? handleUnselectAll : undefined}

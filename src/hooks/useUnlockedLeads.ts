@@ -19,9 +19,8 @@ export function useUnlockedLeads() {
         const { data, error: fetchError } = await supabase
           .from('unlocked_leads')
           .select(`
-            id,
-            created_at,
             lead_id,
+            created_at,
             leads!inner (
               event_name,
               subtext,
@@ -34,7 +33,10 @@ export function useUnlockedLeads() {
           .eq('unlocked', true)
           .order('created_at', { ascending: false });
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error('Error fetching unlocked leads:', fetchError);
+          throw new Error('Failed to fetch unlocked leads');
+        }
 
         const formattedLeads = data?.map(item => ({
           id: item.lead_id,
@@ -42,12 +44,14 @@ export function useUnlockedLeads() {
           subtext: item.leads.subtext,
           industry: item.leads.industry,
           image: item.leads.image_url,
-          lead_type: item.leads.lead_type,
           unlockDate: new Date(item.created_at),
+          lead_type: item.leads.lead_type
         })) || [];
 
         setLeads(formattedLeads);
+        setError(null);
       } catch (err) {
+        console.error('Error fetching unlocked leads:', err);
         setError('Failed to load unlocked leads');
       } finally {
         setLoading(false);

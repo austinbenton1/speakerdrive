@@ -1,26 +1,20 @@
-import { supabase } from './supabase';
+import { z } from 'zod';
 
-interface ImportMetaEnv {
-  readonly VITE_SUPABASE_URL: string
-  readonly VITE_SUPABASE_ANON_KEY: string
-}
+const envSchema = z.object({
+  VITE_SUPABASE_URL: z.string().url(),
+  VITE_SUPABASE_ANON_KEY: z.string().min(1)
+});
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
+export type Env = z.infer<typeof envSchema>;
 
-export function validateEnvVars() {
-  const required = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
-  const missing = required.filter(key => !import.meta.env[key]);
-
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
-  }
-
-  // Validate Supabase URL format
+export function validateEnv(): Env {
   try {
-    new URL(import.meta.env.VITE_SUPABASE_URL);
+    return envSchema.parse({
+      VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+      VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY
+    });
   } catch (error) {
-    throw new Error('Invalid VITE_SUPABASE_URL format. Must be a valid URL.');
+    console.error('Environment validation failed:', error);
+    throw new Error('Invalid environment configuration');
   }
 }

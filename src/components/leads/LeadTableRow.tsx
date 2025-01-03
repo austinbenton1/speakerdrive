@@ -78,17 +78,17 @@ export default function LeadTableRow({
             <div className="text-[13px] text-gray-500 truncate max-w-[400px]">
               {lead.subtext}
             </div>
-            <div className="flex items-center space-x-2 text-[13px] text-gray-600 min-w-0 mt-1">
-              <UnlockButton 
-                type={lead.unlock_type} 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-              />
-            </div>
           </div>
         </div>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <UnlockButton 
+          type={lead.unlock_type} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+        />
       </td>
       <td 
         className="px-3 py-3 whitespace-nowrap max-w-[300px] w-[300px]"
@@ -100,23 +100,18 @@ export default function LeadTableRow({
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
         <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
-          {lead.lead_type}
-        </span>
-      </td>
-      <td className="px-3 py-3 whitespace-nowrap">
-        <span className="text-[13.5px] text-gray-900">
           {lead.industry}
         </span>
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
-        <div className="text-[13.5px] text-gray-500">
+        <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
           {lead.event_format || 'N/A'}
-        </div>
+        </span>
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
-        <div className="text-[13.5px] text-gray-500">
+        <span className="inline-flex px-2.5 py-1 rounded-md text-[13.5px] font-medium bg-gray-100 text-gray-900">
           {lead.organization_type || 'N/A'}
-        </div>
+        </span>
       </td>
       <td 
         className="px-3 py-3 whitespace-nowrap"

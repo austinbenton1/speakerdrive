@@ -1,39 +1,39 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import FilterSection from './FilterSection';
 import MultiSelect from './MultiSelect';
-import { eventFormats } from '../../constants/filters';
+import { industries } from '../../constants/filters';
 
-interface EventFormatFilterProps {
-  selectedFormats: string[];
-  onFormatSelect: (format: string) => void;
+interface IndustryFilterProps {
+  selectedIndustries: string[];
+  onIndustrySelect: (industry: string) => void;
   isOpen: boolean;
   onToggle: () => void;
   onUnselectAll?: () => void;
   showUnselectAll?: boolean;
 }
 
-export default function EventFormatFilter({
-  selectedFormats,
-  onFormatSelect,
+export default function IndustryFilter({
+  selectedIndustries,
+  onIndustrySelect,
   isOpen,
   onToggle,
   onUnselectAll,
   showUnselectAll
-}: EventFormatFilterProps) {
+}: IndustryFilterProps) {
   return (
     <FilterSection
-      title="Event Format"
-      icon={Calendar}
+      title="Industry Category"
+      icon={Building2}
       isOpen={isOpen}
       onToggle={onToggle}
       onUnselectAll={onUnselectAll}
       showUnselectAll={showUnselectAll}
     >
       <MultiSelect
-        options={eventFormats}
-        selected={selectedFormats}
-        onChange={onFormatSelect}
+        options={industries}
+        selected={selectedIndustries}
+        onChange={onIndustrySelect}
       />
     </FilterSection>
   );

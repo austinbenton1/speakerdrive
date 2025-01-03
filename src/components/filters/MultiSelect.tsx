@@ -26,7 +26,7 @@ export default function MultiSelect({ options, selected, onChange }: MultiSelect
               type="checkbox"
               checked={selected.includes(option)}
               onChange={() => onChange(option)}
-              className="h-4 w-4 text-gray-600 rounded border-gray-300 focus:ring-gray-500"
+              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
             />
             <span className="ml-3 text-sm">{option}</span>
           </div>

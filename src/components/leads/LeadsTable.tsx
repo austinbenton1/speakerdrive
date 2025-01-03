@@ -103,6 +103,15 @@ export default function LeadsTable({ leads }: Props) {
                 Event
               </HeaderCell>
               <HeaderCell 
+                field="unlock_type" 
+                sortField={sortField} 
+                sortDirection={sortDirection} 
+                onSort={toggleSort}
+                className="w-[150px]"
+              >
+                Unlock Type
+              </HeaderCell>
+              <HeaderCell 
                 field="focus" 
                 sortField={sortField} 
                 sortDirection={sortDirection} 
@@ -110,9 +119,6 @@ export default function LeadsTable({ leads }: Props) {
                 className="max-w-[300px] w-[300px]"
               >
                 Target Audience
-              </HeaderCell>
-              <HeaderCell field="lead_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Lead Type
               </HeaderCell>
               <HeaderCell field="industry" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Industry Category

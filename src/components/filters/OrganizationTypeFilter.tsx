@@ -1,4 +1,5 @@
 import React from 'react';
+import { Users } from 'lucide-react';
 import FilterSection from './FilterSection';
 import MultiSelect from './MultiSelect';
 import { organizationTypes } from '../../constants/filters';
@@ -8,7 +9,8 @@ interface OrganizationTypeFilterProps {
   onOrgTypeSelect: (orgType: string) => void;
   isOpen: boolean;
   onToggle: () => void;
-  onUnselectAll: () => void;
+  onUnselectAll?: () => void;
+  showUnselectAll?: boolean;
 }
 
 export default function OrganizationTypeFilter({
@@ -17,14 +19,16 @@ export default function OrganizationTypeFilter({
   isOpen,
   onToggle,
   onUnselectAll,
+  showUnselectAll
 }: OrganizationTypeFilterProps) {
   return (
     <FilterSection
       title="Organization Type"
+      icon={Users}
       isOpen={isOpen}
       onToggle={onToggle}
       onUnselectAll={onUnselectAll}
-      showUnselectAll={selectedOrgTypes.length > 0}
+      showUnselectAll={showUnselectAll}
     >
       <MultiSelect
         options={organizationTypes}
