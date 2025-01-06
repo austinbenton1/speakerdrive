@@ -62,7 +62,6 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
       subtext: lead.subtext
     }));
   } catch (error) {
-    console.error('Error fetching available leads:', error);
     throw error;
   }
 }

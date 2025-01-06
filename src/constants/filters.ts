@@ -47,7 +47,7 @@ export const eventFormats = [
 
 export const organizationTypes = [
   'Corporation',
-  'Education Institution',
+  'Educational Institution',
   'Government Body',
   'Professional Association',
   'Small/Medium Business',
