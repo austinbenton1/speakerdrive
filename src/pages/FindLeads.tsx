@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
+import { getUniqueLeads } from '../utils/deduplication';
 import LeadsTable from '../components/leads/LeadsTable';
 import SearchContainer from '../components/SearchContainer';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
@@ -15,6 +16,7 @@ export default function FindLeads() {
   const [searchParams] = useSearchParams();
   const [eventsFilter, setEventsFilter] = useState(() => searchParams.get('event') || '');
   const [selectedLeadType, setSelectedLeadType] = useState<LeadType>('all');
+  const [showAllEvents, setShowAllEvents] = useState(true);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   
   const {
@@ -25,20 +27,29 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
-  // Initialize filters with URL parameters
-  useEffect(() => {
-    const organization = searchParams.get('organization');
-    if (organization) {
-      setFilters(prev => ({
-        ...prev,
-        organization
-      }));
-      setOpenSections(prev => ({
-        ...prev,
-        moreFilters: true
-      }));
-    }
-  }, [searchParams, setFilters, setOpenSections]);
+  // Apply all filters first
+  const filteredLeads = useLeadsFilter(availableLeads, {
+    opportunitiesFilter: eventsFilter,
+    selectedLeadTypes: ['Event', 'Contact'],
+    selectedIndustries: filters.industry,
+    selectedLocations: filters.location,
+    selectedEventFormats: filters.eventFormat || [],
+    selectedOrgTypes: filters.organizationType || [],
+    organization: filters.organization,
+    pastSpeakers: filters.pastSpeakers,
+    searchAll: filters.searchAll,
+    unlockType: filters.unlockType,
+    targetAudience: filters.targetAudience,
+    jobTitle: filters.jobTitle
+  });
+
+  // Then apply unique events filter if enabled
+  const displayedLeads = showAllEvents ? filteredLeads : getUniqueLeads(filteredLeads);
+  const uniqueLeadsCount = getUniqueLeads(filteredLeads).length;
+
+  const handleLeadClick = (leadId: string) => {
+    navigate(`/leads/${leadId}`);
+  };
 
   const handleLeadTypeChange = (type: LeadType) => {
     setSelectedLeadType(type);
@@ -58,25 +69,6 @@ export default function FindLeads() {
     }
   };
 
-  const filteredLeads = useLeadsFilter(availableLeads, {
-    opportunitiesFilter: eventsFilter,
-    selectedLeadTypes: ['Event', 'Contact'],
-    selectedIndustries: filters.industry,
-    selectedLocations: filters.location,
-    selectedEventFormats: filters.eventFormat || [],
-    selectedOrgTypes: filters.organizationType || [],
-    organization: filters.organization,
-    pastSpeakers: filters.pastSpeakers,
-    searchAll: filters.searchAll,
-    unlockType: filters.unlockType,
-    targetAudience: filters.targetAudience,
-    jobTitle: filters.jobTitle
-  });
-
-  const handleLeadClick = (leadId: string) => {
-    navigate(`/leads/${leadId}`);
-  };
-
   return (
     <div className="flex h-full bg-gray-50">
       <LeftSidebarFilters
@@ -86,6 +78,10 @@ export default function FindLeads() {
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
         selectedUnlockType={filters.unlockType}
+        showAllEvents={showAllEvents}
+        onViewToggle={() => setShowAllEvents(!showAllEvents)}
+        totalCount={filteredLeads.length}
+        uniqueCount={uniqueLeadsCount}
       />
 
       <div className="flex-1 overflow-auto">
@@ -107,7 +103,7 @@ export default function FindLeads() {
 
           <div className="bg-white border border-gray-200 rounded-lg mt-6">
             <LeadsTable 
-              leads={filteredLeads}
+              leads={displayedLeads}
               onLeadClick={handleLeadClick}
             />
           </div>

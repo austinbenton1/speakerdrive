@@ -4,11 +4,16 @@ import { Search } from 'lucide-react';
 interface FilterSearchProps {
   value: string;
   onChange: (value: string) => void;
-  placeholder: string;
+  placeholder?: string;
   label?: string;
 }
 
-export default function FilterSearch({ value, onChange, placeholder, label }: FilterSearchProps) {
+export default function FilterSearch({ 
+  value, 
+  onChange, 
+  placeholder = "Search...", 
+  label 
+}: FilterSearchProps) {
   return (
     <div>
       {label && (
@@ -22,7 +27,7 @@ export default function FilterSearch({ value, onChange, placeholder, label }: Fi
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="eg Leadership Summit"
+          placeholder={placeholder}
           className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-md text-[14px] placeholder:text-[14px] focus:ring-1 focus:ring-blue-500/20 focus:border-blue-500/40"
         />
       </div>

@@ -1,0 +1,83 @@
+-- Drop existing table and constraints
+DROP TABLE IF EXISTS profiles CASCADE;
+
+-- Create new profiles table with correct schema
+CREATE TABLE profiles (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  auth_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  email text,
+  display_name text,
+  avatar_url text,
+  user_type text DEFAULT 'Client',
+  user_role text DEFAULT 'Owner',
+  services text[],
+  industries text[],
+  quick_start_guide_tip boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  banned boolean DEFAULT false,
+  banned_at timestamptz,
+  banned_by uuid REFERENCES auth.users(id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_profiles_auth_id ON profiles(auth_id);
+CREATE INDEX idx_profiles_email ON profiles(email);
+CREATE INDEX idx_profiles_user_type ON profiles(user_type);
+CREATE INDEX idx_profiles_banned ON profiles(banned);
+
+-- Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+CREATE POLICY "Users can view own profile"
+ON profiles FOR SELECT
+USING (auth.uid() = auth_id);
+
+CREATE POLICY "Users can update own profile"
+ON profiles FOR UPDATE
+USING (auth.uid() = auth_id);
+
+CREATE POLICY "Users can insert own profile"
+ON profiles FOR INSERT
+WITH CHECK (auth.uid() = auth_id);
+
+-- Add admin policies
+CREATE POLICY "Admins can view all profiles"
+ON profiles FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.auth_id = auth.uid()
+    AND profiles.user_type = 'Admin'
+  )
+);
+
+CREATE POLICY "Admins can update all profiles"
+ON profiles FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.auth_id = auth.uid()
+    AND profiles.user_type = 'Admin'
+  )
+);
+
+-- Add updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_profiles_updated_at
+    BEFORE UPDATE ON profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
