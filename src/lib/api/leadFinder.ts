@@ -28,15 +28,16 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
         lead_type,
         unlock_type,
         industry,
-        domain_type,
         organization,
-        organization_type,
         event_info,
         event_name,
-        location,
         event_format,
         job_title,
-        subtext
+        subtext,
+        past_speakers_events,
+        region,
+        state,
+        city
       `)
       .not('id', 'in', `(${(unlockedLeads || []).map(ul => ul.lead_id).join(',')})`);
 
@@ -51,15 +52,16 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
       lead_type: lead.lead_type,
       unlock_type: lead.unlock_type,
       industry: lead.industry,
-      domain_type: lead.domain_type,
       organization: lead.organization,
-      organization_type: lead.organization_type,
       event_info: lead.event_info,
       event_name: lead.event_name,
-      location: lead.location,
       event_format: lead.event_format,
       job_title: lead.job_title,
-      subtext: lead.subtext
+      subtext: lead.subtext,
+      past_speakers_events: lead.past_speakers_events,
+      region: lead.region,
+      state: lead.state,
+      city: lead.city
     }));
   } catch (error) {
     throw error;

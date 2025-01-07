@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase, Lock, Mail, DollarSign, KeyRound } from 'lucide-react';
+import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase, Lock, Mail, DollarSign, KeyRound, Unlock } from 'lucide-react';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
 import { QuickInfoSection } from './sidebar/QuickInfoSection';
 import { OrganizationSection } from './sidebar/OrganizationSection';
@@ -13,6 +13,20 @@ interface LeadDetailSidebarProps {
 
 export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
   const { isUnlocked, unlockValue } = useLeadUnlock(lead.id);
+
+  const formatLocation = (region?: string, state?: string | string[], city?: string | string[]) => {
+    const parts = [];
+    if (region) parts.push(region);
+    if (state) {
+      const stateStr = Array.isArray(state) ? state.join(', ') : state;
+      parts.push(stateStr);
+    }
+    if (city) {
+      const cityStr = Array.isArray(city) ? city.join(', ') : city;
+      parts.push(cityStr);
+    }
+    return parts.join(', ') || 'Location not specified';
+  };
 
   const quickInfoItems = [
     {
@@ -34,7 +48,7 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
     {
       icon: Building2,
       label: 'Event Category',
-      value: lead.industryCategory,
+      value: lead.industry,
       tooltip: lead.tooltipIndustryCategory,
       show: true,
     },
@@ -48,14 +62,11 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
     {
       icon: MapPin,
       label: 'Event Location',
-      value: lead.location,
+      value: formatLocation(lead.region, lead.state, lead.city),
       tooltip: lead.tooltipLocation,
-      show: !!lead.location,
-    },
+      show: !!(lead.region || lead.state || lead.city),
+    }
   ];
-
-  // Extract job title from subtext (format: "Name, Job Title")
-  const jobTitle = lead.subtext ? lead.subtext.split(', ').slice(1).join(', ') : null;
 
   const organizationItems = [
     {
@@ -107,7 +118,7 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
 
   const unlockTypeItems = [
     {
-      icon: DollarSign,
+      icon: Unlock,
       label: 'Value',
       value: lead.unlockType?.replace('Unlock ', '') || 'Not specified',
       show: true,

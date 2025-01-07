@@ -20,7 +20,7 @@ export default function LeadTableRow({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
-  const UnlockButton = ({ type, onClick }: { type: string; onClick: (e: React.MouseEvent) => void }) => {
+  const UnlockButton = ({ type }: { type: string }) => {
     const buttonStyles = {
       'Unlock Event URL': 'bg-emerald-500/80 hover:bg-emerald-500/90',
       'Unlock Contact Email': 'bg-blue-500/80 hover:bg-blue-500/90',
@@ -48,7 +48,10 @@ export default function LeadTableRow({
     return (
       <button 
         className={`inline-flex items-center px-[12px] py-[4px] rounded-full text-[10px] font-medium text-white/80 ${buttonStyles} transition-colors`}
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
       >
         {icons}
         {type.replace('Unlock ', '')}
@@ -82,13 +85,7 @@ export default function LeadTableRow({
         </div>
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
-        <UnlockButton 
-          type={lead.unlock_type} 
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-        />
+        <UnlockButton type={lead.unlock_type} />
       </td>
       <td 
         className="px-3 py-3 whitespace-nowrap max-w-[300px] w-[300px]"

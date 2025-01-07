@@ -1,44 +1,81 @@
 import React from 'react';
-import { Calendar, FileText, DollarSign, Network } from 'lucide-react';
+import { FileText, DollarSign, Network, Calendar, Tag } from 'lucide-react';
 import type { SpeakerLead } from '../../types';
-
-interface SectionProps {
-  icon: React.ElementType;
-  title: string;
-  children: React.ReactNode;
-}
-
-function Section({ icon: Icon, title, children }: SectionProps) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200/75 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-      <div className="border-b border-gray-200">
-        <div className="px-6 py-4 bg-gradient-to-r from-gray-100 via-gray-50 to-white">
-          <div className="flex items-center">
-            <div className="p-1.5 rounded-md bg-white shadow-sm border border-gray-100">
-              <Icon className="w-4 h-4 text-[#0066FF]" />
-            </div>
-            <h2 className="ml-3 text-sm font-semibold text-gray-900">{title}</h2>
-          </div>
-        </div>
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
-}
-
-function ContentBlock({ title, content }: { title?: string; content: string }) {
-  return (
-    <div className="space-y-2">
-      {title && (
-        <h3 className="text-sm font-medium text-gray-700">{title}</h3>
-      )}
-      <p className="text-[15px] text-gray-600 whitespace-pre-line">{content}</p>
-    </div>
-  );
-}
+import { Section } from './sections/Section';
+import { ValueProfileContent } from './sections/ValueProfileContent';
 
 export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
   const eventName = lead.eventName || lead.name;
+
+  const processOutreachContent = (content: string) => {
+    if (!content) return [];
+    
+    // First replace double newlines after "Event Expired"
+    const processedContent = content.replace(/(Event Expired.*?)(\n\n)/g, '$1\n');
+    
+    // Split into blocks by double newlines
+    const blocks = processedContent.split('\n\n').filter(block => block.trim());
+    
+    const items: { title: string; pillText?: string; description: string }[] = [];
+    let currentItem: { title: string; pillText?: string; description: string } | null = null;
+
+    const processTitle = (title: string): { text: string; pillText?: string } => {
+      // First check if title ends with ' ->' and remove it if it does
+      if (title.trim().endsWith(' ->')) {
+        return { text: title.replace(/\s*->$/, '') };
+      }
+
+      // Then check for arrow with content after it
+      const arrowMatch = title.match(/(.*?)\s*->\s*(.*)/);
+      if (arrowMatch && arrowMatch[2]) {
+        return {
+          text: `${arrowMatch[1].trim()} →`,
+          pillText: arrowMatch[2].trim()
+        };
+      }
+      
+      return { text: title };
+    };
+
+    blocks.forEach(block => {
+      const parts = block.split('\n');
+      
+      if (parts.length >= 2) {
+        // If we have a block with newline, create a new item
+        if (currentItem) {
+          items.push(currentItem);
+        }
+        const processed = processTitle(parts[0].trim());
+        currentItem = {
+          title: processed.text,
+          pillText: processed.pillText,
+          description: parts.slice(1).join('\n').trim()
+        };
+      } else if (currentItem && block.trim()) {
+        // If we have a block without newline and there's a current item,
+        // append to its description
+        currentItem.description += '\n\n' + block.trim();
+      } else if (block.trim()) {
+        // If we have a block without newline and no current item,
+        // treat it as a new item with empty title
+        const processed = processTitle(block.trim());
+        currentItem = {
+          title: processed.text,
+          pillText: processed.pillText,
+          description: ''
+        };
+      }
+    });
+
+    // Don't forget to add the last item
+    if (currentItem) {
+      items.push(currentItem);
+    }
+
+    return items;
+  };
+
+  const keywords = lead.focus?.split(',').map(k => k.trim()).filter(Boolean) || [];
 
   return (
     <div className="space-y-6">
@@ -64,205 +101,93 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
                 })}
             </div>
           ) : (
-            <ContentBlock content="No event snapshot available" />
+            <p className="text-[15px] text-gray-600">No event snapshot available</p>
           )}
         </div>
       </Section>
 
+      {keywords.length > 0 && (
+        <Section icon={Tag} title={`Event Keywords: ${eventName}`}>
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((keyword, index) => (
+              <span 
+                key={index}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+              >
+                {keyword}
+              </span>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section icon={DollarSign} title={`Opportunity Profile: ${eventName}`}>
-        <div className="space-y-6">
-          {lead.valueProfile ? (
-            <div className="space-y-6">
-              {(() => {
-                const parts = lead.valueProfile
-                  .split('\n\n')
-                  .filter(part => part.trim());
-                
-                const items: { title?: string; description?: string }[] = [];
-                let currentItem: { title?: string; description?: string } = {};
-
-                parts.forEach((part) => {
-                  if (part.includes('→')) {
-                    // If we have a complete item, push it
-                    if (currentItem.title || currentItem.description) {
-                      items.push(currentItem);
-                    }
-                    // Use the entire part including the arrow as the title
-                    currentItem = {
-                      title: part.trim()
-                    };
-                  } else {
-                    if (currentItem.description) {
-                      currentItem.description += '\n\n' + part;
-                    } else {
-                      currentItem.description = part;
-                    }
-                  }
-                });
-
-                // Don't forget to push the last item
-                if (currentItem.title || currentItem.description) {
-                  items.push(currentItem);
-                }
-
-                return items.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    {item.title && (
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {item.title}
-                      </h3>
-                    )}
-                    {item.description && (
-                      <p className="text-[15px] text-gray-600 whitespace-pre-wrap">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                ));
-              })()}
-            </div>
-          ) : (
-            <ContentBlock content="No opportunity profile available" />
-          )}
-        </div>
+        <ValueProfileContent valueProfile={lead.valueProfile} />
       </Section>
 
       <Section icon={Network} title={`Outreach Profile: ${eventName}`}>
-        <div className="space-y-6">
-          {lead.outreachPathways ? (
-            <div className="space-y-6">
-              {(() => {
-                const parts = lead.outreachPathways
-                  .split('\n\n')
-                  .filter(part => part.trim());
-                
-                const items: { title?: string; description?: string }[] = [];
-                let currentItem: { title?: string; description?: string } = {};
-
-                parts.forEach((part, index) => {
-                  const hasArrowWithNewline = part.match(/(.*)->\s*\n([\s\S]*)/);
-                  const hasArrowWithoutNewline = part.includes('->') && !hasArrowWithNewline;
-
-                  if (hasArrowWithoutNewline) {
-                    // If we have a complete item, push it
-                    if (currentItem.title || currentItem.description) {
-                      items.push(currentItem);
-                    }
-                    // Use the entire part as the title
-                    currentItem = {
-                      title: part.trim()
-                    };
-                  } else if (hasArrowWithNewline) {
-                    // If we have a complete item, push it
-                    if (currentItem.title || currentItem.description) {
-                      items.push(currentItem);
-                    }
-                    // Extract title and description from the match
-                    currentItem = {
-                      title: hasArrowWithNewline[1].trim(),
-                      description: hasArrowWithNewline[2].trim()
-                    };
-                  } else {
-                    if (currentItem.description) {
-                      currentItem.description += '\n\n' + part;
-                    } else {
-                      currentItem.description = part;
-                    }
-                  }
-                });
-
-                // Don't forget to push the last item
-                if (currentItem.title || currentItem.description) {
-                  items.push(currentItem);
-                }
-
-                return items.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    {item.title && (
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {item.title}
-                      </h3>
-                    )}
-                    {item.description && (
-                      <p className="text-[15px] text-gray-600 whitespace-pre-wrap">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                ));
-              })()}
-            </div>
-          ) : (
-            <ContentBlock content="No outreach profile available" />
-          )}
-        </div>
+        {lead.outreachPathways ? (
+          <div className="space-y-6">
+            {processOutreachContent(lead.outreachPathways).map((item, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {item.title}
+                  </h3>
+                  {item.pillText && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      {item.pillText}
+                    </span>
+                  )}
+                </div>
+                {item.description && (
+                  <p className="text-[15px] text-gray-600 whitespace-pre-line">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[15px] text-gray-600">No outreach profile available</p>
+        )}
       </Section>
 
       <Section icon={Calendar} title={`Event Summary: ${eventName}`}>
         <div className="space-y-6">
           {lead.eventInfo ? (
             <div className="space-y-6">
-              {(() => {
-                const parts = lead.eventInfo
-                  .split('\n\n')
-                  .filter(part => part.trim());
-                
-                const items: { title?: string; description?: string }[] = [];
-                let currentItem: { title?: string; description?: string } = {};
-
-                parts.forEach((part, index) => {
-                  if (part.includes('->')) {
-                    // If we have a complete item, push it
-                    if (currentItem.title || currentItem.description) {
-                      items.push(currentItem);
-                    }
-                    const [title, ...descParts] = part.split('->');
-                    currentItem = {
-                      title: title.trim(),
-                      description: descParts.join('->').trim()
-                    };
-                  } else if (part.includes(':')) {
-                    // If we have a complete item, push it
-                    if (currentItem.title || currentItem.description) {
-                      items.push(currentItem);
-                    }
-                    const [title, ...descParts] = part.split(':');
-                    currentItem = {
-                      title: title.trim(),
-                      description: descParts.join(':').trim()
-                    };
-                  } else {
-                    if (currentItem.description) {
-                      currentItem.description += '\n\n' + part;
-                    } else {
-                      currentItem.description = part;
-                    }
+              {lead.eventInfo.split('\n\n')
+                .filter(part => part.trim())
+                .map((item, index) => {
+                  // Only apply bold styling to "About This Event ->"
+                  if (item.toLowerCase().startsWith('about this event')) {
+                    const [title, ...descriptionParts] = item.split('->').map(part => part.trim());
+                    const description = descriptionParts.join('->').trim();
+                    return (
+                      <div key={index} className="space-y-2">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {`${title} →`}
+                        </h3>
+                        <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
+                          {description}
+                        </p>
+                      </div>
+                    );
                   }
-                });
-
-                // Don't forget to push the last item
-                if (currentItem.title || currentItem.description) {
-                  items.push(currentItem);
-                }
-
-                return items.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    {item.title && (
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {item.title}
-                      </h3>
-                    )}
-                    {item.description && (
-                      <p className="text-[15px] text-gray-600 whitespace-pre-wrap">
-                        {item.description}
+                  
+                  // For all other content, render as regular text
+                  return (
+                    <div key={index} className="space-y-2">
+                      <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
+                        {item}
                       </p>
-                    )}
-                  </div>
-                ));
-              })()}
+                    </div>
+                  );
+                })}
             </div>
           ) : (
-            <ContentBlock content="No event summary available" />
+            <p className="text-[15px] text-gray-600">No event summary available</p>
           )}
         </div>
       </Section>

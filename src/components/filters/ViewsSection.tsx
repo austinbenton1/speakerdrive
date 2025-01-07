@@ -17,16 +17,24 @@ export default function ViewsSection({
 }: ViewsSectionProps) {
   return (
     <div>
-      <div className="pl-2 mb-4">
-        <h2 className="text-sm font-medium tracking-wide text-gray-500 uppercase">
-          Views
-        </h2>
-      </div>
+      <h2 className="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        Views
+      </h2>
       
       <div className="px-3 space-y-2">
-        <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">Event Display</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Event Display</span>
+          </div>
+          <a 
+            href="https://google.com" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-xs text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
+          >
+            Learn more
+          </a>
         </div>
 
         <OutlinedToggle

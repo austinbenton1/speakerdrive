@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, ExternalLink, Key } from 'lucide-react';
 import type { QuickInfoItem } from '../../../types/leads';
 import { SidebarSection } from './SidebarSection';
 
@@ -18,37 +18,17 @@ export function AllUnlocksSection({ items }: AllUnlocksSectionProps) {
           .filter(item => item.show)
           .map((item, index) => (
             <div key={index} className="flex items-start">
-              {item.icon && (
-                <div className="flex-shrink-0">
-                  <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
-              )}
-              <div className={`${item.icon ? 'ml-3' : ''} flex-grow`}>
-                {item.label && (
-                  <span className="text-sm text-gray-500">{item.label}</span>
-                )}
-                <div className="flex items-center gap-1">
-                  {item.isLink ? (
-                    <button
-                      onClick={item.onClick}
-                      className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-                    >
-                      {item.value}
-                    </button>
-                  ) : (
-                    <span className="text-sm text-gray-900">{item.value}</span>
-                  )}
-                  {item.tooltip && (
-                    <div className="relative group">
-                      <button className="w-4 h-4 text-gray-400">
-                        <HelpCircle className="w-4 h-4" />
-                      </button>
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
-                        {item.tooltip}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex-shrink-0">
+                <Key className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3 flex-grow">
+                <button
+                  onClick={item.onClick}
+                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1.5"
+                >
+                  <span className="text-left">{item.value.replace('View More - ', '')}</span>
+                  <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                </button>
               </div>
             </div>
           ))}

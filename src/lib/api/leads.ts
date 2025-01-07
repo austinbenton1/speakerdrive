@@ -13,12 +13,9 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         lead_type,
         unlock_type,
         industry,
-        domain_type,
         organization,
-        organization_type,
         event_name,
         event_url,
-        location,
         created_at,
         event_info,
         detailed_info,
@@ -27,13 +24,15 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         unlock_value,
         info_url,
         event_format,
-        tooltip_location,
         tooltip_industry_category,
         tooltip_event_format,
         tooltip_organization,
-        tooltip_organization_type,
+        tooltip_location,
         job_title,
-        subtext
+        subtext,
+        region,
+        state,
+        city
       `)
       .eq('id', id)
       .single();
@@ -49,16 +48,12 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       lead_name: data.lead_name,
       focus: data.focus,
       unlockType: data.unlock_type,
-      industryCategory: data.industry,
-      domainType: data.domain_type,
       leadType: data.lead_type,
-      isUnlocked: false,
+      industry: data.industry,
+      organization: data.organization,
       eventName: data.event_name,
       eventUrl: data.event_url,
-      organization: data.organization,
-      organizationType: data.organization_type,
-      location: data.location,
-      addedDate: data.created_at,
+      createdAt: data.created_at,
       eventInfo: data.event_info,
       detailedInfo: data.detailed_info,
       valueProfile: data.value_profile,
@@ -66,13 +61,15 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       unlockValue: data.unlock_value,
       infoUrl: data.info_url,
       eventFormat: data.event_format,
-      tooltipLocation: data.tooltip_location,
       tooltipIndustryCategory: data.tooltip_industry_category,
       tooltipEventFormat: data.tooltip_event_format,
       tooltipOrganization: data.tooltip_organization,
-      tooltipOrganizationType: data.tooltip_organization_type,
-      job_title: data.job_title,
-      subtext: data.subtext
+      tooltipLocation: data.tooltip_location,
+      jobTitle: data.job_title,
+      subtext: data.subtext,
+      region: data.region,
+      state: data.state,
+      city: data.city
     };
   } catch (error) {
     console.error('Error fetching lead:', error);

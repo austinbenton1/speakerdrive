@@ -3,11 +3,10 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { Lead } from '../../types';
 import { useTableSort, type SortField } from '../../hooks/useTableSort';
 import { usePagination } from '../../hooks/usePagination';
-import { useLeadVisit } from '../../hooks/useLeadVisit';
+import { useNavigate } from 'react-router-dom';
 import TableHeader from './TableHeader';
 import TablePagination from './TablePagination';
 import LeadTableRow from './LeadTableRow';
-import EmptyState from './EmptyState';
 
 interface Props {
   leads: Lead[];
@@ -30,20 +29,18 @@ const HeaderCell = ({
   sortField, 
   sortDirection, 
   onSort,
-  className = '',
-  hidden = false
+  className = ''
 }: { 
   children: React.ReactNode, 
   field: SortField, 
   sortField: SortField | null, 
   sortDirection: 'asc' | 'desc' | null,
   onSort: (field: SortField) => void,
-  className?: string,
-  hidden?: boolean
+  className?: string
 }) => (
   <th 
     scope="col" 
-    className={`${className} px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer ${hidden ? 'hidden' : ''}`}
+    className={`${className} px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer`}
     onClick={() => onSort(field)}
   >
     <div className="flex items-center space-x-1">
@@ -54,34 +51,16 @@ const HeaderCell = ({
 );
 
 export default function LeadsTable({ leads }: Props) {
+  const navigate = useNavigate();
   const { sortField, sortDirection, toggleSort } = useTableSort();
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
-  const { visitLead, isRecording } = useLeadVisit();
 
-  const stickyColumnStyle = "bg-white/95 backdrop-blur-sm";
-  const stickyColumnShadow = "shadow-[8px_0_16px_-6px_rgba(0,0,0,0.2)]";
-
-  const sortedLeads = [...leads].sort((a, b) => {
-    if (!sortField || !sortDirection) return 0;
-
-    const aValue = a[sortField]?.toString().toLowerCase() || '';
-    const bValue = b[sortField]?.toString().toLowerCase() || '';
-
-    if (sortDirection === 'asc') {
-      return aValue.localeCompare(bValue);
-    } else {
-      return bValue.localeCompare(aValue);
-    }
-  });
-
-  const paginatedLeads = paginate(sortedLeads);
-
-  if (leads.length === 0) {
-    return <EmptyState />;
-  }
+  const handleLeadClick = (leadId: string) => {
+    navigate(`/leads/${leadId}`);
+  };
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden ${isRecording ? 'opacity-75' : ''}`}>
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <TableHeader 
         pageSize={pageSize} 
         onPageSizeChange={setPageSize} 
@@ -89,39 +68,27 @@ export default function LeadsTable({ leads }: Props) {
         currentPage={currentPage}
       />
       
-      <div className="overflow-x-auto relative">
-        <table className="min-w-full">
+      <div className="overflow-x-auto">
+        <table className="min-w-full relative">
           <thead className="bg-white border-b border-gray-200">
             <tr>
-              <HeaderCell
-                field="event_name"
-                sortField={sortField}
-                sortDirection={sortDirection}
+              <HeaderCell 
+                field="event_name" 
+                sortField={sortField} 
+                sortDirection={sortDirection} 
                 onSort={toggleSort}
-                className={`sticky left-0 z-10 ${stickyColumnStyle} ${stickyColumnShadow} min-w-[500px] w-[500px]`}
+                className="sticky left-0 z-20 bg-white"
               >
                 Event
               </HeaderCell>
-              <HeaderCell 
-                field="unlock_type" 
-                sortField={sortField} 
-                sortDirection={sortDirection} 
-                onSort={toggleSort}
-                className="w-[150px]"
-              >
+              <HeaderCell field="unlock_type" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Unlock Type
               </HeaderCell>
-              <HeaderCell 
-                field="focus" 
-                sortField={sortField} 
-                sortDirection={sortDirection} 
-                onSort={toggleSort}
-                className="max-w-[300px] w-[300px]"
-              >
-                Target Audience
+              <HeaderCell field="focus" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
+                Event Audience
               </HeaderCell>
               <HeaderCell field="industry" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
-                Industry Category
+                Event Category
               </HeaderCell>
               <HeaderCell field="event_format" sortField={sortField} sortDirection={sortDirection} onSort={toggleSort}>
                 Event Format
@@ -137,14 +104,14 @@ export default function LeadsTable({ leads }: Props) {
               </HeaderCell>
             </tr>
           </thead>
-          <tbody className="bg-white">
-            {paginatedLeads.map((lead) => (
+          <tbody className="bg-white divide-y divide-gray-200">
+            {paginate(leads).map((lead) => (
               <LeadTableRow
                 key={lead.id}
                 lead={lead}
-                onClick={() => visitLead(lead.id)}
-                stickyColumnStyle={stickyColumnStyle}
-                stickyColumnShadow={stickyColumnShadow}
+                onClick={() => handleLeadClick(lead.id)}
+                stickyColumnStyle="bg-white"
+                stickyColumnShadow="shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
               />
             ))}
           </tbody>

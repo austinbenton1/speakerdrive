@@ -50,10 +50,10 @@ export default function LeadDetailHeader({
                 <img
                   src={lead.image}
                   alt={lead.eventName || lead.name}
-                  className={`h-20 w-20 rounded-xl object-cover ring-4 ring-white shadow-lg ${
+                  className={`h-20 w-20 rounded-xl object-cover shadow-lg ${
                     lead.leadType === 'Contact'
-                      ? 'ring-blue-100/50'
-                      : 'ring-emerald-100/50'
+                      ? 'ring-4 ring-blue-100/50'
+                      : 'ring-4 ring-emerald-100/50'
                   }`}
                 />
               </div>

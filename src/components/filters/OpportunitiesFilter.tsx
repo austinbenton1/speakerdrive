@@ -12,7 +12,7 @@ export default function OpportunitiesFilter({ value, onChange }: OpportunitiesFi
       <div className="flex items-center gap-2 mb-2">
         <Search className="w-4 h-4 text-blue-600" />
         <label className="block text-sm font-semibold text-gray-900">
-          Search Events
+          Search Event Keywords
         </label>
       </div>
       <div className="relative group">
@@ -34,7 +34,7 @@ export default function OpportunitiesFilter({ value, onChange }: OpportunitiesFi
         </div>
       </div>
       <p className="mt-2 text-xs text-gray-500">
-        Search across all available speaking opportunities
+        Search across all available opportunities
       </p>
     </div>
   );

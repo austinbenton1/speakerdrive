@@ -10,14 +10,15 @@ const RETRY_DELAY = 1000; // 1 second
 
 async function retryableRequest<T>(
   request: () => Promise<T>,
-  retries = MAX_RETRIES
+  retries = MAX_RETRIES,
+  delay = RETRY_DELAY
 ): Promise<T> {
   try {
     return await request();
   } catch (error) {
-    if (retries > 0 && error instanceof Error && error.message.includes('Failed to fetch')) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return retryableRequest(request, retries - 1);
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryableRequest(request, retries - 1, delay * 2); // Exponential backoff
     }
     throw error;
   }
@@ -30,37 +31,24 @@ export const supabase = createClient<Database>(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      storageKey: 'supabase.auth.token',
-      flowType: 'pkce'
+      detectSessionInUrl: true
     },
     global: {
-      headers: {
-        'X-Client-Info': 'speakerdrive-web'
-      }
-    },
-    db: {
-      schema: 'public'
-    },
-    // Add request interceptor for retries
-    fetch: (url, options) => {
-      return retryableRequest(() => fetch(url, options));
+      fetch: (...args) => retryableRequest(() => fetch(...args))
     }
   }
 );
 
-// Add connection status check
+// Add connection status check with retry
 export async function checkSupabaseConnection(): Promise<boolean> {
-  try {
+  return retryableRequest(async () => {
     const { data, error } = await supabase.from('profiles').select('id').limit(1);
     return !error;
-  } catch {
-    return false;
-  }
+  });
 }
 
-supabase.auth.onAuthStateChange((event) => {
+// Handle auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
     localStorage.removeItem('supabase.auth.token');
   }

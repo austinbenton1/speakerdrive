@@ -32,15 +32,17 @@ export default function FindLeads() {
     opportunitiesFilter: eventsFilter,
     selectedLeadTypes: ['Event', 'Contact'],
     selectedIndustries: filters.industry,
-    selectedLocations: filters.location,
     selectedEventFormats: filters.eventFormat || [],
     selectedOrgTypes: filters.organizationType || [],
     organization: filters.organization,
     pastSpeakers: filters.pastSpeakers,
     searchAll: filters.searchAll,
     unlockType: filters.unlockType,
-    targetAudience: filters.targetAudience,
-    jobTitle: filters.jobTitle
+    targetAudience: filters.targetAudience || [],
+    jobTitle: filters.jobTitle,
+    region: filters.region,
+    state: filters.state || [],
+    city: filters.city || []
   });
 
   // Then apply unique events filter if enabled

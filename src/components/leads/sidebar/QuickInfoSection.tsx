@@ -22,7 +22,19 @@ export function QuickInfoSection({ items }: QuickInfoSectionProps) {
                 <item.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
               </div>
               <div className="ml-3 flex-grow">
-                <span className="text-sm text-gray-500">{item.label}</span>
+                <div className="flex items-center gap-1 mb-0.5">
+                  <span className="text-sm text-gray-500">{item.label}</span>
+                  {item.tooltip && (
+                    <div className="relative group">
+                      <button className="w-4 h-4 text-gray-400">
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                        {item.tooltip}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center gap-1">
                   {item.isLink ? (
                     <button
@@ -33,16 +45,6 @@ export function QuickInfoSection({ items }: QuickInfoSectionProps) {
                     </button>
                   ) : (
                     <span className="text-sm text-gray-900">{item.value}</span>
-                  )}
-                  {item.tooltip && (
-                    <div className="relative group">
-                      <button className="w-4 h-4 text-gray-400">
-                        <HelpCircle className="w-4 h-4" />
-                      </button>
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
-                        {item.tooltip}
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>

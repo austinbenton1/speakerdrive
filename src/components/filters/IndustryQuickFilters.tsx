@@ -44,7 +44,7 @@ export default function IndustryQuickFilters({
         className="group inline-flex items-center px-3 py-1.5 rounded-xl text-[14px] font-medium text-[#0066FF] transition-all duration-200 border border-gray-200 hover:border-gray-300 shadow-sm bg-white"
       >
         <Sparkles className="w-4 h-4 mr-1.5 text-[#00B341] group-hover:text-[#00B341]/90" />
-        More Industries
+        More Categories
         <ChevronRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
       </button>
     </div>

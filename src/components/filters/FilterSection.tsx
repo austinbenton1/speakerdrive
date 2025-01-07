@@ -25,26 +25,28 @@ export default function FilterSection({
     <div className="mb-2">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 rounded-lg 
+          hover:bg-gray-50 transition-all duration-200 group"
       >
         <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-gray-500" />
+          <Icon className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
           <span className="font-medium">{title}</span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
         )}
       </button>
       
       {isOpen && (
-        <div className="mt-2 space-y-2 pl-3">
+        <div className="mt-2 space-y-2 px-3 py-2 bg-gray-50/50 rounded-lg">
           {children}
           {showUnselectAll && onUnselectAll && (
             <button
               onClick={onUnselectAll}
-              className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
+              className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 
+                bg-white hover:bg-gray-50 rounded-md transition-colors border border-gray-200"
             >
               Unselect All
             </button>

@@ -16,23 +16,32 @@ export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockValue, setUnlockValue] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Check unlock status on mount and when leadId changes
-  useEffect(() => {
-    if (leadId) {
-      checkUnlockStatus();
-    }
-  }, [leadId]);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   const checkUnlockStatus = async () => {
     try {
       const status = await checkLeadUnlocked(leadId);
       setIsUnlocked(status.isUnlocked);
       setUnlockValue(status.unlockValue || null);
+      setError(null);
+      setRetryCount(0);
     } catch (err) {
-      console.error('Error checking unlock status:', err);
+      console.error('Error checking lead unlock status:', err);
+      if (retryCount < MAX_RETRIES) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(checkUnlockStatus, 1000 * Math.pow(2, retryCount));
+      } else {
+        setError('Failed to check unlock status. Please try again.');
+      }
     }
   };
+
+  useEffect(() => {
+    if (leadId) {
+      checkUnlockStatus();
+    }
+  }, [leadId]);
 
   const handleUnlock = async () => {
     if (!leadId || isUnlocking) return;
@@ -47,7 +56,6 @@ export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
         throw new Error(error || 'Failed to unlock lead');
       }
 
-      // Check updated status after successful unlock
       await checkUnlockStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unlock lead');

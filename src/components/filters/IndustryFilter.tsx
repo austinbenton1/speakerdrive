@@ -23,7 +23,7 @@ export default function IndustryFilter({
 }: IndustryFilterProps) {
   return (
     <FilterSection
-      title="Industry Category"
+      title="Event Category"
       icon={Building2}
       isOpen={isOpen}
       onToggle={onToggle}

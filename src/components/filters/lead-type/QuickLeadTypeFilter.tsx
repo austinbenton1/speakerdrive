@@ -13,11 +13,21 @@ export default function QuickLeadTypeFilter({
 }: QuickLeadTypeFilterProps) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Unlock className="w-3.5 h-3.5 text-gray-500" />
-        <label className="block text-sm font-medium text-gray-700">
-          Unlock Type
-        </label>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-1.5">
+          <Unlock className="w-4 h-4 text-blue-600" />
+          <label className="block text-sm font-semibold text-gray-900">
+            Unlock Type
+          </label>
+        </div>
+        <a 
+          href="https://google.com" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          Learn more
+        </a>
       </div>
       <div className="grid grid-cols-4 gap-2">
         {leadTypes.map((type) => (

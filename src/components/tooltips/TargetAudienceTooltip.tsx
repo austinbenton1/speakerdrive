@@ -1,7 +1,13 @@
 export const TargetAudienceTooltip = () => (
   <div>
     <p className="text-gray-200">
-      Refine your search further by specifying your ideal audience. Try terms like Business Leaders, HR Executives, Nonprofits and more.
+      Filter events by their audience. Examples:
     </p>
+    <ul className="mt-2 space-y-1 text-gray-200">
+      <li>• C-Level Executives</li>
+      <li>• HR Professionals</li>
+      <li>• Tech Leaders</li>
+      <li>• Sales Teams</li>
+    </ul>
   </div>
 );
