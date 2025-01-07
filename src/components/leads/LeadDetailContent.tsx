@@ -20,6 +20,11 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
     let currentItem: { title: string; pillText?: string; description: string } | null = null;
 
     const processTitle = (title: string): { text: string; pillText?: string } => {
+      // Skip if line starts with a hyphen
+      if (title.trim().startsWith('-')) {
+        return { text: title };
+      }
+
       // First check if title ends with ' ->' and remove it if it does
       if (title.trim().endsWith(' ->')) {
         return { text: title.replace(/\s*->$/, '') };
@@ -40,8 +45,8 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
     blocks.forEach(block => {
       const parts = block.split('\n');
       
-      if (parts.length >= 2) {
-        // If we have a block with newline, create a new item
+      if (parts.length >= 2 && !parts[0].trim().startsWith('-')) {
+        // If we have a block with newline and first line doesn't start with hyphen
         if (currentItem) {
           items.push(currentItem);
         }
@@ -55,9 +60,8 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
         // If we have a block without newline and there's a current item,
         // append to its description
         currentItem.description += '\n\n' + block.trim();
-      } else if (block.trim()) {
-        // If we have a block without newline and no current item,
-        // treat it as a new item with empty title
+      } else if (block.trim() && !block.trim().startsWith('-')) {
+        // If we have a block without newline, no current item, and doesn't start with hyphen
         const processed = processTitle(block.trim());
         currentItem = {
           title: processed.text,
