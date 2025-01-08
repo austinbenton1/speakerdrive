@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Search, Unlock, Settings, Brain, UserSearch, LogOut, ChevronDown, ChevronUp, Users, Image, Building2, UserRound, UserCog } from 'lucide-react';
+import { Unlock, Calendar, Users, Image, Building2, UserRound, UserCog, Settings, LogOut, ChevronDown, ChevronUp, LayoutDashboard, Search, Brain } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAdminRole } from '../hooks/useAdminRole';
@@ -13,7 +13,7 @@ const mainNavItems = [
     { label: 'Sales Coach', path: '/chat/sales-coach' },
     { label: 'Ask SpeakerDrive', path: '/chat/conversation' }
   ]},
-  { icon: UserSearch, label: 'Contact Finder', path: '/contact-finder' },
+  { icon: UserRound, label: 'Contact Finder', path: '/contact-finder' },
   { icon: Building2, label: 'Company Finder', path: '/company-finder' },
   { icon: UserRound, label: 'Role Finder', path: '/role-finder' },
   { icon: UserCog, label: 'Profile Finder', path: '/profile-finder' }
@@ -38,15 +38,11 @@ export default function Sidebar() {
   const { user } = useAuth();
   const { isAdmin } = useAdminRole();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
+  // Determine if we should collapse the sidebar
+  const shouldCollapse = location.pathname === '/find-leads';
+  const isCollapsed = shouldCollapse && !isHovered;
 
   const NavLink = ({ item }: { item: typeof mainNavItems[0] }) => {
     const isActive = location.pathname === item.path;
@@ -72,16 +68,20 @@ export default function Sidebar() {
             }
           `}
         >
-          <div className="flex items-center">
-            <item.icon className="w-4 h-4 mr-2.5 flex-shrink-0" />
-            <span className="font-medium truncate">{item.label}</span>
+          <div className="flex items-center min-w-0">
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            {!isCollapsed && (
+              <>
+                <span className="ml-2.5 font-medium truncate">{item.label}</span>
+                {hasSubItems && (
+                  isExpanded ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />
+                )}
+              </>
+            )}
           </div>
-          {hasSubItems && (
-            isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-          )}
         </button>
 
-        {hasSubItems && isExpanded && (
+        {hasSubItems && isExpanded && !isCollapsed && (
           <div className="ml-9 space-y-1">
             {item.subItems.map((subItem) => (
               <Link
@@ -113,12 +113,20 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-52 h-screen bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4">
+    <div 
+      className={`
+        h-screen bg-white border-r border-gray-200 flex flex-col
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'w-[60px]' : 'w-52'}
+      `}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`p-4 ${isCollapsed ? 'px-2' : ''}`}>
         <img 
           src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
           alt="SpeakerDrive" 
-          className="h-6 w-auto mb-6"
+          className={`h-6 w-auto mb-6 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
         />
       </div>
       
@@ -161,11 +169,11 @@ export default function Sidebar() {
           <NavLink key={item.path} item={item} />
         ))}
         <button
-          onClick={handleLogout}
+          onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
           className="flex items-center w-full px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-sm"
         >
-          <LogOut className="w-4 h-4 mr-2.5 flex-shrink-0" />
-          <span className="font-medium">Logout</span>
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-2.5 font-medium">Logout</span>}
         </button>
       </div>
     </div>

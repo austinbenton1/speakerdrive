@@ -89,20 +89,22 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
             <div className="space-y-6">
               {lead.detailedInfo.split('\n\n')
                 .filter(part => part.trim())
-                .map((item, index) => {
+                .map((item) => {
                   const [title, ...descriptionParts] = item.split('->').map(part => part.trim());
                   const description = descriptionParts.join('->').trim();
-                  return (
-                    <div key={index} className="space-y-2">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {title}
-                      </h3>
-                      <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
-                        {description}
-                      </p>
-                    </div>
-                  );
-                })}
+                  return { title, description };
+                })
+                .filter(({ title }) => title.toLowerCase() !== 'target audience')
+                .map(({ title, description }, index) => (
+                  <div key={index} className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {title}
+                    </h3>
+                    <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
+                      {description}
+                    </p>
+                  </div>
+                ))}
             </div>
           ) : (
             <p className="text-[15px] text-gray-600">No event snapshot available</p>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tooltip } from '../../Tooltip';
 
 interface ValueProfileItem {
   title: string;
@@ -95,8 +96,11 @@ export function ValueProfileContent({ valueProfile }: { valueProfile: string | u
           <div key={index} className="space-y-2">
             {item.title && (
               <div className="flex items-start gap-2 flex-wrap">
-                <h3 className="text-sm font-medium text-gray-900">
+                <h3 className="text-sm font-medium text-gray-900 inline-flex items-center gap-2">
                   {item.title}
+                  {index === 0 && (
+                    <Tooltip content="Fee potential is directional, high level estimate only; actual fees may vary considerably." />
+                  )}
                 </h3>
                 {item.highlightedValues?.map((value, valueIndex) => (
                   <span 

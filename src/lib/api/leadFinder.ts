@@ -3,12 +3,10 @@ import type { Lead } from '../../types';
 
 export async function fetchAvailableLeads(): Promise<Lead[]> {
   try {
-    // Get current user session
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) throw new Error('No authenticated user');
 
-    // Get current user's unlocked leads
     const { data: unlockedLeads, error: unlockedError } = await supabase
       .from('unlocked_leads')
       .select('lead_id')
@@ -17,7 +15,6 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
 
     if (unlockedError) throw unlockedError;
 
-    // Get all leads except those that are already unlocked
     const { data: availableLeads, error: leadsError } = await supabase
       .from('leads')
       .select(`
@@ -29,7 +26,9 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
         unlock_type,
         industry,
         organization,
+        organization_type,
         event_info,
+        detailed_info,
         event_name,
         event_format,
         job_title,
@@ -43,7 +42,6 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
 
     if (leadsError) throw leadsError;
 
-    // Map and return the available leads
     return (availableLeads || []).map(lead => ({
       id: lead.id,
       image_url: lead.image_url,
@@ -53,7 +51,9 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
       unlock_type: lead.unlock_type,
       industry: lead.industry,
       organization: lead.organization,
+      organization_type: lead.organization_type,
       event_info: lead.event_info,
+      detailed_info: lead.detailed_info,
       event_name: lead.event_name,
       event_format: lead.event_format,
       job_title: lead.job_title,

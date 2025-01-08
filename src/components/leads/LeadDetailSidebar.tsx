@@ -16,16 +16,16 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
 
   const formatLocation = (region?: string, state?: string | string[], city?: string | string[]) => {
     const parts = [];
-    if (region) parts.push(region);
-    if (state) {
-      const stateStr = Array.isArray(state) ? state.join(', ') : state;
-      parts.push(stateStr);
-    }
     if (city) {
       const cityStr = Array.isArray(city) ? city.join(', ') : city;
       parts.push(cityStr);
     }
-    return parts.join(', ') || 'Location not specified';
+    if (state) {
+      const stateStr = Array.isArray(state) ? state.join(', ') : state;
+      parts.push(stateStr);
+    }
+    if (region) parts.push(region);
+    return parts.join(' • ') || 'Location not specified';
   };
 
   const quickInfoItems = [

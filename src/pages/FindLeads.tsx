@@ -96,10 +96,12 @@ export default function FindLeads() {
                   onChange={setEventsFilter}
                 />
               </div>
-              <QuickLeadTypeFilter
-                selectedType={selectedLeadType}
-                onTypeChange={handleLeadTypeChange}
-              />
+              <div className="max-w-[650px]">
+                <QuickLeadTypeFilter
+                  selectedType={selectedLeadType}
+                  onTypeChange={handleLeadTypeChange}
+                />
+              </div>
             </div>
           </SearchContainer>
 
