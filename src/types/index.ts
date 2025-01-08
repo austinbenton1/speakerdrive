@@ -18,6 +18,12 @@ export interface Lead {
   state?: string;
   city?: string;
   subtext?: string;
+  keywords?: string;
+  tooltipLocation?: string;
+  tooltipIndustryCategory?: string;
+  tooltipEventFormat?: string;
+  tooltipOrganization?: string;
+  tooltipOrganizationType?: string;
 }
 
 export interface FilterOptions {

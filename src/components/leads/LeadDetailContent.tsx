@@ -79,7 +79,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
     return items;
   };
 
-  const keywords = lead.focus?.split(',').map(k => k.trim()).filter(Boolean) || [];
+  const keywords = lead.keywords?.split(',').map(k => k.trim()).filter(Boolean) || [];
 
   return (
     <div className="space-y-6">
@@ -94,7 +94,6 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
                   const description = descriptionParts.join('->').trim();
                   return { title, description };
                 })
-                .filter(({ title }) => title.toLowerCase() !== 'target audience')
                 .map(({ title, description }, index) => (
                   <div key={index} className="space-y-2">
                     <h3 className="text-sm font-medium text-gray-900">

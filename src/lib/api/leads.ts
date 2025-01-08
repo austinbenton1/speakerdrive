@@ -28,7 +28,9 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
         tooltip_industry_category,
         tooltip_event_format,
         tooltip_organization,
+        tooltip_organization_type,
         tooltip_location,
+        keywords,
         job_title,
         subtext,
         region,
@@ -66,7 +68,9 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       tooltipIndustryCategory: data.tooltip_industry_category,
       tooltipEventFormat: data.tooltip_event_format,
       tooltipOrganization: data.tooltip_organization,
+      tooltipOrganizationType: data.tooltip_organization_type,
       tooltipLocation: data.tooltip_location,
+      keywords: data.keywords,
       jobTitle: data.job_title,
       subtext: data.subtext,
       region: data.region,
@@ -74,7 +78,7 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       city: data.city
     };
   } catch (error) {
-    console.error('Error fetching lead:', error);
+    console.error('Error fetching lead by ID:', error);
     throw error;
   }
 }

@@ -12,4 +12,14 @@ export interface RecordedLead {
   unlocked: boolean;
 }
 
+export interface QuickInfoItem {
+  icon: LucideIcon;
+  label: string;
+  value: string | null;
+  tooltip?: string;
+  show: boolean;
+  onClick?: () => void;
+  isLink?: boolean;
+}
+
 // Rest of the types remain the same...
