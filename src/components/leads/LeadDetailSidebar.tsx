@@ -93,7 +93,7 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
       {
         icon: Briefcase,
         label: 'Job Title',
-        value: lead.job_title || 'Not specified',
+        value: lead.jobTitle || 'Not specified',
         show: true,
       },
       {
