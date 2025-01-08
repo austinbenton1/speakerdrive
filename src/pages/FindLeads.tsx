@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
@@ -27,14 +27,25 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
+  // Handle URL parameters on mount
+  useEffect(() => {
+    const orgParam = searchParams.get('organization');
+    if (orgParam) {
+      setFilters(prev => ({
+        ...prev,
+        organization: [orgParam]
+      }));
+    }
+  }, [searchParams]);
+
   // Apply all filters first
   const filteredLeads = useLeadsFilter(availableLeads, {
     opportunitiesFilter: eventsFilter,
     selectedLeadTypes: ['Event', 'Contact'],
     selectedIndustries: filters.industry,
     selectedEventFormats: filters.eventFormat || [],
-    selectedOrgTypes: filters.organizationType || [],
     organization: filters.organization,
+    organizationType: filters.organizationType || [],
     pastSpeakers: filters.pastSpeakers,
     searchAll: filters.searchAll,
     unlockType: filters.unlockType,

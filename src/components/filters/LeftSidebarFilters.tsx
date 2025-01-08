@@ -87,7 +87,7 @@ export default function LeftSidebarFilters({
       if (!filters.jobTitle.includes(newTitle)) {
         setFilters({
           ...filters,
-          jobTitle: filters.jobTitle ? `${filters.jobTitle}, ${newTitle}` : newTitle
+          jobTitle: [...filters.jobTitle, newTitle]
         });
       }
       setJobTitleInput('');
@@ -116,11 +116,10 @@ export default function LeftSidebarFilters({
   };
 
   const removeJobTitle = (title: string) => {
-    const newTitles = filters.jobTitle
-      .split(',')
-      .filter(t => t !== title)
-      .join(',');
-    setFilters({ ...filters, jobTitle: newTitles });
+    setFilters({
+      ...filters,
+      jobTitle: filters.jobTitle.filter(t => t !== title)
+    });
   };
 
   return (
@@ -139,11 +138,13 @@ export default function LeftSidebarFilters({
                 icon={Briefcase}
                 isOpen={openSections.jobTitle}
                 onToggle={() => toggleSection('jobTitle')}
+                onUnselectAll={() => setFilters({ ...filters, jobTitle: [] })}
+                showUnselectAll={filters.jobTitle.length > 0}
               >
                 <div className="space-y-2">
-                  {filters.jobTitle && (
+                  {filters.jobTitle.length > 0 && (
                     <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg">
-                      {filters.jobTitle.split(',').map((title) => (
+                      {filters.jobTitle.map((title) => (
                         <span
                           key={title}
                           className="inline-flex items-center px-2 py-1 rounded-md text-sm bg-white border border-gray-200 text-gray-700"

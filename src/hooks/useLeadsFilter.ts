@@ -7,6 +7,7 @@ interface FilterParams {
   selectedIndustries: string[];
   selectedEventFormats: string[];
   organization: string[];
+  organizationType: string[];
   pastSpeakers: string[];
   searchAll: string;
   unlockType?: string;
@@ -151,18 +152,44 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       }
     }
 
-    // Filter by Organization - only if there are tags
-    if (filters.organization && filters.organization.filter(tag => tag.trim()).length > 0) {
-      const validTags = filters.organization.map(tag => tag.toLowerCase().trim()).filter(Boolean);
+    // Filter by Organization
+    if (filters.organization && filters.organization.length > 0) {
+      const searchTerms = filters.organization.map(org => org.toLowerCase());
+      filteredLeads = filteredLeads.filter(lead =>
+        lead.organization && searchTerms.some(term => lead.organization?.toLowerCase().includes(term))
+      );
+    }
+
+    // Filter by organization type
+    if (filters.organizationType && filters.organizationType.length > 0) {
+      filteredLeads = filteredLeads.filter(lead =>
+        lead.organization_type && filters.organizationType.includes(lead.organization_type)
+      );
+    }
+
+    // Filter by job title
+    if (filters.jobTitle && filters.jobTitle.length > 0) {
+      const jobTitles = filters.jobTitle.map(title => title.toLowerCase());
       filteredLeads = filteredLeads.filter(lead => {
-        // Skip if lead has no organization
-        if (!lead.organization) return false;
+        // Skip if lead has no job title
+        if (!lead.job_title) return false;
         
-        // Get the organization field and normalize it
-        const organizationText = lead.organization.toLowerCase().trim();
+        const leadJobTitle = lead.job_title.toLowerCase();
+        // Check if any of our search job titles appear in the lead's job title
+        return jobTitles.some(searchTitle => leadJobTitle.includes(searchTitle));
+      });
+    }
+
+    // Filter by past speakers
+    if (filters.pastSpeakers && filters.pastSpeakers.length > 0) {
+      filteredLeads = filteredLeads.filter(lead => {
+        // Skip if lead has no past speakers
+        if (!lead.event_info) return false;
         
-        // Check if any of our search tags appear in the organization text
-        return validTags.some(searchTag => organizationText.includes(searchTag));
+        const eventInfo = lead.event_info.toLowerCase();
+        return filters.pastSpeakers.some(speaker => 
+          eventInfo.includes(speaker.toLowerCase())
+        );
       });
     }
 

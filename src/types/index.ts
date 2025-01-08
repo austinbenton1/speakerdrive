@@ -9,6 +9,7 @@ export interface Lead {
   domain_type?: string;
   organization?: string;
   organization_type?: string;
+  job_title?: string;
   event_info?: string;
   detailed_info?: string;
   event_name?: string;
@@ -17,4 +18,33 @@ export interface Lead {
   state?: string;
   city?: string;
   subtext?: string;
+}
+
+export interface FilterOptions {
+  targetAudience: string[];
+  jobTitle: string[];
+  searchEvent: string;
+  organization: string[];
+  pastSpeakers: string[];
+  searchAll: string;
+  location: string[];
+  industry: string[];
+  timeframe: string[];
+  eventFormat: string[];
+  organizationType: string[];
+  region: string;
+  state: string[];
+  city: string[];
+  unlockType?: string;
+}
+
+export interface OpenSections {
+  eventFormat: boolean;
+  industry: boolean;
+  pastSpeakers: boolean;
+  moreFilters: boolean;
+  organizationType: boolean;
+  location: boolean;
+  jobTitle: boolean;
+  region: boolean;
 }

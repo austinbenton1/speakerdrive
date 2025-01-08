@@ -5,11 +5,11 @@ export function useLeadFilters() {
   const [selectedLeadTypes, setSelectedLeadTypes] = useState<string[]>(['Events', 'Contacts']);
   const [selectedEventUnlockTypes, setSelectedEventUnlockTypes] = useState<string[]>(['Event Email', 'Event URL']);
   const [filters, setFilters] = useState<FilterOptions>({
-    targetAudience: '',
-    jobTitle: '',
+    targetAudience: [],
+    jobTitle: [],  
     searchEvent: '',
-    organization: '',
-    pastSpeakers: '',
+    organization: [],
+    pastSpeakers: [],
     searchAll: '',
     location: [],
     industry: [],
@@ -17,7 +17,8 @@ export function useLeadFilters() {
     eventFormat: [],
     organizationType: [],
     region: '',
-    state: []
+    state: [],
+    city: []
   });
 
   const [openSections, setOpenSections] = useState<OpenSections>({
@@ -53,7 +54,7 @@ export function useLeadFilters() {
       } 
       // If only Events is selected, clear job title
       else if (newTypes.length === 1 && newTypes[0] === 'Events') {
-        setFilters(prev => ({ ...prev, jobTitle: '', unlockType: undefined }));
+        setFilters(prev => ({ ...prev, jobTitle: [], unlockType: undefined }));
         setOpenSections(prev => ({ ...prev, jobTitle: false }));
       }
       // If no types are selected, add both back
