@@ -36,7 +36,8 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
         past_speakers_events,
         region,
         state,
-        city
+        city,
+        keywords
       `)
       .not('id', 'in', `(${(unlockedLeads || []).map(ul => ul.lead_id).join(',')})`);
 
@@ -61,7 +62,8 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
       past_speakers_events: lead.past_speakers_events,
       region: lead.region,
       state: lead.state,
-      city: lead.city
+      city: lead.city,
+      keywords: lead.keywords
     }));
   } catch (error) {
     throw error;

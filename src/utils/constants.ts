@@ -7,24 +7,24 @@ export const usRegions = {
 };
 
 export const industries = [
-  'Technology & Media',
-  'Education & Training',
-  'General Business & Entrepreneurship',
-  'Finance, Business & Cooperative Services',
-  'Community, Culture & Inclusion',
-  'Leadership & Corporate Development',
-  'NonProfit, Associations & Public Sector',
-  'Sales & Consumer Services',
-  'Healthcare professionals and stakeholders',
-  'Health, Wellness & Sustainability'
+  { id: 'tech-media', label: 'Technology & Media' },
+  { id: 'education', label: 'Education & Training' },
+  { id: 'business', label: 'General Business & Entrepreneurship' },
+  { id: 'finance', label: 'Finance, Business & Cooperative Services' },
+  { id: 'community', label: 'Community, Culture & Inclusion' },
+  { id: 'leadership', label: 'Leadership & Corporate Development' },
+  { id: 'nonprofit', label: 'NonProfit, Associations & Public Sector' },
+  { id: 'sales', label: 'Sales & Consumer Services' },
+  { id: 'healthcare', label: 'Healthcare professionals and stakeholders' },
+  { id: 'wellness', label: 'Health, Wellness & Sustainability' }
 ];
 
 export const services = [
-  'Keynote Speaker',
-  'Workshop Leader', 
-  'Panel Moderator',
-  'Facilitator',
-  'Coach/Consultant'
+  { id: 'keynote', label: 'Keynote Speaker' },
+  { id: 'workshop', label: 'Workshop Leader' },
+  { id: 'moderator', label: 'Panel Moderator' },
+  { id: 'facilitator', label: 'Facilitator' },
+  { id: 'coach', label: 'Coach/Consultant' }
 ];
 
 export const eventFormats = [

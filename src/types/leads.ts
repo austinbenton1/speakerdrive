@@ -12,6 +12,20 @@ export interface RecordedLead {
   unlocked: boolean;
 }
 
+export interface Lead {
+  id: string;
+  event_name: string;
+  lead_name: string;
+  focus: string;
+  industry: string;
+  image_url: string;
+  unlock_type: string;
+  event_format?: string;
+  organization_type?: string;
+  location: string;
+  keywords: string;
+}
+
 export interface QuickInfoItem {
   icon: LucideIcon;
   label: string;

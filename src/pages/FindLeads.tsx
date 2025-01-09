@@ -5,7 +5,6 @@ import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { useLeadsFilter } from '../hooks/useLeadsFilter';
 import { getUniqueLeads } from '../utils/deduplication';
 import LeadsTable from '../components/leads/LeadsTable';
-import SearchContainer from '../components/SearchContainer';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
@@ -18,6 +17,8 @@ export default function FindLeads() {
   const [selectedLeadType, setSelectedLeadType] = useState<LeadType>('all');
   const [showAllEvents, setShowAllEvents] = useState(true);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
+  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
   
   const {
     filters,
@@ -27,6 +28,32 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
+  const handleResetFilters = () => {
+    setFilters({
+      industry: [],
+      eventFormat: [],
+      organization: [],
+      organizationType: [],
+      pastSpeakers: '',
+      searchAll: '',
+      unlockType: undefined,
+      targetAudience: [],
+      jobTitle: '',
+      region: '',
+      state: [],
+      city: []
+    });
+    setEventsFilter('');
+    setSelectedLeadType('all');
+  };
+
+  // Set initial 50 records when leads are loaded
+  useEffect(() => {
+    if (availableLeads.length > 0 && !isFiltering) {
+      setDisplayedLeads(availableLeads.slice(0, 50));
+    }
+  }, [availableLeads, isFiltering]);
+
   // Handle URL parameters on mount
   useEffect(() => {
     const orgParam = searchParams.get('organization');
@@ -35,11 +62,12 @@ export default function FindLeads() {
         ...prev,
         organization: [orgParam]
       }));
+      setIsFiltering(true);
     }
   }, [searchParams]);
 
-  // Apply all filters first
-  const filteredLeads = useLeadsFilter(availableLeads, {
+  // Get filtered results using the hook
+  const filteredResults = useLeadsFilter(availableLeads, {
     opportunitiesFilter: eventsFilter,
     selectedLeadTypes: ['Event', 'Contact'],
     selectedIndustries: filters.industry,
@@ -56,9 +84,32 @@ export default function FindLeads() {
     city: filters.city || []
   });
 
-  // Then apply unique events filter if enabled
-  const displayedLeads = showAllEvents ? filteredLeads : getUniqueLeads(filteredLeads);
-  const uniqueLeadsCount = getUniqueLeads(filteredLeads).length;
+  // Update displayed leads when filters change
+  useEffect(() => {
+    const hasActiveFilters = 
+      eventsFilter ||
+      filters.industry?.length > 0 ||
+      filters.eventFormat?.length > 0 ||
+      filters.organization?.length > 0 ||
+      filters.organizationType?.length > 0 ||
+      filters.pastSpeakers ||
+      filters.searchAll ||
+      filters.unlockType ||
+      filters.targetAudience?.length > 0 ||
+      filters.jobTitle ||
+      filters.region ||
+      filters.state?.length > 0 ||
+      filters.city?.length > 0;
+
+    setIsFiltering(hasActiveFilters);
+
+    if (hasActiveFilters) {
+      const finalResults = showAllEvents ? filteredResults : getUniqueLeads(filteredResults);
+      setDisplayedLeads(finalResults);
+    }
+  }, [filters, eventsFilter, showAllEvents, filteredResults]);
+
+  const uniqueLeadsCount = getUniqueLeads(displayedLeads).length;
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);
@@ -93,13 +144,22 @@ export default function FindLeads() {
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
-        totalCount={filteredLeads.length}
+        totalCount={displayedLeads.length}
         uniqueCount={uniqueLeadsCount}
       />
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <SearchContainer>
+          <div className="mb-6">
+            {error ? (
+              <div className="text-red-600 mb-4">
+                Error loading leads. Please try refreshing the page.
+              </div>
+            ) : !loading && !isFiltering && (
+              <div className="mb-4 text-sm text-gray-600">
+                Showing first 50 records. Use filters to see more specific results.
+              </div>
+            )}
             <div className="space-y-6">
               <div className="max-w-xl">
                 <OpportunitiesFilter
@@ -114,12 +174,14 @@ export default function FindLeads() {
                 />
               </div>
             </div>
-          </SearchContainer>
+          </div>
 
           <div className="bg-white border border-gray-200 rounded-lg mt-6">
             <LeadsTable 
               leads={displayedLeads}
+              loading={loading}
               onLeadClick={handleLeadClick}
+              onResetFilters={handleResetFilters}
             />
           </div>
         </div>

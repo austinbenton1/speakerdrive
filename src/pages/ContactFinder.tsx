@@ -6,7 +6,7 @@ import SearchResult from '../components/contact-finder/SearchResult';
 import { findEmail } from '../lib/api/emailFinder';
 import type { EmailFinderResponse } from '../lib/api/emailFinder';
 
-export default function ContactFinder() {
+export default function EmailFinder() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<EmailFinderResponse | null>(null);

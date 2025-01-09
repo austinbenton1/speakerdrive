@@ -1,116 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Unlock, Calendar, Users, Image, Building2, UserRound, UserCog, Settings, LogOut, ChevronDown, ChevronUp, LayoutDashboard, Search, Brain } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  LayoutDashboard, Search, MessageSquare, 
+  Settings, LogOut, ChevronDown, ChevronUp,
+  Mail, Link as LinkIcon, Building2, Phone, Wrench,
+  Headphones, Sparkles, LineChart, Briefcase
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
-import { useAdminRole } from '../hooks/useAdminRole';
+import speakerMiniLogo from '../assets/speakerdrive-mini.png';
 
 const mainNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Search, label: 'Find Leads', path: '/find-leads' },
-  { icon: Brain, label: 'SpeakerDrive AI', path: '/chat', subItems: [
-    { label: 'Instant Intel', path: '/chat' },
-    { label: 'Sales Coach', path: '/chat/sales-coach' },
-    { label: 'Ask SpeakerDrive', path: '/chat/conversation' }
-  ]},
-  { icon: UserRound, label: 'Contact Finder', path: '/contact-finder' },
+];
+
+const contactTools = [
+  { icon: Mail, label: 'Email Finder', path: '/contact-finder' },
+  { icon: Phone, label: 'Mobile Finder', path: '/mobile-finder' },
   { icon: Building2, label: 'Company Finder', path: '/company-finder' },
-  { icon: UserRound, label: 'Role Finder', path: '/role-finder' },
-  { icon: UserCog, label: 'Profile Finder', path: '/profile-finder' }
-];
-
-const bottomNavItems = [
-  { icon: Unlock, label: 'Unlocked Leads', path: '/leads' },
-  { icon: Image, label: 'Store Image', path: '/store-image' },
-];
-
-const adminItems = [
-  { icon: Users, label: 'Users Management', path: '/users' },
-];
-
-const settingsItems = [
-  { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export default function Sidebar() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isAdmin } = useAdminRole();
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
+  const [isAiToolsOpen, setIsAiToolsOpen] = useState(false);
+  const [isContactToolsOpen, setIsContactToolsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Determine if we should collapse the sidebar
-  const shouldCollapse = location.pathname === '/find-leads';
-  const isCollapsed = shouldCollapse && !isHovered;
+  // Auto-collapse sidebar on Find Leads page when not hovered
+  useEffect(() => {
+    if (location.pathname === '/find-leads') {
+      setIsCollapsed(!isHovered);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [location.pathname, isHovered]);
 
-  const NavLink = ({ item }: { item: typeof mainNavItems[0] }) => {
-    const isActive = location.pathname === item.path;
-    const hasSubItems = item.subItems && item.subItems.length > 0;
-    const isExpanded = expandedItem === item.label;
-    const isSubItemActive = hasSubItems && item.subItems.some(subItem => location.pathname === subItem.path);
-
-    return (
-      <div>
-        <button
-          onClick={() => {
-            if (hasSubItems) {
-              setExpandedItem(isExpanded ? null : item.label);
-            } else {
-              navigate(item.path);
-            }
-          }}
-          className={`
-            flex items-center justify-between w-full px-3 py-2 rounded-lg mb-1 transition-colors text-sm
-            ${isActive || isSubItemActive
-              ? 'bg-blue-50 text-blue-700'
-              : 'text-gray-700 hover:bg-gray-50'
-            }
-          `}
-        >
-          <div className="flex items-center min-w-0">
-            <item.icon className="w-4 h-4 flex-shrink-0" />
-            {!isCollapsed && (
-              <>
-                <span className="ml-2.5 font-medium truncate">{item.label}</span>
-                {hasSubItems && (
-                  isExpanded ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />
-                )}
-              </>
-            )}
-          </div>
-        </button>
-
-        {hasSubItems && isExpanded && !isCollapsed && (
-          <div className="ml-9 space-y-1">
-            {item.subItems.map((subItem) => (
-              <Link
-                key={subItem.path}
-                to={subItem.path}
-                className={`
-                  block px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                  ${location.pathname === subItem.path
-                    ? 'text-blue-700'
-                    : 'text-gray-600 hover:text-gray-900'
-                  }
-                `}
-              >
-                {subItem.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  const handleMouseEnter = () => {
+    setIsHovered(true);
   };
 
-  // Filter bottom nav items based on admin role
-  const filteredBottomNavItems = bottomNavItems.filter(item => {
-    if (item.label === 'Store Image') {
-      return isAdmin;
-    }
-    return true;
-  });
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
 
   return (
     <div 
@@ -119,61 +51,246 @@ export default function Sidebar() {
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-[60px]' : 'w-52'}
       `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className={`p-4 ${isCollapsed ? 'px-2' : ''}`}>
-        <img 
-          src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
-          alt="SpeakerDrive" 
-          className={`h-6 w-auto mb-6 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-        />
+      <div className={`p-4 ${isCollapsed ? 'flex justify-center items-center px-2' : ''}`}>
+        {isCollapsed ? (
+          <img 
+            src={speakerMiniLogo}
+            alt="SD" 
+            className="h-5 w-auto transition-all duration-300"
+          />
+        ) : (
+          <img 
+            src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
+            alt="SpeakerDrive" 
+            className="h-6 w-auto transition-all duration-300"
+          />
+        )}
       </div>
       
-      {/* Main Navigation */}
-      <nav className="px-3">
+      <nav className="flex-1 px-2.5 space-y-0.5">
+        {/* Main Nav Items */}
         {mainNavItems.map((item) => (
-          <NavLink key={item.path} item={item} />
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className={`
+              flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+              ${location.pathname === item.path
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+              }
+            `}
+          >
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            {!isCollapsed && <span className="ml-2.5">{item.label}</span>}
+          </button>
         ))}
+
+        {/* Find New Leads Section */}
+        {!isCollapsed && (
+          <div className="px-1.5 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-5">
+            Find New Leads
+          </div>
+        )}
+
+        {/* Find Leads Button */}
+        <button
+          onClick={() => navigate('/find-leads')}
+          className={`
+            flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+            ${location.pathname === '/find-leads'
+              ? 'bg-blue-50 text-blue-700'
+              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            }
+          `}
+        >
+          <Search className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-2.5">Find Leads</span>}
+        </button>
+
+        {/* Tools Section Header */}
+        {!isCollapsed && (
+          <div className="px-1.5 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-5">
+            Tools
+          </div>
+        )}
+
+        {/* AI Tools Section */}
+        <div>
+          <button
+            onClick={() => setIsAiToolsOpen(!isAiToolsOpen)}
+            className={`
+              flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+              ${isAiToolsOpen ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}
+            `}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center">
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                {!isCollapsed && <span className="ml-2.5">AI Tools</span>}
+              </div>
+              {!isCollapsed && (
+                <div className="ml-auto">
+                  {isAiToolsOpen ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </div>
+              )}
+            </div>
+          </button>
+
+          {isAiToolsOpen && !isCollapsed && (
+            <div className="mt-0.5">
+              {/* Ask SpeakerDrive - No indent */}
+              <button
+                onClick={() => navigate('/chat/conversation')}
+                className={`
+                  flex items-center w-full px-3 py-1.5 rounded-lg text-[15px] transition-colors text-left
+                  ${location.pathname === '/chat/conversation'
+                    ? 'text-blue-700 font-semibold'
+                    : 'text-gray-600 hover:text-gray-900'
+                  }
+                `}
+              >
+                <MessageSquare className="w-4 h-4 flex-shrink-0 mr-2.5" />
+                <span className="font-semibold">Ask SpeakerDrive</span>
+              </button>
+
+              {/* Indented items with vertical line */}
+              <div className="relative ml-4">
+                {/* Vertical line */}
+                <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200/75 rounded-full" />
+                
+                {/* Indented items */}
+                <div className="pl-4">
+                  {/* Instant Intel */}
+                  <button
+                    onClick={() => navigate('/chat')}
+                    className={`
+                      flex items-center w-full px-3 py-1.5 rounded-lg text-[15px] transition-colors text-left
+                      ${location.pathname === '/chat'
+                        ? 'text-blue-700 font-medium'
+                        : 'text-gray-600 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <LineChart className="w-4 h-4 flex-shrink-0 mr-2.5" />
+                    <span>Instant Intel</span>
+                  </button>
+
+                  {/* Sales Coach */}
+                  <button
+                    onClick={() => navigate('/chat/sales-coach')}
+                    className={`
+                      flex items-center w-full px-3 py-1.5 rounded-lg text-[15px] transition-colors text-left
+                      ${location.pathname === '/chat/sales-coach'
+                        ? 'text-blue-700 font-medium'
+                        : 'text-gray-600 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <Headphones className="w-4 h-4 flex-shrink-0 mr-2.5" />
+                    <span>Sales Coach</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Contact Tools Section */}
+        <div>
+          <button
+            onClick={() => setIsContactToolsOpen(!isContactToolsOpen)}
+            className={`
+              flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+              ${isContactToolsOpen ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}
+            `}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center">
+                <Wrench className="w-4 h-4 flex-shrink-0" />
+                {!isCollapsed && <span className="ml-2.5">Contact Tools</span>}
+              </div>
+              {!isCollapsed && (
+                <div className="ml-auto">
+                  {isContactToolsOpen ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </div>
+              )}
+            </div>
+          </button>
+
+          {isContactToolsOpen && !isCollapsed && (
+            <div className="space-y-0.5 mt-0.5">
+              {contactTools.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`
+                    flex items-center w-full px-3 py-1.5 rounded-lg text-[15px] transition-colors text-left
+                    ${location.pathname === item.path
+                      ? 'text-blue-700 font-medium'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0 mr-2.5" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
 
-      {/* Flex spacer */}
-      <div className="flex-1" />
-      
-      {/* Bottom Navigation Items */}
-      <div className="px-3">
-        <div className="space-y-1">
-          {filteredBottomNavItems.map((item) => (
-            <NavLink key={item.path} item={item} />
-          ))}
-        </div>
+      {/* Unlocked Leads Button */}
+      <div className="px-2.5">
+        <button
+          onClick={() => navigate('/leads')}
+          className={`
+            flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+            ${location.pathname === '/leads'
+              ? 'bg-blue-50 text-blue-700'
+              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            }
+          `}
+        >
+          <Briefcase className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-2.5">Unlocked Leads</span>}
+        </button>
       </div>
 
-      {/* Admin Items */}
-      {isAdmin && (
-        <div className="px-3">
-          <div className="space-y-1">
-            {adminItems.map((item) => (
-              <NavLink key={item.path} item={item} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Divider */}
-      <div className="border-t border-gray-200 my-2" />
-
       {/* Settings and Logout */}
-      <div className="px-3 pb-4">
-        {settingsItems.map((item) => (
-          <NavLink key={item.path} item={item} />
-        ))}
+      <div className="px-2.5 pb-4">
+        <div className="border-t border-gray-200 my-2" />
+        <button
+          onClick={() => navigate('/settings')}
+          className={`
+            flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+            ${location.pathname === '/settings'
+              ? 'bg-blue-50 text-blue-700'
+              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            }
+          `}
+        >
+          <Settings className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-2.5">Settings</span>}
+        </button>
         <button
           onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
-          className="flex items-center w-full px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-sm"
+          className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-2.5 font-medium">Logout</span>}
+          {!isCollapsed && <span className="ml-2.5">Logout</span>}
         </button>
       </div>
     </div>

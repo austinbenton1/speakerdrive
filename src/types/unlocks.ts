@@ -6,6 +6,7 @@ export interface UnlockedLead {
   image: string;
   unlockDate: Date;
   lead_type: 'Event' | 'Contact';
+  keywords: string | null;
 }
 
 export interface UnlockStatus {

@@ -163,6 +163,22 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           {[lead.city, lead.state, lead.region].filter(Boolean).join(' • ') || 'Location not specified'}
         </span>
       </td>
+      <td className="px-3 py-4 whitespace-nowrap text-sm">
+        {lead.keywords ? (
+          <div className="flex flex-wrap gap-2">
+            {lead.keywords.split(',').map((keyword, index) => (
+              <span 
+                key={index}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300"
+              >
+                {keyword.trim()}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-gray-400">No keywords</span>
+        )}
+      </td>
     </tr>
   );
 }

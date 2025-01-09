@@ -1,29 +1,24 @@
 export interface Lead {
   id: string;
+  image_url: string;
   lead_name: string;
-  focus?: string;
-  industry?: string;
-  image_url?: string;
+  focus: string;
   lead_type: string;
   unlock_type: string;
-  domain_type?: string;
-  organization?: string;
+  industry: string;
+  organization: string;
   organization_type?: string;
-  job_title?: string;
   event_info?: string;
   detailed_info?: string;
-  event_name?: string;
+  event_name: string;
   event_format?: string;
+  job_title?: string;
+  subtext?: string;
+  past_speakers_events?: string[];
   region?: string;
   state?: string;
   city?: string;
-  subtext?: string;
   keywords?: string;
-  tooltipLocation?: string;
-  tooltipIndustryCategory?: string;
-  tooltipEventFormat?: string;
-  tooltipOrganization?: string;
-  tooltipOrganizationType?: string;
 }
 
 export interface FilterOptions {

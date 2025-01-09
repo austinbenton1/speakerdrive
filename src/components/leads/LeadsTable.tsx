@@ -9,7 +9,41 @@ import LeadTableRow from './LeadTableRow';
 
 interface Props {
   leads: Lead[];
+  loading?: boolean;
+  onResetFilters: () => void;
 }
+
+const LoadingRow = () => (
+  <tr>
+    <td className="px-3 py-4 w-[50%]">
+      <div className="animate-pulse space-y-3">
+        <div className="flex items-center space-x-3">
+          <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+          <div className="flex-1">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </td>
+    <td className="w-12 px-3 py-4">
+      <div className="animate-pulse">
+        <div className="h-8 w-8 bg-gray-200 rounded"></div>
+      </div>
+    </td>
+    <td className="px-3 py-4 w-[25%]">
+      <div className="animate-pulse">
+        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+      </div>
+    </td>
+    <td className="px-3 py-4 w-[25%]">
+      <div className="animate-pulse flex gap-2">
+        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+      </div>
+    </td>
+  </tr>
+);
 
 const SortIcon = ({ field, sortField, sortDirection }: { field: SortField, sortField: SortField | null, sortDirection: 'asc' | 'desc' | null }) => {
   if (field !== sortField) {
@@ -49,7 +83,7 @@ const HeaderCell = ({
   </th>
 );
 
-export default function LeadsTable({ leads }: Props) {
+export default function LeadsTable({ leads, loading = false, onResetFilters }: Props) {
   const navigate = useNavigate();
   const { sortField, sortDirection, toggleSort } = useTableSort();
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
@@ -69,7 +103,7 @@ export default function LeadsTable({ leads }: Props) {
                 sortField={sortField} 
                 sortDirection={sortDirection} 
                 onSort={toggleSort}
-                className="w-[60%]"
+                className="w-[50%]"
               >
                 Available Leads
               </HeaderCell>
@@ -81,14 +115,43 @@ export default function LeadsTable({ leads }: Props) {
                 sortField={sortField} 
                 sortDirection={sortDirection} 
                 onSort={toggleSort}
-                className="w-[40%]"
+                className="w-[25%]"
               >
                 Location
+              </HeaderCell>
+              <HeaderCell 
+                field="keywords" 
+                sortField={sortField} 
+                sortDirection={sortDirection} 
+                onSort={toggleSort}
+                className="w-[25%]"
+              >
+                Keywords
               </HeaderCell>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginate(leads).map((lead) => (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <LoadingRow key={index} />
+              ))
+            ) : leads.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12">
+                  <div className="text-center">
+                    <div className="text-gray-500 text-sm">No leads found matching your filters</div>
+                    <div className="mt-2">
+                      <button
+                        onClick={onResetFilters}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Reset filters
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ) : paginate(leads).map((lead) => (
               <LeadTableRow
                 key={lead.id}
                 lead={lead}
@@ -98,14 +161,15 @@ export default function LeadsTable({ leads }: Props) {
           </tbody>
         </table>
       </div>
-
-      <TablePagination
-        currentPage={currentPage}
-        pageSize={pageSize}
-        totalItems={leads.length}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={setPageSize}
-      />
+      {!loading && leads.length > 0 && (
+        <TablePagination
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalItems={leads.length}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
     </div>
   );
 }

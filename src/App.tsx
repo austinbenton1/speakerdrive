@@ -13,10 +13,9 @@ import UsersManagement from './pages/UsersManagement';
 import Leads from './pages/Leads';
 import LeadDetails from './pages/LeadDetails';
 import Layout from './components/Layout';
-import ContactFinder from './pages/ContactFinder';
+import EmailFinder from './pages/ContactFinder';
 import CompanyFinder from './pages/CompanyFinder';
-import RoleFinder from './pages/RoleFinder';
-import ProfileFinder from './pages/ProfileFinder';
+import MobileFinder from './pages/MobileFinder';
 import Onboarding from './pages/Onboarding';
 import EmailConnection from './pages/EmailConnection';
 import ProfileTest from './pages/ProfileTest';
@@ -66,10 +65,9 @@ function App() {
           <Route path="/find-leads" element={<FindLeads />} />
           <Route path="/leads" element={<Leads />} />
           <Route path="/leads/:id" element={<LeadDetails />} />
-          <Route path="/contact-finder" element={<ContactFinder />} />
+          <Route path="/contact-finder" element={<EmailFinder />} />
           <Route path="/company-finder" element={<CompanyFinder />} />
-          <Route path="/role-finder" element={<RoleFinder />} />
-          <Route path="/profile-finder" element={<ProfileFinder />} />
+          <Route path="/mobile-finder" element={<MobileFinder />} />
           <Route path="/settings" element={<UserManagement />} />
           <Route path="/users" element={
             <ProtectedRoute>

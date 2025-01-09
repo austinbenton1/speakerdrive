@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { User, Shield, Image, Users, ChevronDown } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useProfile } from '../hooks/useProfile';
+import { useAdminRole } from '../hooks/useAdminRole';
 import LoadingSpinner from './common/LoadingSpinner';
 
 export default function Layout() {
   const navigate = useNavigate();
   const { profile, loading, error } = useProfile();
+  const { isAdmin } = useAdminRole();
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   if (loading) {
     return (
@@ -39,10 +42,49 @@ export default function Layout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
-          <div></div>
+          {/* Admin Menu */}
+          {isAdmin && (
+            <div className="relative">
+              <button
+                onClick={() => setShowAdminMenu(!showAdminMenu)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-purple-50 text-gray-700 hover:text-purple-700 transition-colors"
+              >
+                <Shield className="w-5 h-5" />
+                <span className="text-sm font-medium">Admin</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+
+              {showAdminMenu && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <button
+                    onClick={() => {
+                      navigate('/users');
+                      setShowAdminMenu(false);
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Users Management
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/store-image');
+                      setShowAdminMenu(false);
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                  >
+                    <Image className="w-4 h-4 mr-2" />
+                    Store Images
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* User Profile */}
           <div 
             onClick={() => navigate('/settings')}
-            className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
+            className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors ml-auto"
           >
             <div className="flex-shrink-0">
               {profile.avatar_url ? (
