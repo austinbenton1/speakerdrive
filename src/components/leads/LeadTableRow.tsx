@@ -81,14 +81,14 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     );
   };
 
-  const truncateText = (text: string, maxLength: number = 35) => {
+  const truncateText = (text: string, maxLength: number = 40) => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
   return (
     <tr onClick={onClick} className="hover:bg-gray-50/80 cursor-pointer group">
-      <td className="pl-4 pr-8 py-2 whitespace-nowrap">
+      <td className="pl-4 pr-8 py-4 whitespace-nowrap min-w-[500px]">
         <div className="flex items-center min-w-0">
           <img 
             src={lead.image_url} 
@@ -98,13 +98,15 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           <div className="ml-3 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div 
-                className="text-base leading-6 font-medium text-gray-900 truncate group/title relative"
+                className="text-[17px] leading-6 font-medium text-gray-900 group/title relative max-w-[350px]"
                 title={lead.event_name || lead.lead_name}
               >
-                {truncateText(lead.event_name || lead.lead_name)}
+                <span className="truncate block">
+                  {lead.event_name || lead.lead_name}
+                </span>
               </div>
               <button 
-                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${getUnlockTypeStyle(lead.unlock_type)} hover:bg-opacity-75`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${getUnlockTypeStyle(lead.unlock_type)} hover:bg-opacity-75 flex-shrink-0`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onClick();
@@ -118,13 +120,13 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
                 {lead.unlock_type.replace('Unlock ', '')}
               </button>
             </div>
-            <div className="mt-0.5 text-[15px] leading-5 text-gray-500 truncate">
+            <div className="mt-0.5 text-[16px] leading-5 text-gray-500 truncate">
               {lead.subtext}
             </div>
           </div>
         </div>
       </td>
-      <td className="pl-0 pr-12 py-2 whitespace-nowrap text-center">
+      <td className="pl-12 pr-12 py-4 whitespace-nowrap text-center">
         <div className="relative group/tooltip">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 group-hover:bg-gray-100 group-hover:shadow-gray-300 transition-all duration-200">
             <Eye className="w-4 h-4 text-gray-500 group-hover:text-gray-600 transition-colors" />
@@ -134,7 +136,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               <div className="bg-white text-gray-900 rounded-lg shadow-xl border border-gray-200">
                 <div className="p-4 border-b border-gray-100">
                   <div className="text-base font-semibold text-gray-900 text-left">
-                    {truncateText(lead.event_name || lead.lead_name, 35)}
+                    {truncateText(lead.event_name || lead.lead_name, 40)}
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
                     <div className="flex-1 min-w-0">
@@ -165,12 +167,12 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           )}
         </div>
       </td>
-      <td className="pl-4 pr-6 py-2 whitespace-nowrap">
+      <td className="pl-4 pr-6 py-4 whitespace-nowrap">
         <span className="text-sm text-gray-500">
           {[lead.city, lead.state, lead.region].filter(Boolean).join(' • ') || 'Location not specified'}
         </span>
       </td>
-      <td className="px-3 py-2 text-sm whitespace-nowrap">
+      <td className="px-3 py-4 text-sm whitespace-nowrap">
         {lead.keywords ? (
           <div className="min-w-[300px] max-h-[42px] overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-gray-300">
             <div className="flex flex-wrap gap-1 pb-1.5 h-[42px]">
