@@ -120,13 +120,15 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
                 {lead.unlock_type.replace('Unlock ', '')}
               </button>
             </div>
-            <div className="mt-0.5 text-[16px] leading-5 text-gray-500 truncate">
-              {lead.subtext}
+            <div className="mt-0.5 max-w-[500px]" title={lead.subtext}>
+              <span className="text-[16px] leading-5 text-gray-500 truncate block">
+                {lead.subtext}
+              </span>
             </div>
           </div>
         </div>
       </td>
-      <td className="pl-12 pr-12 py-4 whitespace-nowrap text-center">
+      <td className="pl-[100px] pr-12 py-4 whitespace-nowrap text-center">
         <div className="relative group/tooltip">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 group-hover:bg-gray-100 group-hover:shadow-gray-300 transition-all duration-200">
             <Eye className="w-4 h-4 text-gray-500 group-hover:text-gray-600 transition-colors" />
