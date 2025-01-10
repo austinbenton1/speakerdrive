@@ -20,6 +20,18 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     }
   };
 
+  const getIconColor = (type: string) => {
+    switch (type) {
+      case 'Unlock Event URL':
+      case 'Unlock Event Email':
+        return 'text-emerald-700';
+      case 'Unlock Contact Email':
+        return 'text-blue-700';
+      default:
+        return 'text-gray-700';
+    }
+  };
+
   const formatDetailedInfo = (text: string) => {
     const sections: { header: string; content: string }[] = [];
     let currentHeader = '';
@@ -98,7 +110,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           <div className="ml-3 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div 
-                className="text-[17px] leading-6 font-medium text-gray-900 group/title relative max-w-[350px]"
+                className="text-[17.5px] leading-6 font-medium text-gray-900 group/title relative max-w-[350px]"
                 title={lead.event_name || lead.lead_name}
               >
                 <span className="truncate block">
@@ -121,17 +133,17 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               </button>
             </div>
             <div className="mt-0.5 max-w-[500px]" title={lead.subtext}>
-              <span className="text-[16px] leading-5 text-gray-500 truncate block">
+              <span className="text-[16.5px] leading-5 text-gray-500 truncate block">
                 {lead.subtext}
               </span>
             </div>
           </div>
         </div>
       </td>
-      <td className="pl-[100px] pr-12 py-4 whitespace-nowrap text-center">
+      <td className="pl-[20px] pr-12 py-4 whitespace-nowrap text-center">
         <div className="relative group/tooltip">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 group-hover:bg-gray-100 group-hover:shadow-gray-300 transition-all duration-200">
-            <Eye className="w-4 h-4 text-gray-500 group-hover:text-gray-600 transition-colors" />
+            <Eye className={`w-4 h-4 ${getIconColor(lead.unlock_type)} group-hover:opacity-80 transition-colors`} />
           </div>
           {lead.detailed_info && (
             <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200" style={{ zIndex: 9999 }}>
@@ -177,11 +189,11 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       <td className="px-3 py-4 text-sm whitespace-nowrap">
         {lead.keywords ? (
           <div className="min-w-[300px] max-h-[42px] overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-gray-300">
-            <div className="flex flex-wrap gap-1 pb-1.5 h-[42px]">
+            <div className="flex flex-wrap gap-1.5 pb-1.5 h-[42px]">
               {lead.keywords.split(',').map((keyword, index) => (
                 <span 
                   key={index}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] leading-none font-medium bg-gray-100 text-gray-700 border border-gray-300 whitespace-nowrap"
+                  className="inline-flex items-center px-2 py-[3px] rounded-md text-[11.5px] leading-none font-medium bg-gray-50 text-gray-600 shadow-[0_0_0_1px] shadow-gray-200/75 hover:bg-gray-100 hover:shadow-gray-300/75 transition-all duration-200 whitespace-nowrap"
                 >
                   {keyword.trim()}
                 </span>
