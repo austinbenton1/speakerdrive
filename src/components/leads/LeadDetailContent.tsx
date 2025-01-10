@@ -184,7 +184,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
                     return (
                       <div key={index} className="space-y-2">
                         <h3 className="text-sm font-medium text-gray-900">
-                          About [{eventName}]
+                          About {eventName}
                         </h3>
                         <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
                           {description}
