@@ -7,7 +7,6 @@ import {
   Headphones, Sparkles, LineChart, Briefcase
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import speakerMiniLogo from '../assets/SpeakerDrive-mini.png';
 
 const mainNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -57,7 +56,7 @@ export default function Sidebar() {
       <div className={`p-4 ${isCollapsed ? 'flex justify-center items-center px-2' : 'flex justify-center'}`}>
         {isCollapsed ? (
           <img 
-            src={speakerMiniLogo}
+            src="/speakerdrive-mini.png"
             alt="SD" 
             className="h-5 w-auto transition-all duration-300"
           />
