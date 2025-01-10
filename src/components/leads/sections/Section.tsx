@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 
 interface SectionProps {
   icon: LucideIcon;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
 }
 

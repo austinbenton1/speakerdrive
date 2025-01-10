@@ -62,9 +62,8 @@ export default function FindLeads() {
       filters.region,                 // Region text
       filters.state?.length,          // Selected states
       filters.city?.length,           // Selected cities
-      // Only consider lead type active if it's not 'all'
       selectedLeadType !== 'all',      // Lead type selection
-      // Don't consider showAllEvents as an active filter
+      !showAllEvents,                  // Consider unique view as an active filter
     ];
 
     // Return true if any filter is active
@@ -82,9 +81,11 @@ export default function FindLeads() {
     filters.state,
     filters.city,
     selectedLeadType,
+    showAllEvents,
   ]);
 
   const handleResetFilters = () => {
+    // Reset all filter values
     setFilters({
       industry: [],
       eventFormat: [],
@@ -100,6 +101,8 @@ export default function FindLeads() {
     });
     setEventsFilter('');
     setSelectedLeadType('all');
+    // Reset Event Display to default state (showing all events)
+    setShowAllEvents(true);
   };
 
   const handleCompleteReset = () => {
@@ -121,6 +124,8 @@ export default function FindLeads() {
     // Reset opportunities filter
     setEventsFilter('');
     setSelectedLeadType('all');
+    // Reset Event Display to default state
+    setShowAllEvents(true);
     setIsFiltering(false);
 
     // Collapse all filter sections
@@ -176,12 +181,20 @@ export default function FindLeads() {
     setIsFiltering(hasActiveFilters);
 
     if (hasActiveFilters) {
-      const finalResults = showAllEvents ? filteredResults : getUniqueLeads(filteredResults);
-      setDisplayedLeads(finalResults);
+      // Apply unique filter only when showAllEvents is false
+      const results = showAllEvents ? filteredResults : getUniqueLeads(filteredResults);
+      setDisplayedLeads(results);
+    } else {
+      // If no filters active, still respect the showAllEvents toggle
+      const results = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
+      setDisplayedLeads(results.slice(0, 50));
     }
-  }, [filters, eventsFilter, showAllEvents, filteredResults, hasActiveFilters]);
+  }, [filters, eventsFilter, showAllEvents, filteredResults, hasActiveFilters, availableLeads]);
 
-  const uniqueLeadsCount = getUniqueLeads(displayedLeads).length;
+  // Calculate unique count for display
+  const uniqueLeadsCount = useMemo(() => {
+    return getUniqueLeads(displayedLeads).length;
+  }, [displayedLeads]);
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);

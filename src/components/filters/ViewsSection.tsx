@@ -46,7 +46,7 @@ export default function ViewsSection({
           <p className="text-xs text-gray-500">
             {showAllEvents 
               ? 'Showing all event leads'
-              : 'Showing one lead per event'
+              : 'Showing unique leads'
             }
           </p>
           <p className="text-xs text-gray-400">

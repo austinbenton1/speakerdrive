@@ -112,7 +112,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
       </Section>
 
       {keywords.length > 0 && (
-        <Section icon={Tag} title={`Event Keywords: ${eventName}`}>
+        <Section icon={Tag} title="Event Keywords">
           <div className="flex flex-wrap gap-2">
             {keywords.map((keyword, index) => (
               <span 
@@ -130,7 +130,19 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
         <ValueProfileContent valueProfile={lead.valueProfile} />
       </Section>
 
-      <Section icon={Network} title={`Outreach Profile: ${eventName}`}>
+      <Section 
+        icon={Network} 
+        title={
+          <div className="flex items-center gap-2">
+            Outreach Profile
+            {lead.unlockType && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                {lead.unlockType.replace('Unlock', '').trim()}
+              </span>
+            )}
+          </div>
+        }
+      >
         {lead.outreachPathways ? (
           <div className="space-y-6">
             {processOutreachContent(lead.outreachPathways).map((item, index) => (
@@ -158,7 +170,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
         )}
       </Section>
 
-      <Section icon={Calendar} title={`Event Summary: ${eventName}`}>
+      <Section icon={Calendar} title="Event Summary">
         <div className="space-y-6">
           {lead.eventInfo ? (
             <div className="space-y-6">
@@ -172,7 +184,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
                     return (
                       <div key={index} className="space-y-2">
                         <h3 className="text-sm font-medium text-gray-900">
-                          {`${title} →`}
+                          About [{eventName}]
                         </h3>
                         <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
                           {description}

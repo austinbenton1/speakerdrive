@@ -98,7 +98,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           <div className="ml-3 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div 
-                className="text-[15px] leading-5 font-medium text-gray-900 truncate group/title relative"
+                className="text-base leading-6 font-medium text-gray-900 truncate group/title relative"
                 title={lead.event_name || lead.lead_name}
               >
                 {truncateText(lead.event_name || lead.lead_name)}
@@ -118,7 +118,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
                 {lead.unlock_type.replace('Unlock ', '')}
               </button>
             </div>
-            <div className="mt-0.5 text-sm leading-[18px] text-gray-500 truncate">
+            <div className="mt-0.5 text-[15px] leading-5 text-gray-500 truncate">
               {lead.subtext}
             </div>
           </div>

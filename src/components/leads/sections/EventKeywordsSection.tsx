@@ -3,13 +3,12 @@ import { Tag } from 'lucide-react';
 import { Section } from './Section';
 
 interface EventKeywordsSectionProps {
-  eventName: string;
   keywords?: string[];
 }
 
-export function EventKeywordsSection({ eventName, keywords = ['Leadership Event', 'Procurement Executives', 'Professional Development'] }: EventKeywordsSectionProps) {
+export function EventKeywordsSection({ keywords = ['Leadership Event', 'Procurement Executives', 'Professional Development'] }: EventKeywordsSectionProps) {
   return (
-    <Section icon={Tag} title={`Event Keywords: ${eventName}`}>
+    <Section icon={Tag} title="Event Keywords">
       <div className="flex flex-wrap gap-2">
         {keywords.map((keyword, index) => (
           <span 
