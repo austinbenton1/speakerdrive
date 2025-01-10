@@ -36,7 +36,7 @@ export default function Dashboard() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Track your speaking opportunities and engagement metrics</p>
+        <p className="text-gray-600">Track your leads, opportunities and engagement metrics</p>
       </div>
 
       <StatCards stats={stats} />

@@ -7,7 +7,7 @@ import {
   Headphones, Sparkles, LineChart, Briefcase
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import speakerMiniLogo from '../assets/speakerdrive-mini.png';
+import speakerMiniLogo from '../assets/SpeakerDrive-mini.png';
 
 const mainNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -54,7 +54,7 @@ export default function Sidebar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={`p-4 ${isCollapsed ? 'flex justify-center items-center px-2' : ''}`}>
+      <div className={`p-4 ${isCollapsed ? 'flex justify-center items-center px-2' : 'flex justify-center'}`}>
         {isCollapsed ? (
           <img 
             src={speakerMiniLogo}
@@ -65,12 +65,12 @@ export default function Sidebar() {
           <img 
             src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
             alt="SpeakerDrive" 
-            className="h-6 w-auto transition-all duration-300"
+            className="h-6 w-auto transition-all duration-300 mt-4"
           />
         )}
       </div>
       
-      <nav className="flex-1 px-2.5 space-y-0.5">
+      <nav className="flex-1 px-2.5 space-y-0.5 mt-[20px]">
         {/* Main Nav Items */}
         {mainNavItems.map((item) => (
           <button

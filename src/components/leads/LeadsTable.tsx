@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Lead } from '../../types';
 import { useTableSort, type SortField } from '../../hooks/useTableSort';
 import { usePagination } from '../../hooks/usePagination';
@@ -95,7 +95,7 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full table-fixed divide-y divide-gray-200">
           <thead className="bg-white">
             <tr>
               <HeaderCell 
@@ -105,7 +105,37 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
                 onSort={toggleSort}
                 className="w-[50%]"
               >
-                Available Leads
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-xs text-gray-700">
+                    Showing <span className="font-medium mx-1">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                    <span className="font-medium mx-1">{Math.min(currentPage * pageSize, leads.length)}</span> of{' '}
+                    <span className="font-medium ml-1">{leads.length}</span>&nbsp;leads&nbsp;
+                  </div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm ml-6" aria-label="Pagination">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPage(currentPage - 1);
+                      }}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center rounded-l-md px-2 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPage(currentPage + 1);
+                      }}
+                      disabled={currentPage === Math.ceil(leads.length / pageSize)}
+                      className="relative inline-flex items-center rounded-r-md px-2 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </nav>
+                </div>
               </HeaderCell>
               <th scope="col" className="w-12 px-3 py-2">
                 <span className="sr-only">View</span>
@@ -124,7 +154,7 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
                 sortField={sortField} 
                 sortDirection={sortDirection} 
                 onSort={toggleSort}
-                className="w-[25%]"
+                className="min-w-[300px] w-[25%]"
               >
                 Keywords
               </HeaderCell>
@@ -161,15 +191,6 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
           </tbody>
         </table>
       </div>
-      {!loading && leads.length > 0 && (
-        <TablePagination
-          currentPage={currentPage}
-          pageSize={pageSize}
-          totalItems={leads.length}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-        />
-      )}
     </div>
   );
 }

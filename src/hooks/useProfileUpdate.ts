@@ -42,6 +42,29 @@ export function useProfileUpdate() {
         }
       }
 
+      // Fetch the updated profile
+      const { data: updatedProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Send updated profile to webhook
+      try {
+        await fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedProfile),
+        });
+      } catch (webhookError) {
+        console.error('Failed to send profile update to webhook:', webhookError);
+        // Don't throw here - we don't want to fail the update if webhook fails
+      }
+
       setSuccess(true);
       
       // Reset success message after 3 seconds

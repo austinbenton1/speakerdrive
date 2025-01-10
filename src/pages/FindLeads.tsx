@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
@@ -13,8 +13,12 @@ import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTy
 export default function FindLeads() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [eventsFilter, setEventsFilter] = useState(() => searchParams.get('event') || '');
-  const [selectedLeadType, setSelectedLeadType] = useState<LeadType>('all');
+  const [eventsFilter, setEventsFilter] = useState(() => {
+    const urlEvent = searchParams.get('event');
+    // Only set eventsFilter if the URL param exists and is not empty
+    return urlEvent && urlEvent.trim() ? urlEvent : '';
+  });
+  const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
   const [showAllEvents, setShowAllEvents] = useState(true);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
@@ -28,6 +32,58 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
+  useEffect(() => {
+    setFilters({
+      industry: [],
+      eventFormat: [],
+      organization: [],
+      organizationType: [],
+      pastSpeakers: '',
+      searchAll: '',
+      unlockType: undefined,
+      jobTitle: '',
+      region: '',
+      state: [],
+      city: []
+    });
+  }, []); // Run only once on mount
+
+  const hasActiveFilters = useMemo(() => {
+    // Check for any non-empty arrays or truthy values in filters
+    const activeFilterValues = [
+      eventsFilter,                    // Search text
+      filters.industry?.length,        // Selected industries
+      filters.eventFormat?.length,     // Selected event formats
+      filters.organization?.length,    // Selected organizations
+      filters.organizationType?.length,// Selected org types
+      filters.pastSpeakers,           // Past speakers text
+      filters.searchAll,              // Search all text
+      filters.jobTitle,               // Job title text
+      filters.region,                 // Region text
+      filters.state?.length,          // Selected states
+      filters.city?.length,           // Selected cities
+      // Only consider lead type active if it's not 'all'
+      selectedLeadType !== 'all',      // Lead type selection
+      // Don't consider showAllEvents as an active filter
+    ];
+
+    // Return true if any filter is active
+    return activeFilterValues.some(value => Boolean(value));
+  }, [
+    eventsFilter,
+    filters.industry,
+    filters.eventFormat,
+    filters.organization,
+    filters.organizationType,
+    filters.pastSpeakers,
+    filters.searchAll,
+    filters.jobTitle,
+    filters.region,
+    filters.state,
+    filters.city,
+    selectedLeadType,
+  ]);
+
   const handleResetFilters = () => {
     setFilters({
       industry: [],
@@ -37,7 +93,6 @@ export default function FindLeads() {
       pastSpeakers: '',
       searchAll: '',
       unlockType: undefined,
-      targetAudience: [],
       jobTitle: '',
       region: '',
       state: [],
@@ -45,6 +100,38 @@ export default function FindLeads() {
     });
     setEventsFilter('');
     setSelectedLeadType('all');
+  };
+
+  const handleCompleteReset = () => {
+    // Reset all filter values
+    setFilters({
+      industry: [],
+      eventFormat: [],
+      organization: [],
+      organizationType: [],
+      pastSpeakers: '',
+      searchAll: '',
+      unlockType: undefined,
+      jobTitle: '',
+      region: '',
+      state: [],
+      city: []
+    });
+
+    // Reset opportunities filter
+    setEventsFilter('');
+    setSelectedLeadType('all');
+    setIsFiltering(false);
+
+    // Collapse all filter sections
+    setOpenSections({
+      targetAudience: false,
+      eventFormat: false,
+      industry: false,
+      organization: false,
+      organizationType: false,
+      location: false
+    });
   };
 
   // Set initial 50 records when leads are loaded
@@ -86,28 +173,13 @@ export default function FindLeads() {
 
   // Update displayed leads when filters change
   useEffect(() => {
-    const hasActiveFilters = 
-      eventsFilter ||
-      filters.industry?.length > 0 ||
-      filters.eventFormat?.length > 0 ||
-      filters.organization?.length > 0 ||
-      filters.organizationType?.length > 0 ||
-      filters.pastSpeakers ||
-      filters.searchAll ||
-      filters.unlockType ||
-      filters.targetAudience?.length > 0 ||
-      filters.jobTitle ||
-      filters.region ||
-      filters.state?.length > 0 ||
-      filters.city?.length > 0;
-
     setIsFiltering(hasActiveFilters);
 
     if (hasActiveFilters) {
       const finalResults = showAllEvents ? filteredResults : getUniqueLeads(filteredResults);
       setDisplayedLeads(finalResults);
     }
-  }, [filters, eventsFilter, showAllEvents, filteredResults]);
+  }, [filters, eventsFilter, showAllEvents, filteredResults, hasActiveFilters]);
 
   const uniqueLeadsCount = getUniqueLeads(displayedLeads).length;
 
@@ -155,16 +227,14 @@ export default function FindLeads() {
               <div className="text-red-600 mb-4">
                 Error loading leads. Please try refreshing the page.
               </div>
-            ) : !loading && !isFiltering && (
-              <div className="mb-4 text-sm text-gray-600">
-                Showing first 50 records. Use filters to see more specific results.
-              </div>
-            )}
+            ) : null}
             <div className="space-y-6">
-              <div className="max-w-xl">
+              <div className="w-[700px]">
                 <OpportunitiesFilter
                   value={eventsFilter}
                   onChange={setEventsFilter}
+                  onReset={handleCompleteReset}
+                  hasActiveFilters={hasActiveFilters}
                 />
               </div>
               <div className="max-w-[650px]">

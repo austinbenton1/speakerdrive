@@ -22,7 +22,6 @@ export interface Lead {
 }
 
 export interface FilterOptions {
-  targetAudience: string[];
   jobTitle: string[];
   searchEvent: string;
   organization: string[];

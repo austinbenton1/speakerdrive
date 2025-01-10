@@ -29,27 +29,9 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
         const searchFields = [
           lead.lead_name,
           lead.focus,
-          lead.industry,
-          lead.organization,
-          lead.event_info,
-          lead.event_name
+          lead.keywords
         ];
         return searchFields.some(field => field?.toLowerCase().includes(searchTerm));
-      });
-    }
-
-    // Filter by Event Audience - only if there are tags (using focus column)
-    if (filters.targetAudience && filters.targetAudience.filter(tag => tag.trim()).length > 0) {
-      const validTags = filters.targetAudience.map(tag => tag.toLowerCase().trim()).filter(Boolean);
-      filteredLeads = filteredLeads.filter(lead => {
-        // Skip if lead has no focus
-        if (!lead.focus) return false;
-        
-        // Get the focus field and normalize it
-        const focusText = lead.focus.toLowerCase().trim();
-        
-        // Check if any of our search tags appear in the focus text
-        return validTags.some(searchTag => focusText.includes(searchTag));
       });
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Briefcase, Calendar, Building2, Search, X } from 'lucide-react';
 import FilterSection from './FilterSection';
 import FilterSearch from './FilterSearch';
@@ -33,24 +33,16 @@ export default function LeftSidebarFilters({
   totalCount = 0,
   uniqueCount = 0
 }: LeftSidebarFiltersProps) {
-  const [audienceInput, setAudienceInput] = useState('');
   const [speakerInput, setSpeakerInput] = useState('');
   const [organizationInput, setOrganizationInput] = useState('');
   const [jobTitleInput, setJobTitleInput] = useState('');
 
-  const handleAudienceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && audienceInput.trim()) {
-      e.preventDefault();
-      const newAudience = audienceInput.trim();
-      if (!filters.targetAudience.includes(newAudience)) {
-        setFilters({
-          ...filters,
-          targetAudience: [...filters.targetAudience, newAudience]
-        });
-      }
-      setAudienceInput('');
-    }
-  };
+  // Reset all input states when filters are cleared
+  useEffect(() => {
+    if (!filters.pastSpeakers) setSpeakerInput('');
+    if (!filters.organization.length) setOrganizationInput('');
+    if (!filters.jobTitle) setJobTitleInput('');
+  }, [filters]);
 
   const handleSpeakerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && speakerInput.trim()) {
@@ -94,13 +86,6 @@ export default function LeftSidebarFilters({
     }
   };
 
-  const removeAudience = (audience: string) => {
-    setFilters({
-      ...filters,
-      targetAudience: filters.targetAudience.filter(a => a !== audience)
-    });
-  };
-
   const removeSpeaker = (speaker: string) => {
     setFilters({
       ...filters,
@@ -126,7 +111,7 @@ export default function LeftSidebarFilters({
     <div className="w-64 bg-white overflow-y-auto border-r border-gray-200 flex flex-col h-full">
       <div className="flex-1 p-3">
         {/* EVENT FILTERS */}
-        <div className="mb-4">
+        <div className="mt-5 mb-4">
           <h2 className="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Event Filters
           </h2>
@@ -170,42 +155,6 @@ export default function LeftSidebarFilters({
                 </div>
               </FilterSection>
             )}
-
-            <FilterSection
-              title="Event Audience"
-              icon={Users}
-              isOpen={openSections.targetAudience}
-              onToggle={() => toggleSection('targetAudience')}
-            >
-              <div className="space-y-2">
-                {filters.targetAudience.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg">
-                    {filters.targetAudience.map((audience) => (
-                      <span
-                        key={audience}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-sm bg-white border border-gray-200 text-gray-700"
-                      >
-                        {audience}
-                        <button
-                          onClick={() => removeAudience(audience)}
-                          className="ml-1 p-0.5 hover:text-red-500 rounded-full"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <FilterSearch
-                  value={audienceInput}
-                  onChange={setAudienceInput}
-                  onKeyDown={handleAudienceKeyDown}
-                  placeholder="e.g. HR Executives"
-                  helperText="Press Enter to add each audience type"
-                />
-              </div>
-            </FilterSection>
 
             <FilterSection
               title="Event Format"
