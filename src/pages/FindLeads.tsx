@@ -9,13 +9,13 @@ import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTypeConfig';
+import type { Lead } from '../types';
 
 export default function FindLeads() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [eventsFilter, setEventsFilter] = useState(() => {
     const urlEvent = searchParams.get('event');
-    // Only set eventsFilter if the URL param exists and is not empty
     return urlEvent && urlEvent.trim() ? urlEvent : '';
   });
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
@@ -32,133 +32,55 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
-  useEffect(() => {
-    setFilters({
-      industry: [],
-      eventFormat: [],
-      organization: [],
-      organizationType: [],
-      pastSpeakers: '',
-      searchAll: '',
-      unlockType: undefined,
-      jobTitle: '',
-      region: '',
-      state: [],
-      city: []
-    });
-  }, []); // Run only once on mount
-
-  const hasActiveFilters = useMemo(() => {
-    // Check for any non-empty arrays or truthy values in filters
-    const activeFilterValues = [
-      eventsFilter,                    // Search text
-      filters.industry?.length,        // Selected industries
-      filters.eventFormat?.length,     // Selected event formats
-      filters.organization?.length,    // Selected organizations
-      filters.organizationType?.length,// Selected org types
-      filters.pastSpeakers,           // Past speakers text
-      filters.searchAll,              // Search all text
-      filters.jobTitle,               // Job title text
-      filters.region,                 // Region text
-      filters.state?.length,          // Selected states
-      filters.city?.length,           // Selected cities
-      selectedLeadType !== 'all',      // Lead type selection
-      !showAllEvents,                  // Consider unique view as an active filter
-    ];
-
-    // Return true if any filter is active
-    return activeFilterValues.some(value => Boolean(value));
-  }, [
-    eventsFilter,
-    filters.industry,
-    filters.eventFormat,
-    filters.organization,
-    filters.organizationType,
-    filters.pastSpeakers,
-    filters.searchAll,
-    filters.jobTitle,
-    filters.region,
-    filters.state,
-    filters.city,
-    selectedLeadType,
-    showAllEvents,
-  ]);
-
-  const handleResetFilters = () => {
-    // Reset all filter values
-    setFilters({
-      industry: [],
-      eventFormat: [],
-      organization: [],
-      organizationType: [],
-      pastSpeakers: '',
-      searchAll: '',
-      unlockType: undefined,
-      jobTitle: '',
-      region: '',
-      state: [],
-      city: []
-    });
-    setEventsFilter('');
-    setSelectedLeadType('all');
-    // Reset Event Display to default state (showing all events)
-    setShowAllEvents(true);
-  };
-
-  const handleCompleteReset = () => {
-    // Reset all filter values
-    setFilters({
-      industry: [],
-      eventFormat: [],
-      organization: [],
-      organizationType: [],
-      pastSpeakers: '',
-      searchAll: '',
-      unlockType: undefined,
-      jobTitle: '',
-      region: '',
-      state: [],
-      city: []
-    });
-
-    // Reset opportunities filter
-    setEventsFilter('');
-    setSelectedLeadType('all');
-    // Reset Event Display to default state
-    setShowAllEvents(true);
-    setIsFiltering(false);
-
-    // Collapse all filter sections
-    setOpenSections({
-      targetAudience: false,
-      eventFormat: false,
-      industry: false,
-      organization: false,
-      organizationType: false,
-      location: false
-    });
-  };
-
-  // Set initial 50 records when leads are loaded
-  useEffect(() => {
-    if (availableLeads.length > 0 && !isFiltering) {
-      setDisplayedLeads(availableLeads.slice(0, 50));
-    }
-  }, [availableLeads, isFiltering]);
-
-  // Handle URL parameters on mount
+  // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
     const orgParam = searchParams.get('organization');
+    
+    setFilters(prev => ({
+      ...prev,
+      industry: [],
+      eventFormat: [],
+      organization: orgParam ? [orgParam] : [],
+      organizationType: [],
+      pastSpeakers: '',
+      searchAll: '',
+      unlockType: undefined,
+      jobTitle: '',
+      region: '',
+      state: [],
+      city: []
+    }));
+
     if (orgParam) {
-      setFilters(prev => ({
-        ...prev,
-        organization: [orgParam]
-      }));
       setIsFiltering(true);
     }
-  }, [searchParams]);
+  }, []); // Empty dependency array for initialization
 
-  // Get filtered results using the hook
+  // Memoize active filters check
+  const hasActiveFilters = useMemo(() => {
+    return Boolean(
+      eventsFilter ||
+      filters.industry?.length ||
+      filters.eventFormat?.length ||
+      filters.organization?.length ||
+      filters.organizationType?.length ||
+      filters.pastSpeakers ||
+      filters.searchAll ||
+      filters.jobTitle ||
+      filters.region ||
+      filters.state?.length ||
+      filters.city?.length ||
+      selectedLeadType !== 'all' ||
+      !showAllEvents
+    );
+  }, [
+    eventsFilter,
+    filters,
+    selectedLeadType,
+    showAllEvents
+  ]);
+
+  // Memoize filtered results
   const filteredResults = useLeadsFilter(availableLeads, {
     opportunitiesFilter: eventsFilter,
     selectedLeadTypes: ['Event', 'Contact'],
@@ -176,25 +98,56 @@ export default function FindLeads() {
     city: filters.city || []
   });
 
-  // Update displayed leads when filters change
+  // Update displayed leads when necessary
   useEffect(() => {
-    setIsFiltering(hasActiveFilters);
+    const results = hasActiveFilters
+      ? filteredResults
+      : availableLeads.slice(0, 50);
 
-    if (hasActiveFilters) {
-      // Apply unique filter only when showAllEvents is false
-      const results = showAllEvents ? filteredResults : getUniqueLeads(filteredResults);
-      setDisplayedLeads(results);
-    } else {
-      // If no filters active, still respect the showAllEvents toggle
-      const results = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
-      setDisplayedLeads(results.slice(0, 50));
+    const finalResults = showAllEvents ? results : getUniqueLeads(results);
+    
+    if (JSON.stringify(displayedLeads) !== JSON.stringify(finalResults)) {
+      setDisplayedLeads(finalResults);
+      setIsFiltering(hasActiveFilters);
     }
-  }, [filters, eventsFilter, showAllEvents, filteredResults, hasActiveFilters, availableLeads]);
+  }, [filteredResults, hasActiveFilters, showAllEvents, availableLeads]);
 
-  // Calculate unique count for display
-  const uniqueLeadsCount = useMemo(() => {
-    return getUniqueLeads(displayedLeads).length;
-  }, [displayedLeads]);
+  // Memoize unique count calculation
+  const uniqueLeadsCount = useMemo(() => 
+    getUniqueLeads(displayedLeads).length,
+  [displayedLeads]);
+
+  const handleResetFilters = () => {
+    setFilters({
+      industry: [],
+      eventFormat: [],
+      organization: [],
+      organizationType: [],
+      pastSpeakers: '',
+      searchAll: '',
+      unlockType: undefined,
+      jobTitle: '',
+      region: '',
+      state: [],
+      city: []
+    });
+    setEventsFilter('');
+    setSelectedLeadType('all');
+    setShowAllEvents(true);
+  };
+
+  const handleCompleteReset = () => {
+    handleResetFilters();
+    setIsFiltering(false);
+    setOpenSections({
+      targetAudience: false,
+      eventFormat: false,
+      industry: false,
+      organization: false,
+      organizationType: false,
+      location: false
+    });
+  };
 
   const handleLeadClick = (leadId: string) => {
     navigate(`/leads/${leadId}`);
@@ -203,19 +156,12 @@ export default function FindLeads() {
   const handleLeadTypeChange = (type: LeadType) => {
     setSelectedLeadType(type);
     const selectedType = leadTypes.find(t => t.id === type);
-    if (selectedType?.unlockValue) {
-      setFilters(prev => ({
-        ...prev,
-        unlockType: selectedType.unlockValue,
-        jobTitle: selectedType.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : ''
-      }));
-    } else {
-      setFilters(prev => ({
-        ...prev,
-        unlockType: undefined,
-        jobTitle: ''
-      }));
-    }
+    
+    setFilters(prev => ({
+      ...prev,
+      unlockType: selectedType?.unlockValue,
+      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : ''
+    }));
   };
 
   return (
