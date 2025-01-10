@@ -140,7 +140,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           </div>
         </div>
       </td>
-      <td className="pl-[20px] pr-12 py-4 whitespace-nowrap text-center">
+      <td className="pl-[30px] pr-12 py-4 whitespace-nowrap text-center">
         <div className="relative group/tooltip">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 group-hover:bg-gray-100 group-hover:shadow-gray-300 transition-all duration-200">
             <Eye className={`w-4 h-4 ${getIconColor(lead.unlock_type)} group-hover:opacity-80 transition-colors`} />
