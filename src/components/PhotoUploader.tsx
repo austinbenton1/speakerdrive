@@ -14,6 +14,43 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
   const [error, setError] = React.useState<string | null>(null);
   const setGlobalAvatarUrl = useAvatarStore((state) => state.setAvatarUrl);
 
+  const notifyProfileUpdate = async (userId: string, newAvatarUrl: string | null) => {
+    try {
+      // Get user's current profile to include display_name
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Failed to fetch profile:', profileError);
+        return;
+      }
+
+      const payload = {
+        user: {
+          id: userId,
+          display_name: profile.display_name
+        },
+        changes: {
+          avatar_url: newAvatarUrl
+        }
+      };
+
+      await fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.error('Failed to notify profile update:', err);
+      // Don't throw - we don't want to fail the upload if webhook fails
+    }
+  };
+
   const handleUpload = async (file: File) => {
     try {
       setIsUploading(true);
@@ -35,6 +72,9 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
 
       onPhotoChange(publicUrl);
       setGlobalAvatarUrl(publicUrl);
+
+      // Notify webhook about the avatar update
+      await notifyProfileUpdate(user.id, publicUrl);
     } catch (err) {
       console.error('Error uploading photo:', err);
       setError('Failed to upload photo. Please try again.');
@@ -86,6 +126,9 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
 
       onPhotoChange(null);
       setGlobalAvatarUrl(null);
+
+      // Notify webhook about avatar removal
+      await notifyProfileUpdate(user.id, null);
     } catch (err) {
       console.error('Error removing photo:', err);
       setError('Failed to remove photo. Please try again.');

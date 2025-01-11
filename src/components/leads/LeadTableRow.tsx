@@ -5,9 +5,10 @@ import type { Lead } from '../../types';
 interface LeadTableRowProps {
   lead: Lead;
   onClick: () => void;
+  stickyFirstColumn?: boolean;
 }
 
-export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
+export default function LeadTableRow({ lead, onClick, stickyFirstColumn }: LeadTableRowProps) {
   const getUnlockTypeStyle = (type: string) => {
     switch (type) {
       case 'Unlock Event URL':
@@ -99,8 +100,11 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
   };
 
   return (
-    <tr onClick={onClick} className="hover:bg-gray-50/80 cursor-pointer group">
-      <td className="pl-4 pr-8 py-4 whitespace-nowrap min-w-[500px]">
+    <tr
+      onClick={onClick}
+      className="hover:bg-gray-50 cursor-pointer"
+    >
+      <td className={`px-3 py-4 w-[50%] ${stickyFirstColumn ? 'sticky left-0 bg-white hover:bg-gray-50 z-40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]' : ''}`}>
         <div className="flex items-center min-w-0">
           <img 
             src={lead.image_url} 

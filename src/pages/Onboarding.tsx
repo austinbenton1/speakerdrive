@@ -62,11 +62,46 @@ export default function Onboarding() {
     try {
       setError(null);
 
+      // Update profile
       await updateProfile(user.id, {
         display_name: data.fullName,
         services: data.services,
         industries: data.industries
       });
+
+      // Fetch the complete updated profile
+      const { data: updatedProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, email, display_name, services, industries')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Send webhook notification
+      try {
+        const payload = {
+          user: {},
+          changes: {
+            id: updatedProfile.id,
+            email: user.email,
+            display_name: updatedProfile.display_name,
+            services: updatedProfile.services,
+            industries: updatedProfile.industries
+          }
+        };
+
+        await fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (webhookError) {
+        console.error('Failed to send profile update to webhook:', webhookError);
+        // Don't throw - we don't want to fail the onboarding if webhook fails
+      }
 
       navigate('/dashboard');
     } catch (error) {

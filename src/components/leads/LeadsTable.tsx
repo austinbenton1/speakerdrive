@@ -94,7 +94,7 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 scrollbar-track-transparent scroll-smooth relative">
         <table className="min-w-full table-fixed divide-y divide-gray-200">
           <thead className="bg-white">
             <tr>
@@ -103,7 +103,7 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
                 sortField={sortField} 
                 sortDirection={sortDirection} 
                 onSort={toggleSort}
-                className="w-[50%]"
+                className="w-[50%] sticky left-0 bg-white z-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-xs text-gray-700">
@@ -186,6 +186,7 @@ export default function LeadsTable({ leads, loading = false, onResetFilters }: P
                 key={lead.id}
                 lead={lead}
                 onClick={() => handleLeadClick(lead.id)}
+                stickyFirstColumn={true}
               />
             ))}
           </tbody>
