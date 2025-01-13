@@ -1,14 +1,36 @@
-import React from 'react';
-import { Search, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, RotateCcw, X } from 'lucide-react';
 
 interface OpportunitiesFilterProps {
   value: string;
   onChange: (value: string) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
+  tags: string[];
+  onAddTag: (tag: string) => void;
+  onRemoveTag: (tag: string) => void;
 }
 
-export default function OpportunitiesFilter({ value, onChange, onReset, hasActiveFilters }: OpportunitiesFilterProps) {
+export default function OpportunitiesFilter({ 
+  value, 
+  onChange, 
+  onReset, 
+  hasActiveFilters,
+  tags,
+  onAddTag,
+  onRemoveTag 
+}: OpportunitiesFilterProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && value.trim()) {
+      e.preventDefault();
+      const newTag = value.trim();
+      if (!tags.includes(newTag)) {
+        onAddTag(newTag);
+        onChange('');
+      }
+    }
+  };
+
   return (
     <div className="relative">
       <div className="flex items-center gap-2 mb-2">
@@ -24,6 +46,7 @@ export default function OpportunitiesFilter({ value, onChange, onReset, hasActiv
               type="text"
               value={value}
               onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="e.g. Leadership Summit, Tech Conference..."
               className="block w-full px-4 pr-16 py-3.5 bg-white border-2 border-gray-200 rounded-lg text-sm 
                 placeholder:text-gray-400 shadow-sm
@@ -51,6 +74,24 @@ export default function OpportunitiesFilter({ value, onChange, onReset, hasActiv
           )}
         </div>
       </div>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3 p-2 bg-gray-50 rounded-lg">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center px-2 py-1 rounded-md text-sm bg-white border border-gray-200 text-gray-700"
+            >
+              {tag}
+              <button
+                onClick={() => onRemoveTag(tag)}
+                className="ml-1 p-0.5 hover:text-red-500 rounded-full"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <p className="mt-2 text-xs text-gray-500">
         Search across all available opportunities
       </p>

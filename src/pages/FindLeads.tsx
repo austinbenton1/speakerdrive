@@ -22,6 +22,7 @@ export default function FindLeads() {
     const displayParam = searchParams.get('event_display');
     return displayParam === 'all';
   });
+  const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
@@ -72,7 +73,8 @@ export default function FindLeads() {
       filters.region ||
       filters.state?.length ||
       filters.city?.length ||
-      selectedLeadType !== 'all'
+      selectedLeadType !== 'all' ||
+      opportunityTags.length > 0
     );
   }, [
     eventsFilter,
@@ -86,7 +88,8 @@ export default function FindLeads() {
     filters.region,
     filters.state,
     filters.city,
-    selectedLeadType
+    selectedLeadType,
+    opportunityTags
   ]);
 
   // Apply filters to leads
@@ -94,15 +97,28 @@ export default function FindLeads() {
     let results = [...availableLeads];
 
     // Filter by opportunities search term
-    if (eventsFilter) {
-      const searchTerm = eventsFilter.toLowerCase();
+    if (eventsFilter || opportunityTags.length > 0) {
       results = results.filter(lead => {
         const searchFields = [
-          lead.lead_name,
+          lead.event_name,
           lead.focus,
           lead.keywords
         ];
-        return searchFields.some(field => field?.toLowerCase().includes(searchTerm));
+        
+        if (eventsFilter) {
+          const searchTerm = eventsFilter.toLowerCase();
+          if (searchFields.some(field => field?.toLowerCase().includes(searchTerm))) {
+            return true;
+          }
+        }
+        
+        if (opportunityTags.length > 0) {
+          return opportunityTags.some(tag => 
+            searchFields.some(field => field?.toLowerCase().includes(tag.toLowerCase()))
+          );
+        }
+        
+        return false;
       });
     }
 
@@ -180,7 +196,7 @@ export default function FindLeads() {
     }
 
     return results;
-  }, [availableLeads, eventsFilter, filters]);
+  }, [availableLeads, eventsFilter, filters, opportunityTags]);
 
   // Update displayed leads when necessary
   useEffect(() => {
@@ -210,6 +226,7 @@ export default function FindLeads() {
       city: []
     });
     setEventsFilter('');
+    setOpportunityTags([]);
     setSelectedLeadType('all');
     setShowAllEvents(false);
   };
@@ -272,6 +289,9 @@ export default function FindLeads() {
                   onChange={setEventsFilter}
                   onReset={handleCompleteReset}
                   hasActiveFilters={hasActiveFilters}
+                  tags={opportunityTags}
+                  onAddTag={(tag) => setOpportunityTags([...opportunityTags, tag])}
+                  onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
                 />
               </div>
               <div className="max-w-[650px]">

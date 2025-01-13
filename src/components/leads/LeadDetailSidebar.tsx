@@ -132,8 +132,9 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
       isLink: true,
       onClick: () => {
         const params = new URLSearchParams({
-          event: lead.eventName || lead.name,
-          organization: lead.organization || ''
+          event: lead.eventName,
+          organization: lead.organization,
+          event_display: 'all'
         });
         window.open(`/find-leads?${params.toString()}`, '_blank', 'noopener,noreferrer');
       }
