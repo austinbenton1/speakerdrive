@@ -1,5 +1,13 @@
 import type { Lead } from '../types';
 
+// Helper function to get unlock type priority
+const getUnlockPriority = (type: string) => {
+  if (type === 'Unlock Event URL') return 3;
+  if (type === 'Unlock Contact Email') return 2;
+  if (type === 'Unlock Event Email') return 1;
+  return 0;
+};
+
 export function getUniqueLeads(leads: Lead[]): Lead[] {
   // Create a map to store unique leads by event name and organization
   const uniqueMap = new Map<string, Lead>();
@@ -11,14 +19,6 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
     // If organizations are different, maintain original order
     if (a.organization !== b.organization) return 0;
     
-    // Prioritize unlock types
-    const getUnlockPriority = (type: string) => {
-      if (type.includes('URL')) return 3;
-      if (type.includes('Contact Email')) return 2;
-      if (type.includes('Event Email')) return 1;
-      return 0;
-    };
-
     const priorityA = getUnlockPriority(a.unlock_type);
     const priorityB = getUnlockPriority(b.unlock_type);
     
@@ -40,16 +40,10 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
       uniqueMap.set(key, lead);
     } else {
       // Check if current lead has higher priority unlock type
-      const existingPriority = existingLead.unlock_type.includes('URL') ? 3 
-        : existingLead.unlock_type.includes('Contact Email') ? 2 
-        : existingLead.unlock_type.includes('Event Email') ? 1 
-        : 0;
+      const existingPriority = getUnlockPriority(existingLead.unlock_type);
+      const currentPriority = getUnlockPriority(lead.unlock_type);
       
-      const currentPriority = lead.unlock_type.includes('URL') ? 3 
-        : lead.unlock_type.includes('Contact Email') ? 2 
-        : lead.unlock_type.includes('Event Email') ? 1 
-        : 0;
-      
+      // Replace if current lead has higher priority
       if (currentPriority > existingPriority) {
         uniqueMap.set(key, lead);
       }
