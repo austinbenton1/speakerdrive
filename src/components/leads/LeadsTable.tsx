@@ -69,8 +69,8 @@ export default function LeadsTable({
         <div className="min-w-[1500px] w-full">
           <div className="grid grid-cols-[575px_275px_230px_200px_240px] gap-0">
             {/* Header */}
-            <div className="contents sticky top-0">
-              <div className="bg-white px-3 py-3 sticky left-0 z-20">
+            <div className="contents">
+              <div className="bg-white px-3 py-3">
                 <div className="flex items-center gap-2 text-[13.5px] font-medium text-gray-800 ml-2">
                   <Layers className="w-4 h-4 text-gray-500" />
                   <div>
@@ -79,10 +79,10 @@ export default function LeadsTable({
                   </div>
                 </div>
               </div>
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[16px] border-b-2 border-gray-100 sticky top-0 z-10">Event Topic</div>
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100 sticky top-0 z-10">Event URL</div>
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100 sticky top-0 z-10">Location</div>
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[64px] border-b-2 border-gray-100 sticky top-0 z-10">Event Group</div>
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[16px] border-b-2 border-gray-100">Event Topic</div>
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100">Event URL</div>
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100">Location</div>
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[64px] border-b-2 border-gray-100">Event Group</div>
             </div>
 
             {/* Content */}

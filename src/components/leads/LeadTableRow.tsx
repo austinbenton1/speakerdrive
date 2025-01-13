@@ -205,7 +205,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       {/* Main Content */}
       <div 
         onClick={onClick}
-        className="w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer sticky left-0 bg-white z-10"
+        className="w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
       >
         <div className="flex items-start">
           <div className="flex gap-3 min-w-0">
