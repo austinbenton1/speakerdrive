@@ -11,8 +11,8 @@ interface OutlinedToggleProps {
 export default function OutlinedToggle({
   checked,
   onChange,
-  leftLabel = 'All',
-  rightLabel = 'Unique',
+  leftLabel = 'Unique',
+  rightLabel = 'All',
   disabled = false
 }: OutlinedToggleProps) {
   return (
@@ -33,13 +33,13 @@ export default function OutlinedToggle({
     >
       {/* Labels Container */}
       <div className="absolute inset-0 flex">
-        {/* Left Label */}
+        {/* Left Label (Unique) */}
         <div className={`flex-1 flex items-center justify-center transition-colors duration-200
           ${!checked ? 'text-gray-900' : 'text-gray-400'}`}>
           <span className="text-xs font-medium">{leftLabel}</span>
         </div>
         
-        {/* Right Label */}
+        {/* Right Label (All) */}
         <div className={`flex-1 flex items-center justify-center transition-colors duration-200
           ${checked ? 'text-gray-900' : 'text-gray-400'}`}>
           <span className="text-xs font-medium">{rightLabel}</span>

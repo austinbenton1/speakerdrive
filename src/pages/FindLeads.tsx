@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
-import { useLeadsFilter } from '../hooks/useLeadsFilter';
 import { getUniqueLeads } from '../utils/deduplication';
 import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
@@ -19,7 +18,10 @@ export default function FindLeads() {
     return urlEvent && urlEvent.trim() ? urlEvent : '';
   });
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
-  const [showAllEvents, setShowAllEvents] = useState(true);
+  const [showAllEvents, setShowAllEvents] = useState(() => {
+    const displayParam = searchParams.get('event_display');
+    return displayParam === 'all';
+  });
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
@@ -70,47 +72,123 @@ export default function FindLeads() {
       filters.region ||
       filters.state?.length ||
       filters.city?.length ||
-      selectedLeadType !== 'all' ||
-      !showAllEvents
+      selectedLeadType !== 'all'
     );
   }, [
     eventsFilter,
-    filters,
-    selectedLeadType,
-    showAllEvents
+    filters.industry,
+    filters.eventFormat,
+    filters.organization,
+    filters.organizationType,
+    filters.pastSpeakers,
+    filters.searchAll,
+    filters.jobTitle,
+    filters.region,
+    filters.state,
+    filters.city,
+    selectedLeadType
   ]);
 
-  // Memoize filtered results
-  const filteredResults = useLeadsFilter(availableLeads, {
-    opportunitiesFilter: eventsFilter,
-    selectedLeadTypes: ['Event', 'Contact'],
-    selectedIndustries: filters.industry,
-    selectedEventFormats: filters.eventFormat || [],
-    organization: filters.organization,
-    organizationType: filters.organizationType || [],
-    pastSpeakers: filters.pastSpeakers,
-    searchAll: filters.searchAll,
-    unlockType: filters.unlockType,
-    targetAudience: filters.targetAudience || [],
-    jobTitle: filters.jobTitle,
-    region: filters.region,
-    state: filters.state || [],
-    city: filters.city || []
-  });
+  // Apply filters to leads
+  const filteredLeads = useMemo(() => {
+    let results = [...availableLeads];
+
+    // Filter by opportunities search term
+    if (eventsFilter) {
+      const searchTerm = eventsFilter.toLowerCase();
+      results = results.filter(lead => {
+        const searchFields = [
+          lead.lead_name,
+          lead.focus,
+          lead.keywords
+        ];
+        return searchFields.some(field => field?.toLowerCase().includes(searchTerm));
+      });
+    }
+
+    // Filter by industry
+    if (filters.industry?.length) {
+      results = results.filter(lead => 
+        filters.industry.some(industry => 
+          lead.industry?.toLowerCase().includes(industry.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by event format
+    if (filters.eventFormat?.length) {
+      results = results.filter(lead => 
+        filters.eventFormat.some(format => 
+          lead.event_format?.toLowerCase().includes(format.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by organization
+    if (filters.organization?.length) {
+      results = results.filter(lead => 
+        filters.organization.some(org => 
+          lead.organization?.toLowerCase().includes(org.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by organization type
+    if (filters.organizationType?.length) {
+      results = results.filter(lead => 
+        filters.organizationType.includes(lead.organization_type || '')
+      );
+    }
+
+    // Filter by job title
+    if (filters.jobTitle) {
+      results = results.filter(lead => 
+        lead.job_title?.toLowerCase().includes(filters.jobTitle.toLowerCase())
+      );
+    }
+
+    // Filter by region
+    if (filters.region) {
+      results = results.filter(lead => 
+        lead.region?.toLowerCase() === filters.region.toLowerCase()
+      );
+    }
+
+    // Filter by state
+    if (filters.state?.length) {
+      results = results.filter(lead => 
+        filters.state.some(state => 
+          lead.state?.toLowerCase() === state.toLowerCase()
+        )
+      );
+    }
+
+    // Filter by city
+    if (filters.city?.length) {
+      results = results.filter(lead => 
+        filters.city.some(city => 
+          lead.city?.toLowerCase().includes(city.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by unlock type
+    if (filters.unlockType) {
+      results = results.filter(lead => 
+        lead.unlock_type === filters.unlockType
+      );
+    }
+
+    return results;
+  }, [availableLeads, eventsFilter, filters]);
 
   // Update displayed leads when necessary
   useEffect(() => {
-    const results = hasActiveFilters
-      ? filteredResults
-      : availableLeads.slice(0, 50);
-
+    const results = hasActiveFilters ? filteredLeads : availableLeads;
     const finalResults = showAllEvents ? results : getUniqueLeads(results);
-    
-    if (JSON.stringify(displayedLeads) !== JSON.stringify(finalResults)) {
-      setDisplayedLeads(finalResults);
-      setIsFiltering(hasActiveFilters);
-    }
-  }, [filteredResults, hasActiveFilters, showAllEvents, availableLeads]);
+    setDisplayedLeads(finalResults);
+    setIsFiltering(hasActiveFilters);
+  }, [filteredLeads, hasActiveFilters, showAllEvents, availableLeads]);
 
   // Memoize unique count calculation
   const uniqueLeadsCount = useMemo(() => 
@@ -133,7 +211,7 @@ export default function FindLeads() {
     });
     setEventsFilter('');
     setSelectedLeadType('all');
-    setShowAllEvents(true);
+    setShowAllEvents(false);
   };
 
   const handleCompleteReset = () => {
@@ -211,6 +289,8 @@ export default function FindLeads() {
               loading={loading}
               onLeadClick={handleLeadClick}
               onResetFilters={handleResetFilters}
+              showAllEvents={showAllEvents}
+              uniqueCount={uniqueLeadsCount}
             />
           </div>
         </div>

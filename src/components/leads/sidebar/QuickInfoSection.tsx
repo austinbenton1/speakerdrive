@@ -2,7 +2,6 @@ import React from 'react';
 import { Building2, HelpCircle } from 'lucide-react';
 import type { QuickInfoItem } from '../../../types/leads';
 import { SidebarSection } from './SidebarSection';
-import { Tooltip } from '../../common/Tooltip';
 
 interface QuickInfoSectionProps {
   items: QuickInfoItem[];
@@ -26,11 +25,14 @@ export function QuickInfoSection({ items }: QuickInfoSectionProps) {
                 <div className="flex items-center gap-1 mb-0.5">
                   <span className="text-sm text-gray-500">{item.label}</span>
                   {item.tooltip && (
-                    <Tooltip content={item.tooltip}>
+                    <div className="relative group">
                       <button className="w-4 h-4 text-gray-400">
                         <HelpCircle className="w-4 h-4" />
                       </button>
-                    </Tooltip>
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                        {item.tooltip}
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1">

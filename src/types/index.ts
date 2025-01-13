@@ -11,6 +11,7 @@ export interface Lead {
   event_info?: string;
   detailed_info?: string;
   event_name: string;
+  event_url?: string;
   event_format?: string;
   job_title?: string;
   subtext?: string;

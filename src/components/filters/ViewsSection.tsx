@@ -38,21 +38,23 @@ export default function ViewsSection({
         </div>
 
         <OutlinedToggle
-          checked={!showAllEvents}
+          checked={showAllEvents}
           onChange={onToggle}
+          leftLabel="Unique"
+          rightLabel="All"
         />
         
         <div className="space-y-1">
           <p className="text-xs text-gray-500">
-            {showAllEvents 
-              ? 'Showing all event leads'
-              : 'Showing unique leads'
+            {!showAllEvents 
+              ? 'Showing unique events'
+              : 'Showing all event unlocks'
             }
           </p>
           <p className="text-xs text-gray-400">
-            {showAllEvents 
-              ? `${totalCount} total leads`
-              : `${uniqueCount} unique leads`
+            {!showAllEvents 
+              ? `${uniqueCount} total events`
+              : `${totalCount} total leads`
             }
           </p>
         </div>
