@@ -128,12 +128,13 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
   const allUnlocksItems = [
     {
       value: `View More - ${lead.eventName || lead.name}`,
+      eventName: lead.eventName || '',
       show: true,
       isLink: true,
       onClick: () => {
+        if (!lead.eventName) return;
         const params = new URLSearchParams({
           event: lead.eventName,
-          organization: lead.organization,
           event_display: 'all'
         });
         window.open(`/find-leads?${params.toString()}`, '_blank', 'noopener,noreferrer');
