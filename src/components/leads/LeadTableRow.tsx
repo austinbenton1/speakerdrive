@@ -108,7 +108,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               <MapPin className="w-4 h-4 mr-2 text-gray-400" />
               <span className="text-[14.5px]">
                 {[lead.city, lead.state, lead.region]
-                  .filter(Boolean)
+                  .filter(value => value && value.trim() !== '')
                   .join(', ')}
               </span>
             </div>
@@ -316,7 +316,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
             <MapPin className="w-4 h-4 mr-1.5 text-[#DD4B3E] flex-shrink-0" />
             <span>
               {[lead.city, lead.state, lead.region]
-                .filter(Boolean)
+                .filter(value => value && value.trim() !== '' && value.trim().toLowerCase() !== 'blank')
                 .join(', ')}
             </span>
           </div>
