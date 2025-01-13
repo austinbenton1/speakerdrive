@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchLeadById } from '../lib/api/leads';
+import { supabase } from '../lib/supabase';
 import type { SpeakerLead } from '../types';
 
 interface UseLeadDetailsResult {
@@ -18,6 +19,31 @@ export function useLeadDetails(id: string): UseLeadDetailsResult {
       try {
         setIsLoading(true);
         setError(null);
+        
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) throw new Error('No authenticated user');
+
+        // Record the visit in unlocked_leads
+        const { error: visitError } = await supabase
+          .from('unlocked_leads')
+          .upsert(
+            {
+              lead_id: id,
+              user_id: user.id,
+              created_at: new Date().toISOString(),
+              unlocked: false
+            },
+            {
+              onConflict: 'lead_id,user_id',
+              ignoreDuplicates: true
+            }
+          );
+
+        if (visitError) {
+          console.error('Error recording lead visit:', visitError);
+        }
         
         const leadData = await fetchLeadById(id);
         setLead(leadData);
