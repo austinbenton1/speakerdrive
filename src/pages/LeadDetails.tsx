@@ -1,15 +1,24 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Loader, X } from 'lucide-react';
 import { useLeadDetails } from '../hooks/useLeadDetails';
 import { useLeadUnlock } from '../hooks/useLeadUnlock';
 import LeadDetailHeader from '../components/leads/LeadDetailHeader';
 import LeadDetailContent from '../components/leads/LeadDetailContent';
 import LeadDetailSidebar from '../components/leads/LeadDetailSidebar';
 
+interface LocationState {
+  leadIds: string[];
+  currentIndex: number;
+  fromFindLeads: boolean;
+}
+
 export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState;
+  
   const { lead, isLoading, error } = useLeadDetails(id || '');
   const { 
     isUnlocked,
@@ -26,6 +35,30 @@ export default function LeadDetails() {
     }
   }, [id]);
 
+  const handlePrevious = () => {
+    if (state?.leadIds && state.currentIndex > 0) {
+      const previousId = state.leadIds[state.currentIndex - 1];
+      navigate(`/leads/${previousId}${location.search}`, {
+        state: {
+          ...state,
+          currentIndex: state.currentIndex - 1
+        }
+      });
+    }
+  };
+
+  const handleNext = () => {
+    if (state?.leadIds && state.currentIndex < state.leadIds.length - 1) {
+      const nextId = state.leadIds[state.currentIndex + 1];
+      navigate(`/leads/${nextId}${location.search}`, {
+        state: {
+          ...state,
+          currentIndex: state.currentIndex + 1
+        }
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
@@ -37,66 +70,45 @@ export default function LeadDetails() {
     );
   }
 
-  if (error) {
+  if (error || !lead) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-medium text-gray-900 mb-2">Error Loading Lead</h2>
-          <p className="text-sm text-gray-500 mb-4">{error.message}</p>
+          <p className="text-red-600">Error loading lead details. Please try again.</p>
           <button
-            onClick={() => navigate('/find-leads')}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+            onClick={() => navigate(-1)}
+            className="mt-4 text-sm text-blue-600 hover:text-blue-800"
           >
-            Back to Lead Finder
+            Go back
           </button>
         </div>
       </div>
     );
   }
 
-  if (!lead) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
-        <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-900 mb-2">Lead not found</h2>
-          <p className="text-sm text-gray-500 mb-4">The lead you're looking for doesn't exist or has been removed.</p>
-          <button
-            onClick={() => navigate('/find-leads')}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
-          >
-            Back to Lead Finder
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const hasPrevious = state?.leadIds && state.currentIndex > 0;
+  const hasNext = state?.leadIds && state.currentIndex < state.leadIds.length - 1;
 
   return (
     <div className="min-h-screen" style={{ background: '#EDEEF0' }}>
-      {unlockError && (
-        <div className="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50">
-          <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-            <p className="text-sm text-red-700">{unlockError}</p>
-          </div>
-        </div>
-      )}
-
-      <LeadDetailHeader 
+      <LeadDetailHeader
         lead={lead}
         onUnlock={handleUnlock}
         isUnlocking={isUnlocking}
         isUnlocked={isUnlocked}
         unlockValue={unlockValue}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
       />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2">
+        <div className="flex gap-8">
+          <div className="flex-1">
             <LeadDetailContent lead={lead} />
           </div>
-          <div>
+          <div className="w-80">
             <LeadDetailSidebar lead={lead} />
           </div>
         </div>

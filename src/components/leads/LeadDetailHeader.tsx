@@ -10,6 +10,10 @@ interface LeadDetailHeaderProps {
   isUnlocking: boolean;
   isUnlocked: boolean;
   unlockValue: string | null;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
 export default function LeadDetailHeader({ 
@@ -17,7 +21,11 @@ export default function LeadDetailHeader({
   onUnlock,
   isUnlocking,
   isUnlocked,
-  unlockValue
+  unlockValue,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false
 }: LeadDetailHeaderProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -41,18 +49,52 @@ export default function LeadDetailHeader({
     } border-b border-gray-100`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-6">
-          {/* Back Button */}
-          <button 
-            onClick={handleBack}
-            className={`group flex items-center text-sm font-medium text-gray-500 ${
-              lead.leadType === 'Contact'
-                ? 'hover:text-blue-600'
-                : 'hover:text-emerald-600'
-            } transition-colors`}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back
-          </button>
+          {/* Navigation Controls Container - Same width as Event Snapshot */}
+          <div className="max-w-3xl">
+            <div className="flex justify-between items-center">
+              {/* Back Button */}
+              <button 
+                onClick={handleBack}
+                className={`group flex items-center text-sm font-medium text-gray-500 ${
+                  lead.leadType === 'Contact'
+                    ? 'hover:text-blue-600'
+                    : 'hover:text-emerald-600'
+                } transition-colors`}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                Back
+              </button>
+
+              {/* Previous/Next Navigation */}
+              <div className="flex space-x-4 items-center">
+                <button
+                  onClick={onPrevious}
+                  disabled={!hasPrevious}
+                  className={`group flex items-center text-sm font-medium text-gray-500 ${
+                    lead.leadType === 'Contact'
+                      ? 'hover:text-blue-600'
+                      : 'hover:text-emerald-600'
+                  } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                  Previous
+                </button>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <button
+                  onClick={onNext}
+                  disabled={!hasNext}
+                  className={`group flex items-center text-sm font-medium text-gray-500 ${
+                    lead.leadType === 'Contact'
+                      ? 'hover:text-blue-600'
+                      : 'hover:text-emerald-600'
+                  } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  Next
+                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Main Content */}
           <div className="mt-6 flex justify-between items-start gap-8">

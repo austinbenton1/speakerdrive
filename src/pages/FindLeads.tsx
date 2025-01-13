@@ -358,8 +358,21 @@ export default function FindLeads() {
     // Add display mode
     if (showAllEvents) params.set('event_display', 'all');
 
-    // Navigate to lead detail with filters
-    navigate(`/leads/${leadId}?${params.toString()}`);
+    // Get current list of leads based on filters and display mode
+    const currentLeads = showAllEvents ? displayedLeads : getUniqueLeads(displayedLeads);
+    
+    // Get array of lead IDs and current index
+    const leadIds = currentLeads.map(lead => lead.id);
+    const currentIndex = leadIds.indexOf(leadId);
+
+    // Navigate to lead detail with filters and lead IDs
+    navigate(`/leads/${leadId}?${params.toString()}`, {
+      state: {
+        leadIds,
+        currentIndex,
+        fromFindLeads: true
+      }
+    });
   };
 
   const handleLeadTypeChange = (type: LeadType) => {
