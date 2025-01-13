@@ -101,7 +101,6 @@ export default function FindLeads() {
       results = results.filter(lead => {
         const searchFields = [
           lead.event_name,
-          lead.focus,
           lead.keywords
         ];
         
