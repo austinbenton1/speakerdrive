@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import LeadDetailHeaderActions from './LeadDetailHeaderActions';
 import type { SpeakerLead } from '../../types';
@@ -20,6 +20,18 @@ export default function LeadDetailHeader({
   unlockValue
 }: LeadDetailHeaderProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const handleBack = () => {
+    // Get all current URL parameters
+    const params = new URLSearchParams();
+    searchParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+
+    // Navigate back to find leads with the same filters
+    navigate(`/find-leads?${params.toString()}`);
+  };
 
   return (
     <div className={`bg-gradient-to-b ${
@@ -31,7 +43,7 @@ export default function LeadDetailHeader({
         <div className="py-6">
           {/* Back Button */}
           <button 
-            onClick={() => navigate(-1)} 
+            onClick={handleBack}
             className={`group flex items-center text-sm font-medium text-gray-500 ${
               lead.leadType === 'Contact'
                 ? 'hover:text-blue-600'

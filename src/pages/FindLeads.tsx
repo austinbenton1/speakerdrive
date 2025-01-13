@@ -13,15 +13,9 @@ import type { Lead } from '../types';
 export default function FindLeads() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [eventsFilter, setEventsFilter] = useState(() => {
-    const urlEvent = searchParams.get('event');
-    return urlEvent && urlEvent.trim() ? urlEvent : '';
-  });
+  const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
-  const [showAllEvents, setShowAllEvents] = useState(() => {
-    const displayParam = searchParams.get('event_display');
-    return displayParam === 'all';
-  });
+  const [showAllEvents, setShowAllEvents] = useState(false);
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
@@ -37,24 +31,113 @@ export default function FindLeads() {
 
   // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
-    const orgParam = searchParams.get('organization');
-    
+    // Parse URL parameters for all filters
+    const urlParams = {
+      // Opportunity filter
+      event: searchParams.get('event'),
+      tags: searchParams.get('tags')?.split(',').filter(Boolean) || [],
+      
+      // Lead type filter
+      type: searchParams.get('type'),
+      
+      // Main filters
+      industry: searchParams.get('industry')?.split(',').filter(Boolean) || [],
+      eventFormat: searchParams.get('format')?.split(',').filter(Boolean) || [],
+      organization: searchParams.get('organization')?.split(',').filter(Boolean) || [],
+      organizationType: searchParams.get('orgType')?.split(',').filter(Boolean) || [],
+      pastSpeakers: searchParams.get('speakers')?.split(',').filter(Boolean) || [],
+      searchAll: searchParams.get('search') || '',
+      jobTitle: searchParams.get('job')?.split(',').filter(Boolean) || [],
+      region: searchParams.get('region') || '',
+      state: searchParams.get('state')?.split(',').filter(Boolean) || [],
+      city: searchParams.get('city')?.split(',').filter(Boolean) || [],
+      unlockType: undefined
+    };
+
+    // Set event filter if present
+    if (urlParams.event) {
+      setEventsFilter(urlParams.event);
+    }
+
+    // Set opportunity tags if present
+    if (urlParams.tags.length > 0) {
+      setOpportunityTags(urlParams.tags);
+    }
+
+    // Set lead type if specified
+    if (urlParams.type && urlParams.type !== 'all') {
+      setSelectedLeadType(urlParams.type);
+      const selectedType = leadTypes.find(t => t.id === urlParams.type);
+      if (selectedType) {
+        urlParams.unlockType = selectedType.unlockValue;
+      }
+    }
+
+    // Set display mode if specified
+    const displayParam = searchParams.get('event_display');
+    if (displayParam === 'all') {
+      setShowAllEvents(true);
+    }
+
+    // Set main filters
     setFilters(prev => ({
       ...prev,
-      industry: [],
-      eventFormat: [],
-      organization: orgParam ? [orgParam] : [],
-      organizationType: [],
-      pastSpeakers: '',
-      searchAll: '',
-      unlockType: undefined,
-      jobTitle: '',
-      region: '',
-      state: [],
-      city: []
+      industry: urlParams.industry,
+      eventFormat: urlParams.eventFormat,
+      organization: urlParams.organization,
+      organizationType: urlParams.organizationType,
+      pastSpeakers: urlParams.pastSpeakers,
+      searchAll: urlParams.searchAll,
+      jobTitle: urlParams.jobTitle,
+      region: urlParams.region,
+      state: urlParams.state,
+      city: urlParams.city,
+      unlockType: urlParams.unlockType
     }));
 
-    if (orgParam) {
+    // Determine which sections should be open based on active filters
+    const sectionsToOpen = {
+      // Event Filters
+      jobTitle: urlParams.jobTitle.length > 0,
+      eventFormat: urlParams.eventFormat.length > 0,
+      industry: urlParams.industry.length > 0,
+      pastSpeakers: urlParams.pastSpeakers.length > 0,
+      
+      // Organization Filters
+      moreFilters: urlParams.organization.length > 0, // Organization filter
+      organizationType: urlParams.organizationType.length > 0,
+      
+      // Location Filters
+      location: Boolean(urlParams.region || urlParams.state.length || urlParams.city.length),
+      
+      // Target Audience (based on job title or past speakers)
+      targetAudience: urlParams.jobTitle.length > 0 || urlParams.pastSpeakers.length > 0
+    };
+
+    // Open sections that have active filters
+    setOpenSections(prev => ({
+      ...prev,
+      ...sectionsToOpen
+    }));
+
+    // Set filtering state if any filter is active
+    const hasActiveFilters = Boolean(
+      urlParams.event ||
+      urlParams.tags.length > 0 ||
+      urlParams.type !== 'all' ||
+      urlParams.industry.length > 0 ||
+      urlParams.eventFormat.length > 0 ||
+      urlParams.organization.length > 0 ||
+      urlParams.organizationType.length > 0 ||
+      urlParams.pastSpeakers.length > 0 ||
+      urlParams.searchAll ||
+      urlParams.jobTitle.length > 0 ||
+      urlParams.region ||
+      urlParams.state.length > 0 ||
+      urlParams.city.length > 0
+    );
+
+    if (hasActiveFilters) {
       setIsFiltering(true);
     }
   }, []); // Empty dependency array for initialization
@@ -67,9 +150,9 @@ export default function FindLeads() {
       filters.eventFormat?.length ||
       filters.organization?.length ||
       filters.organizationType?.length ||
-      filters.pastSpeakers ||
+      filters.pastSpeakers?.length ||
       filters.searchAll ||
-      filters.jobTitle ||
+      filters.jobTitle?.length ||
       filters.region ||
       filters.state?.length ||
       filters.city?.length ||
@@ -156,9 +239,11 @@ export default function FindLeads() {
     }
 
     // Filter by job title
-    if (filters.jobTitle) {
+    if (filters.jobTitle?.length) {
       results = results.filter(lead => 
-        lead.job_title?.toLowerCase().includes(filters.jobTitle.toLowerCase())
+        filters.jobTitle.some(job => 
+          lead.job_title?.toLowerCase().includes(job.toLowerCase())
+        )
       );
     }
 
@@ -216,10 +301,10 @@ export default function FindLeads() {
       eventFormat: [],
       organization: [],
       organizationType: [],
-      pastSpeakers: '',
+      pastSpeakers: [],
       searchAll: '',
       unlockType: undefined,
-      jobTitle: '',
+      jobTitle: [],
       region: '',
       state: [],
       city: []
@@ -239,12 +324,42 @@ export default function FindLeads() {
       industry: false,
       organization: false,
       organizationType: false,
-      location: false
+      location: false,
+      jobTitle: false,
+      moreFilters: false
     });
   };
 
   const handleLeadClick = (leadId: string) => {
-    navigate(`/leads/${leadId}`);
+    // Create URL parameters with active filters
+    const params = new URLSearchParams();
+
+    // Add event filter if exists
+    if (eventsFilter) params.set('event', eventsFilter);
+
+    // Add opportunity tags if any
+    if (opportunityTags.length) params.set('tags', opportunityTags.join(','));
+
+    // Add lead type if not 'all'
+    if (selectedLeadType !== 'all') params.set('type', selectedLeadType);
+
+    // Add other active filters
+    if (filters.industry?.length) params.set('industry', filters.industry.join(','));
+    if (filters.eventFormat?.length) params.set('format', filters.eventFormat.join(','));
+    if (filters.organization?.length) params.set('organization', filters.organization.join(','));
+    if (filters.organizationType?.length) params.set('orgType', filters.organizationType.join(','));
+    if (filters.pastSpeakers?.length) params.set('speakers', filters.pastSpeakers.join(','));
+    if (filters.searchAll) params.set('search', filters.searchAll);
+    if (filters.jobTitle?.length) params.set('job', filters.jobTitle.join(','));
+    if (filters.region) params.set('region', filters.region);
+    if (filters.state?.length) params.set('state', filters.state.join(','));
+    if (filters.city?.length) params.set('city', filters.city.join(','));
+
+    // Add display mode
+    if (showAllEvents) params.set('event_display', 'all');
+
+    // Navigate to lead detail with filters
+    navigate(`/leads/${leadId}?${params.toString()}`);
   };
 
   const handleLeadTypeChange = (type: LeadType) => {
@@ -254,7 +369,7 @@ export default function FindLeads() {
     setFilters(prev => ({
       ...prev,
       unlockType: selectedType?.unlockValue,
-      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : ''
+      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : []
     }));
   };
 
