@@ -291,11 +291,11 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               e.stopPropagation();
               window.open(urlData.fullUrl, '_blank', 'noopener,noreferrer');
             }}
-            className="group text-left hover:bg-gray-50 rounded-md p-2 transition-colors"
+            className="group text-left hover:bg-gray-50 rounded-md p-2 transition-colors w-full"
           >
-            <div className="flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-              <span className="text-[14.5px] text-gray-600 group-hover:text-blue-600 transition-colors">
+            <div className="flex items-start gap-1.5">
+              <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors mt-1" />
+              <span className="text-[14.5px] text-gray-600 group-hover:text-blue-600 transition-colors break-all">
                 {urlData.hostname}
               </span>
             </div>
