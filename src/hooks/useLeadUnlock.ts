@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { unlockLead, checkLeadUnlocked } from '../lib/api/unlocks';
 import type { UnlockStatus } from '../types/unlocks';
 import { User } from '@supabase/supabase-js';
+import type { SpeakerLead } from '../types/leads';
 
 interface UseLeadUnlockResult {
   isUnlocked: boolean;
@@ -12,7 +13,7 @@ interface UseLeadUnlockResult {
   checkUnlockStatus: () => Promise<void>;
 }
 
-export function useLeadUnlock(leadId: string, user: User | null): UseLeadUnlockResult {
+export function useLeadUnlock(leadId: string, user: User | null, lead?: SpeakerLead | null): UseLeadUnlockResult {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockValue, setUnlockValue] = useState<string | null>(null);
@@ -25,8 +26,13 @@ export function useLeadUnlock(leadId: string, user: User | null): UseLeadUnlockR
     
     try {
       const status = await checkLeadUnlocked(leadId, user);
+      console.log('Unlock Status:', status);
+      
       setIsUnlocked(status.isUnlocked);
-      setUnlockValue(status.unlockValue || null);
+      // Use unlock value from status instead of lead data
+      setUnlockValue(status.isUnlocked ? status.unlockValue : null);
+      console.log('Set Unlock Value:', status.isUnlocked ? status.unlockValue : null);
+      
       setError(null);
       setRetryCount(0);
     } catch (err) {

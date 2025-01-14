@@ -51,7 +51,7 @@ export default function LeadDetails() {
     error: unlockError,
     handleUnlock,
     checkUnlockStatus
-  } = useLeadUnlock(id || '', user);
+  } = useLeadUnlock(id || '', user, lead);
 
   useEffect(() => {
     if (id && user) {

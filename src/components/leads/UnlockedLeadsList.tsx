@@ -11,6 +11,20 @@ interface UnlockedLeadsListProps {
 export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
   const navigate = useNavigate();
 
+  const handleViewLead = (leadId: string, index: number) => {
+    // Get array of all lead IDs
+    const leadIds = leads.map(lead => lead.id);
+
+    // Navigate to lead detail with state containing IDs and current index
+    navigate(`/leads/${leadId}`, {
+      state: {
+        leadIds,
+        currentIndex: index,
+        fromUnlockedLeads: true
+      }
+    });
+  };
+
   if (leads.length === 0) {
     return (
       <div className="text-center py-12">
@@ -26,7 +40,7 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
   return (
     <table className="min-w-full divide-y divide-gray-200">
       <tbody className="bg-white divide-y divide-gray-200">
-        {leads.map((lead) => {
+        {leads.map((lead, index) => {
           const LeadIcon = lead.lead_type === 'Event' ? Calendar : Users;
 
           return (
@@ -63,7 +77,7 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
               </td>
               <td className="px-6 py-4 text-right">
                 <button
-                  onClick={() => navigate(`/leads/${lead.id}`)}
+                  onClick={() => handleViewLead(lead.id, index)}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   <Eye className="w-4 h-4 mr-2" />

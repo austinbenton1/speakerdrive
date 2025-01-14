@@ -3,6 +3,8 @@ import { Sparkles, Unlock, Check, Copy, Mail, Link as LinkIcon, ExternalLink } f
 import { formatUnlockType, getUnlockIcon } from '../../utils/formatters';
 import { copyToClipboard } from '../../utils/clipboard';
 import Toast from '../ui/Toast';
+import EmailComposer from '../email/EmailComposer';
+import type { SpeakerLead } from '../../types';
 
 interface LeadDetailHeaderActionsProps {
   onCreateColdIntro: () => void;
@@ -11,6 +13,7 @@ interface LeadDetailHeaderActionsProps {
   isUnlocked: boolean;
   unlockType: string;
   unlockValue: string | null;
+  lead: SpeakerLead;
 }
 
 export default function LeadDetailHeaderActions({
@@ -19,13 +22,15 @@ export default function LeadDetailHeaderActions({
   isUnlocking,
   isUnlocked,
   unlockType,
-  unlockValue
+  unlockValue,
+  lead
 }: LeadDetailHeaderActionsProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   const truncateValue = (value: string) => {
     if (!value) return '';
@@ -57,36 +62,27 @@ export default function LeadDetailHeaderActions({
   };
 
   const handleUnlockClick = async () => {
-    if (!isUnlocked) {
-      onUnlock();
-      return;
-    }
-
-    if (!unlockValue) return;
-
-    if (unlockType === 'Event URL' || unlockType === 'Unlock Event URL') {
-      window.open(unlockValue, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    const success = await copyToClipboard(unlockValue);
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      
-      // Show toast for email copies
-      if (unlockType === 'Contact Email' || unlockType === 'Event Email' || 
-          unlockType === 'Unlock Contact Email' || unlockType === 'Unlock Event Email') {
-        setToastMessage(`${unlockType.replace('Unlock ', '')} copied to clipboard`);
-        setToastType('success');
-        setShowToast(true);
+    if (isUnlocked && unlockValue) {
+      if (unlockType.toLowerCase().includes('url')) {
+        window.open(unlockValue, '_blank', 'noopener,noreferrer');
+      } else {
+        try {
+          await copyToClipboard(unlockValue);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          setToastMessage('Copied to clipboard!');
+          setToastType('success');
+          setShowToast(true);
+        } catch {
+          setCopyError(true);
+          setTimeout(() => setCopyError(false), 2000);
+          setToastMessage('Failed to copy to clipboard');
+          setToastType('error');
+          setShowToast(true);
+        }
       }
     } else {
-      setCopyError(true);
-      setTimeout(() => setCopyError(false), 2000);
-      setToastMessage('Failed to copy to clipboard');
-      setToastType('error');
-      setShowToast(true);
+      onUnlock();
     }
   };
 
@@ -98,7 +94,7 @@ export default function LeadDetailHeaderActions({
     if (!unlockValue) return 'Unlocked';
     
     // For Event URLs, show the truncated URL
-    if (unlockType === 'Event URL' || unlockType === 'Unlock Event URL') {
+    if (unlockType.toLowerCase().includes('url')) {
       try {
         const url = new URL(unlockValue);
         // Show domain and first part of path if it exists
@@ -109,14 +105,15 @@ export default function LeadDetailHeaderActions({
       }
     }
     
-    return truncateValue(unlockValue);
+    // For emails, show the full value
+    return unlockValue;
   };
 
   return (
     <>
       <div className="flex items-center gap-3">
         <button
-          onClick={onCreateColdIntro}
+          onClick={() => setShowEmailComposer(true)}
           disabled={!isUnlocked}
           className="h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 hover:bg-[#00B341]/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
@@ -157,6 +154,12 @@ export default function LeadDetailHeaderActions({
           onClose={() => setShowToast(false)}
         />
       )}
+
+      <EmailComposer
+        lead={lead}
+        isOpen={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+      />
     </>
   );
 }

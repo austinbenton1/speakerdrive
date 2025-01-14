@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, Mail, Eye, Layers, ArrowUpRight, Calendar, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe } from 'lucide-react';
+import { Link, Mail, Eye, Layers, ArrowUpRight, Calendar, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe, Loader } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { supabase } from '../../lib/supabase';
 import type { Lead } from '../../types';
@@ -13,6 +13,7 @@ interface LeadTableRowProps {
 export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
   const [relatedLeadsCount, setRelatedLeadsCount] = useState<number | null>(null);
   const [isCountVisible, setIsCountVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { recordedLeads } = useUnlockedLeadsData();
 
   // Get topic from keywords (first keyword)
@@ -214,13 +215,31 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     </div>
   ), [lead]);
 
+  const handleClick = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      await onClick();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       {/* Main Content */}
       <div 
-        onClick={onClick}
-        className="w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
+        onClick={handleClick}
+        className={`w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer bg-white relative ${isLoading ? 'pointer-events-none' : ''}`}
       >
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 shadow-sm border border-gray-100">
+              <Loader className="w-4 h-4 text-blue-600 animate-spin" />
+              <span className="text-sm text-gray-600">Opening...</span>
+            </div>
+          </div>
+        )}
         <div className="flex items-start">
           <div className="flex gap-3 min-w-0">
             {/* Image */}

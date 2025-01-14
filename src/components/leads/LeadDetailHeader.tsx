@@ -132,6 +132,7 @@ export default function LeadDetailHeader({
                 isUnlocked={isUnlocked}
                 unlockType={lead.unlockType}
                 unlockValue={unlockValue}
+                lead={lead}
               />
             </div>
           </div>

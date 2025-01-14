@@ -13,43 +13,17 @@ export interface UnlockStatus {
 }
 
 /**
- * Unlocks a lead for the current user
+ * Unlocks a lead for the current user by setting the unlocked field to true
  */
 export async function unlockLead(leadId: string, user: User): Promise<UnlockResponse> {
   try {
-    // Check if lead is already unlocked
-    const { data: existingUnlock, error: checkError } = await supabase
+    const { error } = await supabase
       .from('unlocked_leads')
-      .select('*')
+      .update({ unlocked: true })
       .eq('user_id', user.id)
-      .eq('lead_id', leadId)
-      .single();
+      .eq('lead_id', leadId);
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
-      throw checkError;
-    }
-
-    if (existingUnlock) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('unlocked_leads')
-        .update({ unlocked: true })
-        .eq('user_id', user.id)
-        .eq('lead_id', leadId);
-
-      if (updateError) throw updateError;
-    } else {
-      // Insert new record
-      const { error: insertError } = await supabase
-        .from('unlocked_leads')
-        .insert({
-          user_id: user.id,
-          lead_id: leadId,
-          unlocked: true
-        });
-
-      if (insertError) throw insertError;
-    }
+    if (error) throw error;
 
     return { success: true };
   } catch (error) {
@@ -67,21 +41,29 @@ export async function unlockLead(leadId: string, user: User): Promise<UnlockResp
 export async function checkLeadUnlocked(leadId: string, user: User): Promise<UnlockStatus> {
   const { data, error } = await supabase
     .from('unlocked_leads')
-    .select('unlocked, unlock_value')
+    .select(`
+      unlocked,
+      leads (
+        unlock_value
+      )
+    `)
     .eq('user_id', user.id)
     .eq('lead_id', leadId)
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1);
 
   if (error) {
-    if (error.code === 'PGRST116') { // No rows found
-      return { isUnlocked: false };
-    }
     throw error;
   }
 
+  // If no rows found, lead is not unlocked
+  if (!data || data.length === 0) {
+    return { isUnlocked: false };
+  }
+
   return {
-    isUnlocked: data.unlocked || false,
-    unlockValue: data.unlock_value
+    isUnlocked: data[0].unlocked || false,
+    unlockValue: data[0].leads?.unlock_value
   };
 }
 

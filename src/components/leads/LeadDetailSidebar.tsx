@@ -1,6 +1,7 @@
 import React from 'react';
 import { Building2, Globe, MapPin, Building, Presentation, GraduationCap, HelpCircle, ExternalLink, Link, LinkedinIcon, User, Briefcase, Lock, Mail, DollarSign, KeyRound, Unlock } from 'lucide-react';
 import { useLeadUnlock } from '../../hooks/useLeadUnlock';
+import { useAuth } from '../../contexts/AuthContext';
 import { QuickInfoSection } from './sidebar/QuickInfoSection';
 import { OrganizationSection } from './sidebar/OrganizationSection';
 import { UnlockTypeSection } from './sidebar/UnlockTypeSection';
@@ -12,7 +13,8 @@ interface LeadDetailSidebarProps {
 }
 
 export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
-  const { isUnlocked, unlockValue } = useLeadUnlock(lead.id);
+  const { user } = useAuth();
+  const { isUnlocked, unlockValue } = useLeadUnlock(lead.id, user, lead);
 
   const formatLocation = (region?: string, state?: string | string[], city?: string | string[]) => {
     const parts = [];
