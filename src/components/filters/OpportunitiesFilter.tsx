@@ -36,7 +36,7 @@ export default function OpportunitiesFilter({
       <div className="flex items-center gap-2 mb-2">
         <Search className="w-4 h-4 text-blue-600" />
         <label className="block text-sm font-semibold text-gray-900">
-          Search Event Name, Keywords, and Target Audience
+          Search Event Names And Topics
         </label>
       </div>
       <div className="flex gap-2">

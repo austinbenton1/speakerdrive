@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { unlockLead, checkLeadUnlocked } from '../lib/api/unlocks';
 import type { UnlockStatus } from '../types/unlocks';
+import { User } from '@supabase/supabase-js';
 
 interface UseLeadUnlockResult {
   isUnlocked: boolean;
@@ -11,7 +12,7 @@ interface UseLeadUnlockResult {
   checkUnlockStatus: () => Promise<void>;
 }
 
-export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
+export function useLeadUnlock(leadId: string, user: User | null): UseLeadUnlockResult {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockValue, setUnlockValue] = useState<string | null>(null);
@@ -20,8 +21,10 @@ export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
   const MAX_RETRIES = 3;
 
   const checkUnlockStatus = async () => {
+    if (!user) return;
+    
     try {
-      const status = await checkLeadUnlocked(leadId);
+      const status = await checkLeadUnlocked(leadId, user);
       setIsUnlocked(status.isUnlocked);
       setUnlockValue(status.unlockValue || null);
       setError(null);
@@ -38,24 +41,23 @@ export function useLeadUnlock(leadId: string): UseLeadUnlockResult {
   };
 
   useEffect(() => {
-    if (leadId) {
+    if (leadId && user) {
       checkUnlockStatus();
     }
-  }, [leadId]);
+  }, [leadId, user]);
 
   const handleUnlock = async () => {
-    if (!leadId || isUnlocking) return;
+    if (!leadId || isUnlocking || !user) return;
 
     try {
       setIsUnlocking(true);
       setError(null);
-
-      const { success, error } = await unlockLead(leadId);
       
-      if (!success) {
-        throw new Error(error || 'Failed to unlock lead');
+      const response = await unlockLead(leadId, user);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to unlock lead');
       }
-
+      
       await checkUnlockStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unlock lead');

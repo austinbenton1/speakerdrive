@@ -17,7 +17,7 @@ export function useLeadsData() {
         if (fetchError) throw fetchError;
         setLeads(data || []);
       } catch (err) {
-        console.error('Error fetching leads:', err);
+        // console.error('Error fetching leads:', err);
         setError('Failed to load leads data. Please try refreshing the page.');
       } finally {
         setLoading(false);

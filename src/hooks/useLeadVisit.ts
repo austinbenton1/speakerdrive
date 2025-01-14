@@ -36,7 +36,7 @@ export function useLeadVisit(): UseLeadVisitResult {
       }
       
       setError(error);
-      console.error('Lead visit error:', error);
+      // console.error('Lead visit error:', error);
       
       // Still navigate even if recording fails
       navigate(`/leads/${leadId}`);

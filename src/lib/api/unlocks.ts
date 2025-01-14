@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import type { UnlockedLead } from '../../types/unlocks';
+import { User } from '@supabase/supabase-js';
 
 export interface UnlockResponse {
   success: boolean;
@@ -14,12 +15,8 @@ export interface UnlockStatus {
 /**
  * Unlocks a lead for the current user
  */
-export async function unlockLead(leadId: string): Promise<UnlockResponse> {
+export async function unlockLead(leadId: string, user: User): Promise<UnlockResponse> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('No authenticated user');
-
     // Check if lead is already unlocked
     const { data: existingUnlock, error: checkError } = await supabase
       .from('unlocked_leads')
@@ -67,70 +64,61 @@ export async function unlockLead(leadId: string): Promise<UnlockResponse> {
 /**
  * Checks if a lead is unlocked for the current user
  */
-export async function checkLeadUnlocked(leadId: string): Promise<UnlockStatus> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { isUnlocked: false };
+export async function checkLeadUnlocked(leadId: string, user: User): Promise<UnlockStatus> {
+  const { data, error } = await supabase
+    .from('unlocked_leads')
+    .select('unlocked, unlock_value')
+    .eq('user_id', user.id)
+    .eq('lead_id', leadId)
+    .single();
 
-    const { data, error } = await supabase
-      .from('unlocked_leads')
-      .select(`
-        unlocked,
-        leads (
-          unlock_value
-        )
-      `)
-      .eq('user_id', user.id)
-      .eq('lead_id', leadId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error checking lead unlock status:', error);
+  if (error) {
+    if (error.code === 'PGRST116') { // No rows found
       return { isUnlocked: false };
     }
-
-    return {
-      isUnlocked: data?.unlocked || false,
-      unlockValue: data?.leads?.unlock_value
-    };
-  } catch (error) {
-    console.error('Error checking lead unlock status:', error);
-    return { isUnlocked: false };
+    throw error;
   }
+
+  return {
+    isUnlocked: data.unlocked || false,
+    unlockValue: data.unlock_value
+  };
 }
 
 /**
  * Fetches recent unlocks for the current user
  */
-export async function fetchRecentUnlocks(): Promise<UnlockedLead[]> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No authenticated user');
+export async function fetchRecentUnlocks(user: User): Promise<UnlockedLead[]> {
+  const { data, error } = await supabase
+    .from('unlocked_leads')
+    .select(`
+      id,
+      lead_id,
+      created_at,
+      leads (
+        event_name,
+        subtext,
+        industry,
+        image_url,
+        lead_type,
+        keywords
+      )
+    `)
+    .eq('user_id', user.id)
+    .eq('unlocked', true)
+    .order('created_at', { ascending: false })
+    .limit(10);
 
-    const { data, error } = await supabase
-      .from('unlocked_leads')
-      .select(`
-        lead_id,
-        created_at,
-        leads (
-          lead_name,
-          focus
-        )
-      `)
-      .eq('user_id', user.id)
-      .eq('unlocked', true)
-      .order('created_at', { ascending: false })
-      .limit(10);
+  if (error) throw error;
 
-    if (error) throw error;
-
-    return (data || []).map(unlock => ({
-      name: unlock.leads.lead_name,
-      focus: unlock.leads.focus,
-      unlocked_at: unlock.created_at
-    }));
-  } catch (error) {
-    console.error('Error fetching recent unlocks:', error);
-    throw error;
-  }
+  return data.map(item => ({
+    id: item.lead_id,
+    event_name: item.leads.event_name,
+    subtext: item.leads.subtext,
+    industry: item.leads.industry,
+    image: item.leads.image_url,
+    unlockDate: new Date(item.created_at),
+    lead_type: item.leads.lead_type,
+    keywords: item.leads.keywords
+  }));
 }

@@ -9,10 +9,10 @@ interface OrganizationSectionProps {
 
 export function OrganizationSection({ items }: OrganizationSectionProps) {
   // Debug tooltips
-  console.log('Organization Section Items:', items.map(item => ({
-    label: item.label,
-    tooltip: item.tooltip
-  })));
+  // console.log('Organization Section Items:', items.map(item => ({
+  //   label: item.label,
+  //   tooltip: item.tooltip
+  // })));
 
   return (
     <SidebarSection 

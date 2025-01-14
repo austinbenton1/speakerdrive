@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { getUniqueLeads } from '../utils/deduplication';
+import { supabase } from '../lib/supabase';
 import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
@@ -279,6 +280,15 @@ export default function FindLeads() {
       );
     }
 
+    // Filter by past speakers
+    if (filters.pastSpeakers?.length) {
+      results = results.filter(lead => 
+        filters.pastSpeakers.some(speaker => 
+          lead.past_speakers_events?.toLowerCase().includes(speaker.toLowerCase())
+        )
+      );
+    }
+
     return results;
   }, [availableLeads, eventsFilter, filters, opportunityTags]);
 
@@ -330,8 +340,25 @@ export default function FindLeads() {
     });
   };
 
-  const handleLeadClick = (leadId: string) => {
-    // Create URL parameters with active filters
+  const handleLeadClick = async (leadId: string) => {
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('No authenticated user');
+
+      // Record the visit
+      const { data, error } = await supabase.rpc('record_visit', {
+        var_lead: leadId,
+        var_user: user.id
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      // Silently handle error - don't block navigation
+    }
+
+    // Proceed with navigation
     const params = new URLSearchParams();
 
     // Add event filter if exists
