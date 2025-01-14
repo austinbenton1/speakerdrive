@@ -21,6 +21,7 @@ export default function FindLeads() {
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
   
   const {
     filters,
@@ -292,18 +293,76 @@ export default function FindLeads() {
     return results;
   }, [availableLeads, eventsFilter, filters, opportunityTags]);
 
-  // Update displayed leads when necessary
+  // Update displayed leads and IDs when necessary
   useEffect(() => {
     const results = hasActiveFilters ? filteredLeads : availableLeads;
-    const finalResults = showAllEvents ? results : getUniqueLeads(results);
-    setDisplayedLeads(finalResults);
-    setIsFiltering(hasActiveFilters);
+    setDisplayedLeads(results);
+
+    // Update lead IDs whenever filters change
+    const leads = showAllEvents ? results : getUniqueLeads(results);
+    setCurrentLeadIds(leads.map(lead => lead.id));
   }, [filteredLeads, hasActiveFilters, showAllEvents, availableLeads]);
 
-  // Memoize unique count calculation
-  const uniqueLeadsCount = useMemo(() => 
-    getUniqueLeads(displayedLeads).length,
-  [displayedLeads]);
+  const handleLeadClick = async (leadId: string) => {
+    // Build Navigation Params
+    const params = new URLSearchParams();
+
+    // Add event filter if exists
+    if (eventsFilter) params.set('event', eventsFilter);
+    if (opportunityTags.length) params.set('tags', opportunityTags.join(','));
+    if (selectedLeadType !== 'all') params.set('type', selectedLeadType);
+    if (filters.industry?.length) params.set('industry', filters.industry.join(','));
+    if (filters.eventFormat?.length) params.set('format', filters.eventFormat.join(','));
+    if (filters.organization?.length) params.set('organization', filters.organization.join(','));
+    if (filters.organizationType?.length) params.set('orgType', filters.organizationType.join(','));
+    if (filters.pastSpeakers?.length) params.set('speakers', filters.pastSpeakers.join(','));
+    if (filters.searchAll) params.set('search', filters.searchAll);
+    if (filters.jobTitle?.length) params.set('job', filters.jobTitle.join(','));
+    if (filters.region) params.set('region', filters.region);
+    if (filters.state?.length) params.set('state', filters.state.join(','));
+    if (filters.city?.length) params.set('city', filters.city.join(','));
+
+    // Add display mode
+    if (showAllEvents) params.set('event_display', 'all');
+
+    // Use the pre-computed lead IDs
+    const currentIndex = currentLeadIds.indexOf(leadId);
+
+    // Navigate immediately
+    navigate(`/leads/${leadId}?${params.toString()}`, {
+      state: {
+        leadIds: currentLeadIds,
+        currentIndex,
+        fromFindLeads: true
+      }
+    });
+
+    // Record visit after navigation (non-blocking)
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        supabase.rpc('record_visit', {
+          var_lead: leadId,
+          var_user: user.id
+        }).then(({ error }) => {
+          if (error) console.error('Failed to record visit:', error);
+        });
+      }
+    } catch (err) {
+      console.error('Failed to get user:', err);
+    }
+  };
+
+  const handleLeadTypeChange = (type: LeadType) => {
+    setSelectedLeadType(type);
+    const selectedType = leadTypes.find(t => t.id === type);
+    
+    setFilters(prev => ({
+      ...prev,
+      unlockType: selectedType?.unlockValue,
+      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : []
+    }));
+  };
 
   const handleResetFilters = () => {
     setFilters({
@@ -340,78 +399,10 @@ export default function FindLeads() {
     });
   };
 
-  const handleLeadClick = async (leadId: string) => {
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error('No authenticated user');
-
-      // Record the visit
-      const { data, error } = await supabase.rpc('record_visit', {
-        var_lead: leadId,
-        var_user: user.id
-      });
-
-      if (error) throw error;
-    } catch (err) {
-      // Silently handle error - don't block navigation
-    }
-
-    // Proceed with navigation
-    const params = new URLSearchParams();
-
-    // Add event filter if exists
-    if (eventsFilter) params.set('event', eventsFilter);
-
-    // Add opportunity tags if any
-    if (opportunityTags.length) params.set('tags', opportunityTags.join(','));
-
-    // Add lead type if not 'all'
-    if (selectedLeadType !== 'all') params.set('type', selectedLeadType);
-
-    // Add other active filters
-    if (filters.industry?.length) params.set('industry', filters.industry.join(','));
-    if (filters.eventFormat?.length) params.set('format', filters.eventFormat.join(','));
-    if (filters.organization?.length) params.set('organization', filters.organization.join(','));
-    if (filters.organizationType?.length) params.set('orgType', filters.organizationType.join(','));
-    if (filters.pastSpeakers?.length) params.set('speakers', filters.pastSpeakers.join(','));
-    if (filters.searchAll) params.set('search', filters.searchAll);
-    if (filters.jobTitle?.length) params.set('job', filters.jobTitle.join(','));
-    if (filters.region) params.set('region', filters.region);
-    if (filters.state?.length) params.set('state', filters.state.join(','));
-    if (filters.city?.length) params.set('city', filters.city.join(','));
-
-    // Add display mode
-    if (showAllEvents) params.set('event_display', 'all');
-
-    // Get current list of leads based on filters and display mode
-    const currentLeads = showAllEvents ? displayedLeads : getUniqueLeads(displayedLeads);
-    
-    // Get array of lead IDs and current index
-    const leadIds = currentLeads.map(lead => lead.id);
-    const currentIndex = leadIds.indexOf(leadId);
-
-    // Navigate to lead detail with filters and lead IDs
-    navigate(`/leads/${leadId}?${params.toString()}`, {
-      state: {
-        leadIds,
-        currentIndex,
-        fromFindLeads: true
-      }
-    });
-  };
-
-  const handleLeadTypeChange = (type: LeadType) => {
-    setSelectedLeadType(type);
-    const selectedType = leadTypes.find(t => t.id === type);
-    
-    setFilters(prev => ({
-      ...prev,
-      unlockType: selectedType?.unlockValue,
-      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : []
-    }));
-  };
+  // Memoize unique count calculation
+  const uniqueLeadsCount = useMemo(() => 
+    getUniqueLeads(displayedLeads).length,
+  [displayedLeads]);
 
   return (
     <div className="flex h-full bg-gray-50">

@@ -170,19 +170,19 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
         {/* Event Details */}
         <div className="border-t border-gray-100 pt-4 space-y-3">
           {lead?.event_format && (
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center gap-1.5 text-gray-600">
               <Calendar className="w-4 h-4 mr-2 text-gray-400" />
               <span className="text-[14.5px]">{lead.event_format}</span>
             </div>
           )}
           {lead?.industry && (
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center gap-1.5 text-gray-600">
               <Tag className="w-4 h-4 mr-2 text-gray-400" />
               <span className="text-[14.5px] text-gray-500">{lead.industry}</span>
             </div>
           )}
           {lead?.region && (
-            <div className="flex items-center text-gray-600">
+            <div className="flex items-center gap-1.5 text-gray-600">
               <MapPin className="w-4 h-4 mr-2 text-gray-400" />
               <span className="text-[14.5px]">
                 {[lead.city, lead.state, lead.region]
@@ -226,7 +226,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
   };
 
   return (
-    <>
+    <div className="contents">
       {/* Main Content */}
       <div 
         onClick={handleClick}
@@ -256,14 +256,20 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               <div className="flex items-center gap-3">
                 {/* Name */}
                 <div className="text-[17.5px] leading-6 font-medium text-gray-900 truncate">
-                  {lead.event_name || lead.lead_name}
+                  {lead.unlock_type === 'Unlock Contact Email' 
+                    ? lead.subtext
+                    : lead.event_name
+                  }
                 </div>
               </div>
               
               {/* Subtext */}
-              <div className="mt-1" title={lead.subtext}>
+              <div className="mt-1">
                 <span className="text-[16.5px] leading-5 text-gray-500 truncate block">
-                  {lead.subtext}
+                  {lead.unlock_type === 'Unlock Contact Email'
+                    ? lead.event_name
+                    : lead.subtext
+                  }
                 </span>
               </div>
               
@@ -293,7 +299,8 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Topic Column */}
-      <div className="px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2">
+      <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative ${isLoading ? 'pointer-events-none' : ''}`}>
+        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
         {topic && (
           <div className="inline-flex items-center max-w-full relative">
             <span className={`
@@ -317,7 +324,8 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Event URL Column */}
-      <div className="px-3 border-t border-gray-200 flex items-center min-h-[88px]">
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
+        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
         {urlData && (
           <button
             onClick={(e) => {
@@ -343,7 +351,8 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Location Column */}
-      <div className="px-3 border-t border-gray-200 flex items-center min-h-[88px]">
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
+        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
         {lead.region && (
           <div className="flex items-center text-[14.5px] text-gray-700">
             <MapPin className="w-4 h-4 mr-1.5 text-[#DD4B3E] flex-shrink-0" />
@@ -357,7 +366,8 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Group Column */}
-      <div className="px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px]">
+      <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
+        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
         <button
           onClick={handleViewMore}
           className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200"
@@ -399,6 +409,6 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
           </div>
         </button>
       </div>
-    </>
+    </div>
   );
 }
