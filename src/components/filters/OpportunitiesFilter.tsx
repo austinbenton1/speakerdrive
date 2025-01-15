@@ -36,7 +36,7 @@ export default function OpportunitiesFilter({
       <div className="flex items-center gap-2 mb-2">
         <Search className="w-4 h-4 text-blue-600" />
         <label className="block text-sm font-semibold text-gray-900">
-          Search Event Names And Topics
+          Search Events, Topics, Job Roles & More
         </label>
       </div>
       <div className="flex gap-2">
@@ -47,7 +47,7 @@ export default function OpportunitiesFilter({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="e.g. Leadership Summit, Tech Conference..."
+              placeholder="e.g. Leadership Summit, Event Planner, etc."
               className="block w-full px-4 pr-16 py-3.5 bg-white border-2 border-gray-200 rounded-lg text-sm 
                 placeholder:text-gray-400 shadow-sm
                 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20

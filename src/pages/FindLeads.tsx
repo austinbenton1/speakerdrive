@@ -184,22 +184,21 @@ export default function FindLeads() {
     // Filter by opportunities search term
     if (eventsFilter || opportunityTags.length > 0) {
       results = results.filter(lead => {
-        const searchFields = [
+        // Combine all searchable fields
+        const searchableText = [
           lead.event_name,
-          lead.keywords
-        ];
+          lead.keywords,
+          lead.subtext
+        ].filter(Boolean).join(' ').toLowerCase();
         
-        if (eventsFilter) {
-          const searchTerm = eventsFilter.toLowerCase();
-          if (searchFields.some(field => field?.toLowerCase().includes(searchTerm))) {
-            return true;
-          }
+        // Check text search
+        if (eventsFilter && searchableText.includes(eventsFilter.toLowerCase())) {
+          return true;
         }
         
+        // Check tags
         if (opportunityTags.length > 0) {
-          return opportunityTags.some(tag => 
-            searchFields.some(field => field?.toLowerCase().includes(tag.toLowerCase()))
-          );
+          return opportunityTags.some(tag => searchableText.includes(tag.toLowerCase()));
         }
         
         return false;
