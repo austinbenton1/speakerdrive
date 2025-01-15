@@ -209,7 +209,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 {/* Name */}
-                <div className="text-[17.5px] leading-6 font-medium text-gray-900 truncate">
+                <div className="text-[16.5px] leading-6 font-medium text-gray-900 truncate">
                   {lead.unlock_type === 'Unlock Contact Email' 
                     ? lead.subtext
                     : lead.event_name
@@ -219,7 +219,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               
               {/* Subtext */}
               <div className="mt-1">
-                <span className="text-[16.5px] leading-5 text-gray-500 truncate block">
+                <span className="text-[15.5px] leading-5 text-gray-500 truncate block">
                   {lead.unlock_type === 'Unlock Contact Email'
                     ? lead.event_name
                     : lead.subtext

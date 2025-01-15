@@ -2,7 +2,9 @@ import { createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: User;
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

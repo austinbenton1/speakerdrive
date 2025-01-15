@@ -21,26 +21,28 @@ async function retryableRequest<T>(
   }
 }
 
-export async function fetchAvailableLeads(): Promise<Lead[]> {
+// Sorting fields and their weights
+const SORT_FIELDS = [
+  'event_name',
+  'organization',
+  'past_speakers_events',
+  'id',
+  'image_url'
+] as const;
+
+function getRandomSort() {
+  const randomField = SORT_FIELDS[Math.floor(Math.random() * SORT_FIELDS.length)];
+  const isAscending = Math.random() < 0.5;
+  return {
+    field: randomField,
+    ascending: isAscending
+  };
+}
+
+export async function fetchAvailableLeads(userId: string, unlockedLeadIds: string[] = []): Promise<Lead[]> {
   try {
-    // First check if we have a valid session
-    const { data: { user }, error: userError } = await retryableRequest(() => 
-      supabase.auth.getUser()
-    );
-
-    if (userError) throw userError;
-    if (!user) throw new Error('No authenticated user');
-
-    // Get unlocked leads with retry
-    const { data: unlockedLeads, error: unlockedError } = await retryableRequest(() =>
-      supabase
-        .from('unlocked_leads')
-        .select('lead_id')
-        .eq('user_id', user.id)
-        .eq('unlocked', true)
-    );
-
-    if (unlockedError) throw unlockedError;
+    // Get random sort configuration
+    const sort = getRandomSort();
 
     // Build query for available leads
     const query = supabase
@@ -67,11 +69,12 @@ export async function fetchAvailableLeads(): Promise<Lead[]> {
         state,
         city,
         keywords
-      `);
+      `)
+      .order(sort.field, { ascending: sort.ascending });
 
     // Add filter for unlocked leads if any exist
-    if (unlockedLeads && unlockedLeads.length > 0) {
-      query.not('id', 'in', `(${unlockedLeads.map(ul => ul.lead_id).join(',')})`);
+    if (unlockedLeadIds.length > 0) {
+      query.not('id', 'in', `(${unlockedLeadIds.join(',')})`);
     }
 
     // Get available leads with retry

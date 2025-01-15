@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAvailableLeads } from '../lib/api/leadFinder';
 import { useAuth } from './useAuth';
+import { useUnlockedLeadsData } from './useUnlockedLeadsData';
 import type { Lead } from '../types';
 import { checkSupabaseConnection } from '../lib/supabase';
 
@@ -10,7 +11,8 @@ const RETRY_DELAY = 1000; // 1 second
 
 export function useAvailableLeads() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { recordedLeads } = useUnlockedLeadsData();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export function useAvailableLeads() {
   useEffect(() => {
     const loadLeads = async (retryCount = 0) => {
       try {
-        if (!isAuthenticated) {
+        if (!isAuthenticated || !user) {
           navigate('/login');
           return;
         }
@@ -31,7 +33,13 @@ export function useAvailableLeads() {
 
         setLoading(true);
         setError(null);
-        const availableLeads = await fetchAvailableLeads();
+        
+        // Get unlocked lead IDs
+        const unlockedLeadIds = recordedLeads
+          .filter(lead => lead.unlocked)
+          .map(lead => lead.lead_id);
+        
+        const availableLeads = await fetchAvailableLeads(user.id, unlockedLeadIds);
         setLeads(availableLeads);
       } catch (err) {
         console.error('Error loading available leads:', err);
@@ -52,7 +60,7 @@ export function useAvailableLeads() {
     };
 
     loadLeads();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user, recordedLeads]);
 
   return { leads, loading, error };
 }

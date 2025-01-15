@@ -34,7 +34,14 @@ export const supabase = createClient<Database>(
       detectSessionInUrl: true
     },
     global: {
-      fetch: (...args) => retryableRequest(() => fetch(...args))
+      fetch: (...args) => {
+        // Skip retries for auth requests
+        const url = args[0]?.toString() || '';
+        if (url.includes('/auth/')) {
+          return fetch(...args);
+        }
+        return retryableRequest(() => fetch(...args));
+      }
     }
   }
 );
