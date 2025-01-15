@@ -36,6 +36,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     // Create URL parameters
     const params = new URLSearchParams();
     if (lead.event_name) params.set('event', lead.event_name);
+    if (lead.organization) params.set('organization', lead.organization);
     params.set('event_display', 'all');
     
     // Open in new tab

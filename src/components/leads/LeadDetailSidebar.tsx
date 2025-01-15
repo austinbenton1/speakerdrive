@@ -139,6 +139,9 @@ export default function LeadDetailSidebar({ lead }: LeadDetailSidebarProps) {
           event: lead.eventName,
           event_display: 'all'
         });
+        if (lead.organization) {
+          params.set('organization', lead.organization);
+        }
         window.open(`/find-leads?${params.toString()}`, '_blank', 'noopener,noreferrer');
       }
     }
