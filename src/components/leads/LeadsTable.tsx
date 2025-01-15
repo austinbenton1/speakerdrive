@@ -15,6 +15,7 @@ interface LeadsTableProps {
   onLeadClick: (leadId: string) => Promise<void>;
   showAllEvents?: boolean;
   uniqueCount?: number;
+  selectedLeadType?: string;
 }
 
 const LoadingRow = () => (
@@ -41,7 +42,8 @@ export default function LeadsTable({
   onResetFilters, 
   onLeadClick,
   showAllEvents = false,
-  uniqueCount = 0
+  uniqueCount = 0,
+  selectedLeadType = 'all'
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const [sortField, setSortField] = React.useState<SortField | null>(null);
@@ -144,8 +146,16 @@ export default function LeadsTable({
                 <div className="flex items-center gap-2 text-[13.5px] font-medium text-gray-800 ml-2">
                   <Layers className="w-4 h-4 text-gray-500" />
                   <div>
-                    Showing <span className="font-medium">{showAllEvents ? leads.length : uniqueCount}</span>
-                    {showAllEvents ? ' total leads' : ' total events'}
+                    Showing <span className="font-medium">
+                      {selectedLeadType === 'all' 
+                        ? (showAllEvents ? leads.length : uniqueCount)
+                        : leads.length}
+                    </span>
+                    {selectedLeadType === 'contacts' 
+                      ? ' contacts'
+                      : selectedLeadType === 'all'
+                        ? (showAllEvents ? ' total contacts & events' : ' unique contacts & events')
+                        : ' events'}
                   </div>
                 </div>
               </div>

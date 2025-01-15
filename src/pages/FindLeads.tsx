@@ -453,10 +453,11 @@ export default function FindLeads() {
             <LeadsTable 
               leads={displayedLeads}
               loading={loading}
-              onLeadClick={handleLeadClick}
               onResetFilters={handleResetFilters}
+              onLeadClick={handleLeadClick}
               showAllEvents={showAllEvents}
               uniqueCount={uniqueLeadsCount}
+              selectedLeadType={selectedLeadType}
             />
           </div>
         </div>
