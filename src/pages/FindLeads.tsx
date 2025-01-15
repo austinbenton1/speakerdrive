@@ -296,11 +296,13 @@ export default function FindLeads() {
   // Update displayed leads and IDs when necessary
   useEffect(() => {
     const results = hasActiveFilters ? filteredLeads : availableLeads;
-    setDisplayedLeads(results);
-
-    // Update lead IDs whenever filters change
-    const leads = showAllEvents ? results : getUniqueLeads(results);
-    setCurrentLeadIds(leads.map(lead => lead.id));
+    
+    // First apply deduplication
+    const uniqueLeads = showAllEvents ? results : getUniqueLeads(results);
+    
+    // Then update both states with the deduplicated results
+    setDisplayedLeads(uniqueLeads);
+    setCurrentLeadIds(uniqueLeads.map(lead => lead.id));
   }, [filteredLeads, hasActiveFilters, showAllEvents, availableLeads]);
 
   const handleLeadClick = async (leadId: string) => {

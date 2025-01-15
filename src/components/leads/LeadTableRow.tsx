@@ -11,8 +11,6 @@ interface LeadTableRowProps {
 }
 
 export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
-  const [relatedLeadsCount, setRelatedLeadsCount] = useState<number | null>(null);
-  const [isCountVisible, setIsCountVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { recordedLeads } = useUnlockedLeadsData();
 
@@ -32,51 +30,6 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       : 'bg-emerald-400'
   };
 
-  // Effect to handle count visibility
-  useEffect(() => {
-    if (relatedLeadsCount !== null) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        setIsCountVisible(true);
-      }, 50);
-      return () => clearTimeout(timer);
-    } else {
-      setIsCountVisible(false);
-    }
-  }, [relatedLeadsCount]);
-
-  useEffect(() => {
-    const checkRelatedLeads = async () => {
-      try {
-        // Get all leads with same event name
-        const { data: eventLeads, error } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('event_name', lead.event_name);
-
-        if (error) throw error;
-
-        // Create a Set of unlocked lead IDs for this event
-        const unlockedIds = new Set(
-          recordedLeads
-            .filter(ul => ul.event_name === lead.event_name)
-            .map(ul => ul.lead_id)
-        );
-
-        // Calculate locked leads count by excluding unlocked leads
-        const lockedCount = eventLeads.filter(l => !unlockedIds.has(l.id)).length;
-        
-        setRelatedLeadsCount(lockedCount);
-      } catch (error) {
-        console.error('Error checking related leads:', error);
-      }
-    };
-
-    if (lead.event_name) {
-      checkRelatedLeads();
-    }
-  }, [lead.event_name, lead.id, recordedLeads]);
-
   const handleViewMore = (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -89,24 +42,6 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     const url = `${window.location.pathname}?${params.toString()}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
-
-  const getFormattedUrl = (url: string | undefined | null) => {
-    if (!url) return null;
-    
-    try {
-      const urlToFormat = url.startsWith('http') ? url : `https://${url}`;
-      const urlObj = new URL(urlToFormat);
-      return {
-        hostname: urlObj.hostname.replace(/^www\./, ''),
-        fullUrl: urlToFormat
-      };
-    } catch (error) {
-      console.error('Invalid URL:', url);
-      return null;
-    }
-  };
-
-  const urlData = getFormattedUrl(lead.event_url);
 
   const TooltipContent = React.memo(() => (
     <div className="w-[500px] divide-y divide-gray-100">
@@ -224,6 +159,24 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       setIsLoading(false);
     }
   };
+
+  const getFormattedUrl = (url: string | undefined | null) => {
+    if (!url) return null;
+    
+    try {
+      const urlToFormat = url.startsWith('http') ? url : `https://${url}`;
+      const urlObj = new URL(urlToFormat);
+      return {
+        hostname: urlObj.hostname.replace(/^www\./, ''),
+        fullUrl: urlToFormat
+      };
+    } catch (error) {
+      console.error('Invalid URL:', url);
+      return null;
+    }
+  };
+
+  const urlData = getFormattedUrl(lead.event_url);
 
   return (
     <div className="contents">
@@ -371,42 +324,18 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
         <button
           onClick={handleViewMore}
           className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200"
-          title={relatedLeadsCount ? (relatedLeadsCount > 1 ? "View all leads from this event" : "View this lead") : "Loading..."}
+          title="View all leads from this event"
         >
           <div className="relative">
             <div className="relative">
               <Layers className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-600 transition-colors" />
-              <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${styles.dot} animate-pulse`}></div>
+              <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${styles.dot}`}></div>
             </div>
           </div>
-          <div className="flex items-center">
-            <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
-              View All Leads
-            </span>
-            <div 
-              className={`
-                ml-1 w-px h-3.5 bg-gray-200 group-hover:bg-gray-300 
-                transition-all duration-300 ease-in-out
-                ${relatedLeadsCount !== null ? 'opacity-100' : 'opacity-0 w-0 ml-0'}
-              `}
-            ></div>
-          </div>
-          <div 
-            className={`
-              relative flex items-center
-              transition-all duration-300 ease-in-out
-              ${isCountVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}
-            `}
-          >
-            {relatedLeadsCount !== null && (
-              <div className="flex items-center">
-                <span className="text-gray-500 group-hover:text-gray-700 transition-colors min-w-[0.875rem] text-center">
-                  {relatedLeadsCount}
-                </span>
-                <ArrowUpRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors -translate-y-px group-hover:translate-x-0.5 transform transition-all duration-200 -ml-0.5" />
-              </div>
-            )}
-          </div>
+          <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
+            View All Leads
+          </span>
+          <ArrowUpRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors -translate-y-px group-hover:translate-x-0.5 transform transition-all duration-200" />
         </button>
       </div>
     </div>

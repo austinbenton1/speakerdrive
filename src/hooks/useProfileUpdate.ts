@@ -1,93 +1,57 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../lib/store';
+import { useAuthStore, useProfileStore } from '../lib/store';
 
 interface ProfileUpdateData {
-  display_name?: string;
+  display_name?: string | null;
   services?: string[];
   industries?: string[];
+  offering?: string | null;
 }
 
 export function useProfileUpdate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const setUser = useAuthStore(state => state.setUser);
+  const updateProfileState = useProfileStore(state => state.updateProfile);
 
   const handleProfileUpdate = async (userId: string, updates: ProfileUpdateData) => {
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      setSuccess(false);
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(false);
 
+    try {
       // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
-        .update(updates)
+        .update({
+          display_name: updates.display_name,
+          services: updates.services,
+          industries: updates.industries,
+          offering: updates.offering
+        })
         .eq('id', userId);
 
       if (updateError) throw updateError;
 
-      // Update auth metadata for display name
-      if (updates.display_name) {
-        const { data: { user }, error: authError } = await supabase.auth.updateUser({
-          data: { display_name: updates.display_name }
-        });
-
-        if (authError) throw authError;
-
-        // Update global auth state to reflect the new display name
-        if (user) {
-          setUser(user);
-        }
-      }
-
-      // Fetch the updated profile
-      const { data: updatedProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Send updated profile to webhook
-      try {
-        await fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updatedProfile),
-        });
-      } catch (webhookError) {
-        console.error('Failed to send profile update to webhook:', webhookError);
-        // Don't throw here - we don't want to fail the update if webhook fails
-      }
-
+      // Update local profile state
+      updateProfileState(updates);
       setSuccess(true);
-      
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-
-      return { success: true, error: null };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      console.error('Error updating profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const clearError = () => setError(null);
 
   return {
     updateProfile: handleProfileUpdate,
     isSubmitting,
     error,
     success,
-    clearError: () => setError(null),
-    clearSuccess: () => setSuccess(false)
+    clearError
   };
 }

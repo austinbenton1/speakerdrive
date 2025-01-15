@@ -46,6 +46,7 @@ export default function UserManagement() {
     fullName: string; 
     services: string[]; 
     industries: string[]; 
+    offering: string;
   }) => {
     // Clear any existing error before submitting
     clearError();
@@ -53,7 +54,8 @@ export default function UserManagement() {
     await updateProfile(profile.id, {
       display_name: data.fullName,
       services: data.services,
-      industries: data.industries
+      industries: data.industries,
+      offering: data.offering
     });
   };
 
@@ -104,6 +106,7 @@ export default function UserManagement() {
                       fullName: profile.display_name || '',
                       services: profile.services || [],
                       industries: profile.industries || [],
+                      offering: profile.offering || ''
                     });
                   }}
                 />
@@ -112,7 +115,8 @@ export default function UserManagement() {
                   initialData={{
                     fullName: profile.display_name || '',
                     services: profile.services || [],
-                    industries: profile.industries || []
+                    industries: profile.industries || [],
+                    offering: profile.offering || ''
                   }}
                   onSubmit={handleProfileSubmit}
                   isSubmitting={isSubmitting}

@@ -12,6 +12,21 @@ interface AvatarState {
   setAvatarUrl: (url: string | null) => void;
 }
 
+interface ProfileState {
+  profile: {
+    display_name: string | null;
+    services: string[];
+    industries: string[];
+    offering: string | null;
+  } | null;
+  updateProfile: (data: {
+    display_name?: string | null;
+    services?: string[];
+    industries?: string[];
+    offering?: string | null;
+  }) => void;
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
@@ -24,4 +39,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 export const useAvatarStore = create<AvatarState>((set) => ({
   avatarUrl: null,
   setAvatarUrl: (url) => set({ avatarUrl: url }),
+}));
+
+export const useProfileStore = create<ProfileState>((set) => ({
+  profile: null,
+  updateProfile: (data) => set((state) => ({
+    profile: state.profile ? { ...state.profile, ...data } : null
+  })),
 }));

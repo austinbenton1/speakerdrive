@@ -58,7 +58,8 @@ export function useUserProfile() {
           services: parsedServices,
           industries: parsedIndustries,
           avatarUrl: profileData.avatar_url,
-          quick_start_guide_tip: profileData.quick_start_guide_tip
+          quick_start_guide_tip: profileData.quick_start_guide_tip,
+          offering: profileData.offering || null
         });
       } catch (err) {
         console.error('Error loading profile:', err);

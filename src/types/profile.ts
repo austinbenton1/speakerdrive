@@ -7,4 +7,5 @@ export interface UserProfile {
   industries: string[];
   avatarUrl: string | null;
   quick_start_guide_tip: boolean;
+  offering: string | null;
 }

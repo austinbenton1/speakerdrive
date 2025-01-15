@@ -7,6 +7,7 @@ interface ProfileFormData {
   fullName: string;
   services: string[];
   industries: string[];
+  offering: string;
 }
 
 interface ProfileFormProps {
@@ -23,7 +24,8 @@ export default function ProfileForm({
   const [formData, setFormData] = React.useState<ProfileFormData>({
     fullName: initialData?.fullName || '',
     services: initialData?.services || [],
-    industries: initialData?.industries || []
+    industries: initialData?.industries || [],
+    offering: initialData?.offering || ''
   });
 
   const handleServiceChange = (serviceId: string) => {
@@ -69,8 +71,10 @@ export default function ProfileForm({
       <ServiceIndustrySelector
         selectedServices={formData.services}
         selectedIndustries={formData.industries}
+        offering={formData.offering}
         onServiceChange={handleServiceChange}
         onIndustryChange={handleIndustryChange}
+        onOfferingChange={(value) => setFormData(prev => ({ ...prev, offering: value }))}
         disabled={isSubmitting}
       />
 

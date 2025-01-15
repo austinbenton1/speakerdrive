@@ -2,20 +2,31 @@ import { supabase } from '../../lib/supabase';
 import { ProfileError } from './errors';
 import type { ProfileUpdateData, ProfileResponse } from './types';
 
+interface UpdateProfileData {
+  display_name?: string | null;
+  services?: string[];
+  industries?: string[];
+  offering?: string | null;
+}
+
 export async function updateProfile(
-  userId: string, 
-  updates: ProfileUpdateData
+  profileId: string, 
+  data: UpdateProfileData
 ): Promise<ProfileResponse> {
   try {
     // Update profile data in profiles table
-    const { error: profileError } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({
-        display_name: updates.display_name
+        display_name: data.display_name,
+        services: data.services,
+        industries: data.industries,
+        offering: data.offering,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', userId);
+      .eq('id', profileId);
 
-    if (profileError) throw new ProfileError(profileError.message);
+    if (error) throw new ProfileError(error.message);
 
     return { success: true };
   } catch (error) {

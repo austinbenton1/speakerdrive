@@ -12,8 +12,12 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   // Create a map to store unique leads by event name and organization
   const uniqueMap = new Map<string, Lead>();
   
-  // Sort leads to prioritize URL > Contact Email > Event Email
-  const sortedLeads = [...leads].sort((a, b) => {
+  // First, separate Contact Email leads as they should be exempt from deduplication
+  const contactEmailLeads = leads.filter(lead => lead.unlock_type === 'Unlock Contact Email');
+  const otherLeads = leads.filter(lead => lead.unlock_type !== 'Unlock Contact Email');
+  
+  // Sort remaining leads to prioritize URL > Event Email
+  const sortedLeads = [...otherLeads].sort((a, b) => {
     // If event names are different, maintain original order
     if (a.event_name !== b.event_name) return 0;
     // If organizations are different, maintain original order
@@ -26,7 +30,7 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
     return priorityB - priorityA;
   });
 
-  // Process each lead
+  // Process non-Contact Email leads
   sortedLeads.forEach(lead => {
     // Create a unique key combining event name and organization
     const eventName = (lead.event_name || '').toLowerCase().trim();
@@ -50,5 +54,6 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
     }
   });
   
-  return Array.from(uniqueMap.values());
+  // Return both the deduplicated leads and all Contact Email leads
+  return [...Array.from(uniqueMap.values()), ...contactEmailLeads];
 }

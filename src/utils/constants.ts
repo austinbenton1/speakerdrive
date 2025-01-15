@@ -7,24 +7,24 @@ export const usRegions = {
 };
 
 export const industries = [
-  { id: 'tech-media', label: 'Technology & Media' },
-  { id: 'education', label: 'Education & Training' },
-  { id: 'business', label: 'General Business & Entrepreneurship' },
-  { id: 'finance', label: 'Finance, Business & Cooperative Services' },
-  { id: 'community', label: 'Community, Culture & Inclusion' },
-  { id: 'leadership', label: 'Leadership & Corporate Development' },
-  { id: 'nonprofit', label: 'NonProfit, Associations & Public Sector' },
-  { id: 'sales', label: 'Sales & Consumer Services' },
-  { id: 'healthcare', label: 'Healthcare professionals and stakeholders' },
-  { id: 'wellness', label: 'Health, Wellness & Sustainability' }
+  { id: 'tech-media', label: 'Technology & Media', icon: 'Monitor' },
+  { id: 'education', label: 'Education & Training', icon: 'GraduationCap' },
+  { id: 'business', label: 'General Business & Entrepreneurship', icon: 'Briefcase' },
+  { id: 'finance', label: 'Finance, Business & Cooperative Services', icon: 'LineChart' },
+  { id: 'community', label: 'Community, Culture & Inclusion', icon: 'Users2' },
+  { id: 'leadership', label: 'Leadership & Corporate Development', icon: 'Target' },
+  { id: 'nonprofit', label: 'NonProfit, Associations & Public Sector', icon: 'Heart' },
+  { id: 'sales', label: 'Sales & Consumer Services', icon: 'Store' },
+  { id: 'healthcare', label: 'Healthcare professionals and stakeholders', icon: 'Stethoscope' },
+  { id: 'wellness', label: 'Health, Wellness & Sustainability', icon: 'Leaf' }
 ];
 
 export const services = [
-  { id: 'keynote', label: 'Keynote Speaker' },
-  { id: 'workshop', label: 'Workshop Leader' },
-  { id: 'moderator', label: 'Panel Moderator' },
-  { id: 'facilitator', label: 'Facilitator' },
-  { id: 'coach', label: 'Coach/Consultant' }
+  { id: 'keynote', label: 'Keynote Speaker', icon: 'Mic2' },
+  { id: 'workshop', label: 'Workshop Leader', icon: 'Users' },
+  { id: 'moderator', label: 'Panel Moderator', icon: 'GitCommit' },
+  { id: 'facilitator', label: 'Facilitator', icon: 'Presentation' },
+  { id: 'coach', label: 'Coach/Consultant', icon: 'Lightbulb' }
 ];
 
 export const eventFormats = [
