@@ -9,51 +9,76 @@ const getUnlockPriority = (type: string) => {
 };
 
 export function getUniqueLeads(leads: Lead[]): Lead[] {
-  // Create a map to store unique leads by event name and organization
-  const uniqueMap = new Map<string, Lead>();
-  
-  // First, separate Contact Email leads as they should be exempt from deduplication
-  const contactEmailLeads = leads.filter(lead => lead.unlock_type === 'Unlock Contact Email');
+  // First, track Contact Email leads with their original positions
+  const contactEmailPositions = leads.reduce<{ lead: Lead; index: number }[]>((acc, lead, index) => {
+    if (lead.unlock_type === 'Unlock Contact Email') {
+      acc.push({ lead, index });
+    }
+    return acc;
+  }, []);
+
+  // Filter out Contact Email leads for deduplication of other leads
   const otherLeads = leads.filter(lead => lead.unlock_type !== 'Unlock Contact Email');
   
   // Sort remaining leads to prioritize URL > Event Email
   const sortedLeads = [...otherLeads].sort((a, b) => {
-    // If event names are different, maintain original order
-    if (a.event_name !== b.event_name) return 0;
-    // If organizations are different, maintain original order
-    if (a.organization !== b.organization) return 0;
+    // Compare event names first
+    const eventNameA = (a.event_name || '').toLowerCase().trim();
+    const eventNameB = (b.event_name || '').toLowerCase().trim();
+    if (eventNameA !== eventNameB) {
+      return eventNameA.localeCompare(eventNameB);
+    }
+
+    // If event names are same, compare organizations
+    const orgA = (a.organization || '').toLowerCase().trim();
+    const orgB = (b.organization || '').toLowerCase().trim();
+    if (orgA !== orgB) {
+      return orgA.localeCompare(orgB);
+    }
     
+    // If both event and org are same, compare unlock types
     const priorityA = getUnlockPriority(a.unlock_type);
     const priorityB = getUnlockPriority(b.unlock_type);
-    
-    // Higher priority first
-    return priorityB - priorityA;
+    return priorityB - priorityA;  // Higher priority first
   });
 
-  // Process non-Contact Email leads
+  // Process non-Contact Email leads for deduplication
+  const uniqueMap = new Map<string, Lead>();
   sortedLeads.forEach(lead => {
-    // Create a unique key combining event name and organization
     const eventName = (lead.event_name || '').toLowerCase().trim();
     const organization = (lead.organization || '').toLowerCase().trim();
     const key = `${eventName}|${organization}`;
 
-    // Only add if this combination doesn't exist yet
-    // or if we have a higher priority unlock type
     const existingLead = uniqueMap.get(key);
     if (!existingLead) {
       uniqueMap.set(key, lead);
     } else {
-      // Check if current lead has higher priority unlock type
       const existingPriority = getUnlockPriority(existingLead.unlock_type);
       const currentPriority = getUnlockPriority(lead.unlock_type);
       
-      // Replace if current lead has higher priority
       if (currentPriority > existingPriority) {
         uniqueMap.set(key, lead);
       }
     }
   });
+
+  // Get deduplicated leads
+  const deduplicatedLeads = Array.from(uniqueMap.values());
+
+  // Combine deduplicated leads with Contact Email leads in their original positions
+  const result: Lead[] = [...deduplicatedLeads];
   
-  // Return both the deduplicated leads and all Contact Email leads
-  return [...Array.from(uniqueMap.values()), ...contactEmailLeads];
+  // Insert Contact Email leads back in their original positions
+  contactEmailPositions.forEach(({ lead, index }) => {
+    // If the original position is beyond the current result length,
+    // just append it at the end
+    if (index >= result.length) {
+      result.push(lead);
+    } else {
+      // Otherwise insert it at its original position
+      result.splice(index, 0, lead);
+    }
+  });
+
+  return result;
 }
