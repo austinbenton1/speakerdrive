@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { User, Shield, Image, Users, ChevronDown } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -12,6 +12,12 @@ export default function Layout() {
   const { isAdmin } = useAdminRole();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
+  useEffect(() => {
+    if (!loading && (error || !profile)) {
+      navigate('/login');
+    }
+  }, [loading, error, profile, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,8 +26,7 @@ export default function Layout() {
     );
   }
 
-  if (error || !profile) {
-    navigate('/login');
+  if (!profile) {
     return null;
   }
 

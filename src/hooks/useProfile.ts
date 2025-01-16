@@ -1,66 +1,51 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 
-interface ProfileData {
+interface Profile {
+  id: string;
+  user_id: string;
   display_name: string | null;
   email: string;
   avatar_url: string | null;
   user_type: 'Admin' | 'Client';
+  services: string[];
+  industries: string[];
 }
 
+// Placeholder profile data
+const placeholderProfile: Profile = {
+  id: '1',
+  user_id: '1',
+  display_name: 'John Doe',
+  email: 'john@example.com',
+  avatar_url: null,
+  user_type: 'Client',
+  services: ['Keynote Speaker', 'Workshop Leader'],
+  industries: ['Technology', 'Education']
+};
+
 export function useProfile() {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Simulated fetch profile function
+  const fetchProfile = () => {
+    // Simulate API delay
+    setTimeout(() => {
+      setProfile(placeholderProfile);
+      setError(null);
+      setLoading(false);
+    }, 500);
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        if (!session?.user) {
-          setError('No authenticated user');
-          return;
-        }
-
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('display_name, email, avatar_url, user_type')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        setProfile(profileData);
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
-
-    // Subscribe to profile changes
-    const channel = supabase
-      .channel('profile_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'profiles',
-          filter: `id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}` 
-        }, 
-        () => {
-          fetchProfile();
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
   }, []);
 
-  return { profile, loading, error };
+  return { 
+    profile, 
+    loading, 
+    error,
+    refetch: fetchProfile
+  };
 }

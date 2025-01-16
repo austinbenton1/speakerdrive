@@ -90,29 +90,5 @@ export function useUnlockedLeadsData() {
     fetchUnlockedLeads(user.id);
   }, [isAuthenticated, user, fetchUnlockedLeads]);
 
-  // Add subscription for real-time updates
-  useEffect(() => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel('unlocked_leads_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'unlocked_leads',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // Invalidate cache and refetch on any changes
-        const cacheKey = `unlocked_leads_${user.id}`;
-        cache.delete(cacheKey);
-        fetchUnlockedLeads(user.id);
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user, fetchUnlockedLeads]);
-
   return { recordedLeads, loading, error };
 }
