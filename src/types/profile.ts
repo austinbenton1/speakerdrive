@@ -8,4 +8,6 @@ export interface UserProfile {
   avatarUrl: string | null;
   quick_start_guide_tip: boolean;
   offering: string | null;
+  random_lead_sort: string | null;
+  random_lead_sort_date: string | null;
 }

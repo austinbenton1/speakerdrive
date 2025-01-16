@@ -46,65 +46,10 @@ export default function LeadsTable({
   selectedLeadType = 'all'
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
-  const [sortField, setSortField] = React.useState<SortField | null>(null);
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      // Toggle direction if same field
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New field, set to ascending
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-gray-900" />
-      : <ArrowDown className="w-4 h-4 text-gray-900" />;
-  };
-
-  // Sort the leads
-  const sortedLeads = React.useMemo(() => {
-    if (!sortField) return leads;
-
-    return [...leads].sort((a, b) => {
-      let aValue = '', bValue = '';
-      
-      switch (sortField) {
-        case 'topic':
-          aValue = a.keywords?.split(',')[0]?.trim() || '';
-          bValue = b.keywords?.split(',')[0]?.trim() || '';
-          break;
-        case 'url':
-          aValue = a.event_url || '';
-          bValue = b.event_url || '';
-          break;
-        case 'location':
-          aValue = [a.city, a.state, a.region]
-            .filter(value => value && value.trim() !== '' && value.trim().toLowerCase() !== 'blank')
-            .join(', ');
-          bValue = [b.city, b.state, b.region]
-            .filter(value => value && value.trim() !== '' && value.trim().toLowerCase() !== 'blank')
-            .join(', ');
-          break;
-      }
-
-      if (sortDirection === 'asc') {
-        return aValue.localeCompare(bValue);
-      } else {
-        return bValue.localeCompare(aValue);
-      }
-    });
-  }, [leads, sortField, sortDirection]);
-
-  // Paginate the sorted leads
-  const paginatedLeads = paginate(sortedLeads);
-
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Paginate the leads directly (no sorting)
+  const paginatedLeads = paginate(leads);
 
   // Setup wheel event handler
   React.useEffect(() => {
@@ -161,31 +106,19 @@ export default function LeadsTable({
               </div>
               
               {/* Topic Header */}
-              <button
-                onClick={() => handleSort('topic')}
-                className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[16px] border-b-2 border-gray-100 flex items-center gap-2 hover:bg-gray-50 transition-colors"
-              >
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[16px] border-b-2 border-gray-100">
                 Event Topic
-                {getSortIcon('topic')}
-              </button>
+              </div>
 
               {/* URL Header */}
-              <button
-                onClick={() => handleSort('url')}
-                className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100 flex items-center gap-2 hover:bg-gray-50 transition-colors"
-              >
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100">
                 Event URL
-                {getSortIcon('url')}
-              </button>
+              </div>
 
               {/* Location Header */}
-              <button
-                onClick={() => handleSort('location')}
-                className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100 flex items-center gap-2 hover:bg-gray-50 transition-colors"
-              >
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[24px] border-b-2 border-gray-100">
                 Location
-                {getSortIcon('location')}
-              </button>
+              </div>
 
               <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[64px] border-b-2 border-gray-100">Event Group</div>
             </div>
@@ -205,23 +138,11 @@ export default function LeadsTable({
                   </React.Fragment>
                 ))}
               </div>
-            ) : leads.length === 0 ? (
-              <div className="col-span-5 px-3 py-12 text-center border-t border-gray-200">
-                <div className="text-gray-500 text-sm">No leads found matching your filters</div>
-                <div className="mt-2">
-                  <button
-                    onClick={onResetFilters}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Reset filters
-                  </button>
-                </div>
-              </div>
             ) : (
               <div className="contents">
-                {paginatedLeads.map((lead) => (
-                  <LeadTableRow
-                    key={lead.id}
+                {paginatedLeads.map(lead => (
+                  <LeadTableRow 
+                    key={lead.id} 
                     lead={lead}
                     onClick={() => onLeadClick(lead.id)}
                   />

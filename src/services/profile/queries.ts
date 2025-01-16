@@ -12,7 +12,11 @@ export async function fetchProfileData(userId: string) {
         display_name,
         services,
         industries,
-        avatar_url
+        avatar_url,
+        quick_start_guide_tip,
+        offering,
+        random_lead_sort,
+        random_lead_sort_date
       `)
       .eq('id', userId)
       .single();

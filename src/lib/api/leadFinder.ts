@@ -13,13 +13,27 @@ async function retryableRequest<T>(
     return await request();
   } catch (error) {
     if (retries > 0) {
-      console.log(`Retrying request, ${retries} attempts remaining...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return retryableRequest(request, retries - 1, delay * 2); // Exponential backoff
     }
     throw error;
   }
 }
+
+// Valid sort fields that exist in the leads table
+const VALID_SORT_FIELDS = [
+  'event_name',
+  'organization',
+  'lead_name',
+  'event_format',
+  'industry'
+] as const;
+
+// Default sort if none is provided
+const DEFAULT_SORT = {
+  field: 'event_name' as const,
+  ascending: true
+};
 
 // Sorting fields and their weights
 const SORT_FIELDS = [
@@ -31,7 +45,7 @@ const SORT_FIELDS = [
 ] as const;
 
 function getRandomSort() {
-  const randomField = SORT_FIELDS[Math.floor(Math.random() * SORT_FIELDS.length)];
+  const randomField = VALID_SORT_FIELDS[Math.floor(Math.random() * VALID_SORT_FIELDS.length)];
   const isAscending = Math.random() < 0.5;
   return {
     field: randomField,
@@ -41,13 +55,28 @@ function getRandomSort() {
 
 export async function fetchAvailableLeads(userId: string, unlockedLeadIds: string[] = []): Promise<Lead[]> {
   try {
-    // Get random sort configuration
-    const sort = getRandomSort();
+    // Get user's profile sort configuration
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('random_lead_sort')
+      .eq('id', userId)
+      .single();
+
+    // Parse sort config
+    let sortConfig = profileData?.random_lead_sort;
+    if (typeof sortConfig === 'string') {
+      try {
+        sortConfig = JSON.parse(sortConfig);
+      } catch (e) {
+        sortConfig = DEFAULT_SORT;
+      }
+    }
+
+    // Use the sort config or fall back to default
+    const finalSortConfig = sortConfig || DEFAULT_SORT;
 
     // Build query for available leads
-    const query = supabase
-      .from('leads')
-      .select(`
+    const selectQuery = `
         id,
         image_url,
         lead_name,
@@ -69,47 +98,28 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
         state,
         city,
         keywords
-      `)
-      .order(sort.field, { ascending: sort.ascending });
+      `;
+
+    let query = supabase
+      .from('leads')
+      .select(selectQuery);
+
+    // Apply sort configuration
+    query = query.order(finalSortConfig.field, { ascending: finalSortConfig.ascending });
 
     // Add filter for unlocked leads if any exist
     if (unlockedLeadIds.length > 0) {
-      query.not('id', 'in', `(${unlockedLeadIds.join(',')})`);
+      query = query.not('id', 'in', `(${unlockedLeadIds.join(',')})`);
     }
 
     // Get available leads with retry
-    const { data: availableLeads, error: leadsError } = await retryableRequest(() => 
-      query
-    );
+    const { data: availableLeads, error: leadsError } = await retryableRequest(() => query);
 
     if (leadsError) throw leadsError;
+    return availableLeads || [];
 
-    return (availableLeads || []).map(lead => ({
-      id: lead.id,
-      image_url: lead.image_url,
-      lead_name: lead.lead_name,
-      focus: lead.focus,
-      lead_type: lead.lead_type,
-      unlock_type: lead.unlock_type,
-      industry: lead.industry,
-      organization: lead.organization,
-      organization_type: lead.organization_type,
-      event_info: lead.event_info,
-      detailed_info: lead.detailed_info,
-      event_name: lead.event_name,
-      event_url: lead.event_url,
-      event_format: lead.event_format,
-      job_title: lead.job_title,
-      subtext: lead.subtext,
-      past_speakers_events: lead.past_speakers_events,
-      region: lead.region,
-      state: lead.state,
-      city: lead.city,
-      keywords: lead.keywords
-    }));
-  } catch (error) {
-    console.error('Error in fetchAvailableLeads:', error);
-    throw error;
+  } catch (err) {
+    throw err;
   }
 }
 
@@ -274,7 +284,6 @@ export async function fetchLeadNavigation(
       previousLeadId: currentIndex > 0 ? leads[currentIndex - 1].id : undefined
     };
   } catch (error) {
-    console.error('Error fetching lead navigation:', error);
     return {};
   }
 }

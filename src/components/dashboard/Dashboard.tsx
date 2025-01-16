@@ -1,14 +1,21 @@
 import React from 'react';
 import { Loader } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useUnlockedLeadsData } from '../../hooks/useUnlockedLeadsData';
 import { calculateDashboardStats } from '../../utils/stats';
+import { useRandomSort } from '../../hooks/useRandomSort';
 import StatCards from './StatCards';
 import RecentUnlocks from './RecentUnlocks';
 import IndustryDistribution from './IndustryDistribution';
 
 export default function Dashboard() {
+  const location = useLocation();
   const { recordedLeads, loading, error } = useUnlockedLeadsData();
+  const { sortConfig } = useRandomSort(); // This handles all sort logic
   const stats = calculateDashboardStats(recordedLeads);
+
+  console.log('[Dashboard] Render - Path:', location.pathname);
+  console.log('[Dashboard] Current sort:', sortConfig);
 
   if (loading) {
     return (

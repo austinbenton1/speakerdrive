@@ -4,6 +4,7 @@ import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { getUniqueLeads } from '../utils/deduplication';
 import { supabase } from '../lib/supabase';
+import { useRandomSort } from '../hooks/useRandomSort';
 import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
@@ -30,6 +31,8 @@ export default function FindLeads() {
     setOpenSections,
     toggleSection,
   } = useLeadFilters();
+
+  const { sortConfig } = useRandomSort(); // This handles all sort logic
 
   // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
@@ -177,132 +180,128 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
-  // Apply filters to leads
-  const filteredLeads = useMemo(() => {
-    let results = [...availableLeads];
-
-    // Filter by opportunities search term
-    if (eventsFilter || opportunityTags.length > 0) {
-      results = results.filter(lead => {
-        // Combine all searchable fields
-        const searchableText = [
-          lead.event_name,
-          lead.keywords,
-          lead.subtext
-        ].filter(Boolean).join(' ').toLowerCase();
-        
-        // Check text search
-        if (eventsFilter && searchableText.includes(eventsFilter.toLowerCase())) {
-          return true;
-        }
-        
-        // Check tags
-        if (opportunityTags.length > 0) {
-          return opportunityTags.some(tag => searchableText.includes(tag.toLowerCase()));
-        }
-        
-        return false;
-      });
-    }
-
-    // Filter by industry
-    if (filters.industry?.length) {
-      results = results.filter(lead => 
-        filters.industry.some(industry => 
-          lead.industry?.toLowerCase().includes(industry.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by event format
-    if (filters.eventFormat?.length) {
-      results = results.filter(lead => 
-        filters.eventFormat.some(format => 
-          lead.event_format?.toLowerCase().includes(format.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by organization
-    if (filters.organization?.length) {
-      results = results.filter(lead => 
-        filters.organization.some(org => 
-          lead.organization?.toLowerCase().includes(org.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by organization type
-    if (filters.organizationType?.length) {
-      results = results.filter(lead => 
-        filters.organizationType.includes(lead.organization_type || '')
-      );
-    }
-
-    // Filter by job title
-    if (filters.jobTitle?.length) {
-      results = results.filter(lead => 
-        filters.jobTitle.some(job => 
-          lead.job_title?.toLowerCase().includes(job.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by region
-    if (filters.region) {
-      results = results.filter(lead => 
-        lead.region?.toLowerCase() === filters.region.toLowerCase()
-      );
-    }
-
-    // Filter by state
-    if (filters.state?.length) {
-      results = results.filter(lead => 
-        filters.state.some(state => 
-          lead.state?.toLowerCase() === state.toLowerCase()
-        )
-      );
-    }
-
-    // Filter by city
-    if (filters.city?.length) {
-      results = results.filter(lead => 
-        filters.city.some(city => 
-          lead.city?.toLowerCase().includes(city.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by unlock type
-    if (filters.unlockType) {
-      results = results.filter(lead => 
-        lead.unlock_type === filters.unlockType
-      );
-    }
-
-    // Filter by past speakers
-    if (filters.pastSpeakers?.length) {
-      results = results.filter(lead => 
-        filters.pastSpeakers.some(speaker => 
-          lead.past_speakers_events?.toLowerCase().includes(speaker.toLowerCase())
-        )
-      );
-    }
-
-    return results;
-  }, [availableLeads, eventsFilter, filters, opportunityTags]);
-
   // Update displayed leads and IDs when necessary
   useEffect(() => {
-    const results = hasActiveFilters ? filteredLeads : availableLeads;
+    // First apply deduplication to preserve groups
+    const uniqueLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
     
-    // First apply deduplication
-    const uniqueLeads = showAllEvents ? results : getUniqueLeads(results);
+    // Then apply filters to the deduplicated results
+    let results = uniqueLeads;
     
-    // Then update both states with the deduplicated results
-    setDisplayedLeads(uniqueLeads);
-    setCurrentLeadIds(uniqueLeads.map(lead => lead.id));
-  }, [filteredLeads, hasActiveFilters, showAllEvents, availableLeads]);
+    if (hasActiveFilters) {
+      // Filter by opportunities search term
+      if (eventsFilter || opportunityTags.length > 0) {
+        results = results.filter(lead => {
+          // Combine all searchable fields
+          const searchableText = [
+            lead.event_name,
+            lead.keywords,
+            lead.subtext
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          // Check text search
+          if (eventsFilter && searchableText.includes(eventsFilter.toLowerCase())) {
+            return true;
+          }
+          
+          // Check tags
+          if (opportunityTags.length > 0) {
+            return opportunityTags.some(tag => searchableText.includes(tag.toLowerCase()));
+          }
+          
+          return false;
+        });
+      }
+
+      // Filter by industry
+      if (filters.industry?.length) {
+        results = results.filter(lead => 
+          filters.industry.some(industry => 
+            lead.industry?.toLowerCase().includes(industry.toLowerCase())
+          )
+        );
+      }
+
+      // Filter by event format
+      if (filters.eventFormat?.length) {
+        results = results.filter(lead => 
+          filters.eventFormat.some(format => 
+            lead.event_format?.toLowerCase().includes(format.toLowerCase())
+          )
+        );
+      }
+
+      // Filter by organization
+      if (filters.organization?.length) {
+        results = results.filter(lead => 
+          filters.organization.some(org => 
+            lead.organization?.toLowerCase().includes(org.toLowerCase())
+          )
+        );
+      }
+
+      // Filter by organization type
+      if (filters.organizationType?.length) {
+        results = results.filter(lead => 
+          filters.organizationType.includes(lead.organization_type || '')
+        );
+      }
+
+      // Filter by job title
+      if (filters.jobTitle?.length) {
+        results = results.filter(lead => 
+          filters.jobTitle.some(job => 
+            lead.job_title?.toLowerCase().includes(job.toLowerCase())
+          )
+        );
+      }
+
+      // Filter by region
+      if (filters.region) {
+        results = results.filter(lead => 
+          lead.region?.toLowerCase() === filters.region.toLowerCase()
+        );
+      }
+
+      // Filter by state
+      if (filters.state?.length) {
+        results = results.filter(lead => 
+          filters.state.some(state => 
+            lead.state?.toLowerCase() === state.toLowerCase()
+          )
+        );
+      }
+
+      // Filter by city
+      if (filters.city?.length) {
+        results = results.filter(lead => 
+          filters.city.some(city => 
+            lead.city?.toLowerCase().includes(city.toLowerCase())
+          )
+        );
+      }
+
+      // Filter by unlock type
+      if (filters.unlockType) {
+        results = results.filter(lead => 
+          lead.unlock_type === filters.unlockType
+        );
+      }
+
+      // Filter by past speakers
+      if (filters.pastSpeakers?.length) {
+        results = results.filter(lead => 
+          filters.pastSpeakers.some(speaker => 
+            lead.past_speakers_events?.toLowerCase().includes(speaker.toLowerCase())
+          )
+        );
+      }
+    }
+
+    // Update both states with the filtered results
+    setDisplayedLeads(results);
+    setCurrentLeadIds(results.map(lead => lead.id));
+  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params
@@ -345,12 +344,10 @@ export default function FindLeads() {
         supabase.rpc('record_visit', {
           var_lead: leadId,
           var_user: user.id
-        }).then(({ error }) => {
-          if (error) console.error('Failed to record visit:', error);
         });
       }
     } catch (err) {
-      console.error('Failed to get user:', err);
+      // Silently handle errors for visit recording
     }
   };
 

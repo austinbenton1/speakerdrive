@@ -22,6 +22,8 @@ export interface Database {
           services: string[] | null
           industries: string[] | null
           avatar_url: string | null
+          random_lead_sort: { field: string; ascending: boolean } | null
+          random_lead_sort_date: string | null // ISO string
         }
         Insert: {
           id?: string
@@ -35,6 +37,8 @@ export interface Database {
           services?: string[] | null
           industries?: string[] | null
           avatar_url?: string | null
+          random_lead_sort?: { field: string; ascending: boolean } | null
+          random_lead_sort_date?: string | null
         }
         Update: {
           id?: string
@@ -48,6 +52,8 @@ export interface Database {
           services?: string[] | null
           industries?: string[] | null
           avatar_url?: string | null
+          random_lead_sort?: { field: string; ascending: boolean } | null
+          random_lead_sort_date?: string | null
         }
       }
     }
