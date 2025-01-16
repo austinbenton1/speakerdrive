@@ -26,17 +26,12 @@ export function useLeadUnlock(leadId: string, user: User | null, lead?: SpeakerL
     
     try {
       const status = await checkLeadUnlocked(leadId, user);
-      console.log('Unlock Status:', status);
-      
       setIsUnlocked(status.isUnlocked);
       // Use unlock value from status instead of lead data
       setUnlockValue(status.isUnlocked ? status.unlockValue : null);
-      console.log('Set Unlock Value:', status.isUnlocked ? status.unlockValue : null);
-      
       setError(null);
       setRetryCount(0);
     } catch (err) {
-      console.error('Error checking lead unlock status:', err);
       if (retryCount < MAX_RETRIES) {
         setRetryCount(prev => prev + 1);
         setTimeout(checkUnlockStatus, 1000 * Math.pow(2, retryCount));
@@ -67,7 +62,6 @@ export function useLeadUnlock(leadId: string, user: User | null, lead?: SpeakerL
       await checkUnlockStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unlock lead');
-      console.error('Error unlocking lead:', err);
     } finally {
       setIsUnlocking(false);
     }

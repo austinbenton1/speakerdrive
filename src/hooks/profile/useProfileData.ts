@@ -25,8 +25,7 @@ export function useProfileData() {
         name: profileData.display_name || '',
         display_name: profileData.display_name,
         email: profileData.email,
-        services: profileData.services || [],
-        industries: profileData.industries || [],
+        services: profileData.services,
         avatarUrl: profileData.avatar_url,
         quick_start_guide_tip: profileData.quick_start_guide_tip ?? true,
         offering: profileData.offering,
@@ -53,7 +52,6 @@ export function useProfileData() {
         .update({
           display_name: updates.display_name,
           services: updates.services,
-          industries: updates.industries,
           offering: updates.offering,
           random_lead_sort: updates.random_lead_sort,
           random_lead_sort_date: updates.random_lead_sort_date

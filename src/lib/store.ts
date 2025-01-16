@@ -15,15 +15,15 @@ interface AvatarState {
 interface ProfileState {
   profile: {
     display_name: string | null;
-    services: string[];
-    industries: string[];
+    services: string;
     offering: string | null;
+    website: string | null;
   } | null;
   updateProfile: (data: {
     display_name?: string | null;
-    services?: string[];
-    industries?: string[];
+    services?: string;
     offering?: string | null;
+    website?: string | null;
   }) => void;
 }
 
@@ -43,7 +43,22 @@ export const useAvatarStore = create<AvatarState>((set) => ({
 
 export const useProfileStore = create<ProfileState>((set) => ({
   profile: null,
-  updateProfile: (data) => set((state) => ({
-    profile: state.profile ? { ...state.profile, ...data } : null
-  })),
+  updateProfile: (data) => set((state) => {
+    if (!state.profile) return { profile: null };
+    
+    // Only update the profile if the data is actually changing
+    const updatedProfile = {
+      ...state.profile,
+      display_name: data.display_name ?? state.profile.display_name,
+      services: data.services ?? state.profile.services,
+      offering: data.offering ?? state.profile.offering,
+      website: data.website ?? state.profile.website
+    };
+
+    // Only update state if something actually changed
+    if (JSON.stringify(updatedProfile) !== JSON.stringify(state.profile)) {
+      return { profile: updatedProfile };
+    }
+    return state;
+  }),
 }));

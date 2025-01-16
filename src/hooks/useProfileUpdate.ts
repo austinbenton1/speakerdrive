@@ -4,9 +4,9 @@ import { useAuthStore, useProfileStore } from '../lib/store';
 
 interface ProfileUpdateData {
   display_name?: string | null;
-  services?: string[];
-  industries?: string[];
+  services?: string | string[] | null;
   offering?: string | null;
+  website?: string | null;
 }
 
 export function useProfileUpdate() {
@@ -21,21 +21,26 @@ export function useProfileUpdate() {
     setSuccess(false);
 
     try {
+      // Convert services to string if it's an array
+      const servicesString = Array.isArray(updates.services) 
+        ? updates.services[0] || null 
+        : typeof updates.services === 'string'
+          ? updates.services
+          : null;
+
       // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           display_name: updates.display_name,
-          services: updates.services,
-          industries: updates.industries,
-          offering: updates.offering
+          services: servicesString,
+          offering: updates.offering,
+          website: updates.website
         })
         .eq('id', userId);
 
       if (updateError) throw updateError;
 
-      // Update local profile state
-      updateProfileState(updates);
       setSuccess(true);
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -45,10 +50,15 @@ export function useProfileUpdate() {
     }
   };
 
+  const updateLocalProfile = (updates: ProfileUpdateData) => {
+    updateProfileState(updates);
+  };
+
   const clearError = () => setError(null);
 
   return {
     updateProfile: handleProfileUpdate,
+    updateLocalProfile,
     isSubmitting,
     error,
     success,

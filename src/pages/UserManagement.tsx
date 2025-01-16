@@ -42,20 +42,24 @@ export default function UserManagement() {
     );
   }
 
-  const handleProfileSubmit = async (data: { 
+  const handleProfileSubmit = async (formData: { 
     fullName: string; 
     services: string[]; 
     industries: string[]; 
     offering: string;
+    website: string;
   }) => {
     // Clear any existing error before submitting
     clearError();
 
+    if (!profile.id) return;
+
     await updateProfile(profile.id, {
-      display_name: data.fullName,
-      services: data.services,
-      industries: data.industries,
-      offering: data.offering
+      display_name: formData.fullName,
+      services: formData.services,
+      industries: formData.industries,
+      offering: formData.offering,
+      website: formData.website
     });
   };
 
@@ -106,7 +110,8 @@ export default function UserManagement() {
                       fullName: profile.display_name || '',
                       services: profile.services || [],
                       industries: profile.industries || [],
-                      offering: profile.offering || ''
+                      offering: profile.offering || '',
+                      website: profile.website || ''
                     });
                   }}
                 />
@@ -114,9 +119,10 @@ export default function UserManagement() {
                 <ProfileForm
                   initialData={{
                     fullName: profile.display_name || '',
-                    services: profile.services || [],
-                    industries: profile.industries || [],
-                    offering: profile.offering || ''
+                    services: Array.isArray(profile.services) ? profile.services : [],
+                    industries: Array.isArray(profile.industries) ? profile.industries : [],
+                    offering: profile.offering || '',
+                    website: profile.website || ''
                   }}
                   onSubmit={handleProfileSubmit}
                   isSubmitting={isSubmitting}

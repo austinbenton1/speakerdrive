@@ -19,9 +19,9 @@ const DEFAULT_SORT = {
 
 // Weights for each field (higher = more likely to be selected)
 const FIELD_WEIGHTS = {
-  event_name: 3,
-  organization: 3,
-  industry: 2,
+  event_name: 1,
+  organization: 1,
+  industry: 1,
   lead_name: 1,
   event_format: 1
 } as const;
@@ -76,12 +76,12 @@ export function useRandomSort() {
       if (!profile || hasCheckedRef.current) return;
       hasCheckedRef.current = true;
 
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
       
       // Check if we have all required valid data
       const hasValidSort = parseSortConfig(profile.random_lead_sort);
       const hasValidDate = profile.random_lead_sort_date && 
-                          new Date(profile.random_lead_sort_date).toISOString().split('T')[0] === today;
+                          new Date(profile.random_lead_sort_date.replace('Z', '+00:00')).toISOString().slice(0, 13) === now.toISOString().slice(0, 13);
 
       // If everything is valid, keep existing sort
       if (hasValidSort && hasValidDate) {
@@ -98,7 +98,7 @@ export function useRandomSort() {
         .from('profiles')
         .update({
           random_lead_sort: newSort,
-          random_lead_sort_date: new Date().toISOString()
+          random_lead_sort_date: now.toISOString().replace('Z', '+00:00')
         })
         .eq('id', profile.id);
 

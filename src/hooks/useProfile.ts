@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './useAuth';
 
 interface Profile {
   id: string;
@@ -7,40 +9,118 @@ interface Profile {
   email: string;
   avatar_url: string | null;
   user_type: 'Admin' | 'Client';
-  services: string[];
-  industries: string[];
+  services: string;
 }
 
-// Placeholder profile data
-const placeholderProfile: Profile = {
-  id: '1',
-  user_id: '1',
-  display_name: 'John Doe',
-  email: 'john@example.com',
-  avatar_url: null,
-  user_type: 'Client',
-  services: ['Keynote Speaker', 'Workshop Leader'],
-  industries: ['Technology', 'Education']
-};
-
 export function useProfile() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulated fetch profile function
-  const fetchProfile = () => {
-    // Simulate API delay
-    setTimeout(() => {
-      setProfile(placeholderProfile);
-      setError(null);
-      setLoading(false);
-    }, 500);
+  const parseServices = (services: any): string | null => {
+    if (!services) return null;
+
+    // If it's already a string but looks like a JSON array
+    if (typeof services === 'string' && services.startsWith('[') && services.endsWith(']')) {
+      try {
+        // Parse the JSON string and get the first item
+        const parsed = JSON.parse(services);
+        if (Array.isArray(parsed)) {
+          return parsed[0] || null;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // If it's already a string but not JSON, return as is
+    if (typeof services === 'string') {
+      return services;
+    }
+
+    // If it's an array, take the first item
+    if (Array.isArray(services)) {
+      return services[0] || null;
+    }
+
+    return null;
   };
 
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!user?.id) {
+        setProfile(null);
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      
+      // Parse services from any format to string
+      const parsedServices = parseServices(data.services);
+      
+      const parsedData = {
+        ...data,
+        services: parsedServices
+      };
+      
+      setProfile(parsedData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user?.id]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const subscription = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            setProfile(null);
+          } else {
+            const parsedServices = parseServices(payload.new.services);
+            
+            // Parse services from any format
+            const newData = {
+              ...payload.new,
+              services: parsedServices
+            };
+            setProfile(newData as Profile);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   return { 
     profile, 

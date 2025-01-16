@@ -13,21 +13,17 @@ export default function Layout() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   useEffect(() => {
-    if (!loading && (error || !profile)) {
+    if (!loading && error) {
       navigate('/login');
     }
-  }, [loading, error, profile, navigate]);
+  }, [loading, error, navigate]);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
-  }
-
-  if (!profile) {
-    return null;
   }
 
   const getDisplayName = () => {

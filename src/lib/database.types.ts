@@ -19,8 +19,7 @@ export interface Database {
           updated_at: string
           email_provider: string | null
           email_setup_completed: boolean
-          services: string[] | null
-          industries: string[] | null
+          services: string | null
           avatar_url: string | null
           random_lead_sort: { field: string; ascending: boolean } | null
           random_lead_sort_date: string | null // ISO string
@@ -34,8 +33,7 @@ export interface Database {
           updated_at?: string
           email_provider?: string | null
           email_setup_completed?: boolean
-          services?: string[] | null
-          industries?: string[] | null
+          services?: string | null
           avatar_url?: string | null
           random_lead_sort?: { field: string; ascending: boolean } | null
           random_lead_sort_date?: string | null
@@ -49,8 +47,7 @@ export interface Database {
           updated_at?: string
           email_provider?: string | null
           email_setup_completed?: boolean
-          services?: string[] | null
-          industries?: string[] | null
+          services?: string| null
           avatar_url?: string | null
           random_lead_sort?: { field: string; ascending: boolean } | null
           random_lead_sort_date?: string | null

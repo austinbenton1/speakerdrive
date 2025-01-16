@@ -1,13 +1,16 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import Input from '../Input';
-import ServiceIndustrySelector from './ServiceIndustrySelector';
+import ServiceSelector from './ServiceIndustrySelector';
+import AboutMe from './AboutMe';
+import Website from './Website';
 
 interface ProfileFormData {
   fullName: string;
   services: string[];
   industries: string[];
   offering: string;
+  website: string;
 }
 
 interface ProfileFormProps {
@@ -25,35 +28,20 @@ export default function ProfileForm({
     fullName: initialData?.fullName || '',
     services: initialData?.services || [],
     industries: initialData?.industries || [],
-    offering: initialData?.offering || ''
+    offering: initialData?.offering || '',
+    website: initialData?.website || ''
   });
 
   const handleServiceChange = (serviceId: string) => {
     setFormData(prev => ({
       ...prev,
-      services: prev.services.includes(serviceId)
-        ? prev.services.filter(id => id !== serviceId)
-        : [...prev.services, serviceId]
+      services: [serviceId] 
     }));
-  };
-
-  const handleIndustryChange = (industryId: string) => {
-    if (formData.industries.includes(industryId)) {
-      setFormData(prev => ({
-        ...prev,
-        industries: prev.industries.filter(id => id !== industryId)
-      }));
-    } else if (formData.industries.length < 3) {
-      setFormData(prev => ({
-        ...prev,
-        industries: [...prev.industries, industryId]
-      }));
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit(formData); 
   };
 
   return (
@@ -68,13 +56,21 @@ export default function ProfileForm({
         disabled={isSubmitting}
       />
 
-      <ServiceIndustrySelector
-        selectedServices={formData.services}
-        selectedIndustries={formData.industries}
-        offering={formData.offering}
+      <ServiceSelector
+        selectedService={formData.services[0] || ''}
         onServiceChange={handleServiceChange}
-        onIndustryChange={handleIndustryChange}
-        onOfferingChange={(value) => setFormData(prev => ({ ...prev, offering: value }))}
+        disabled={isSubmitting}
+      />
+
+      <AboutMe
+        value={formData.offering}
+        onChange={(value) => setFormData(prev => ({ ...prev, offering: value }))}
+        disabled={isSubmitting}
+      />
+
+      <Website
+        value={formData.website}
+        onChange={(value) => setFormData(prev => ({ ...prev, website: value }))}
         disabled={isSubmitting}
       />
 

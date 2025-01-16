@@ -20,10 +20,6 @@ export async function updateProfileData(
       updateData.services = Array.isArray(updates.services) ? updates.services : [];
     }
 
-    if (updates.industries) {
-      updateData.industries = Array.isArray(updates.industries) ? updates.industries : [];
-    }
-
     // Update profile data
     const { error: profileError } = await supabase
       .from('profiles')
@@ -35,7 +31,7 @@ export async function updateProfileData(
       throw new ProfileError(profileError.message);
     }
 
-    return { success: true };
+    return { error: null };
   } catch (error) {
     console.error('Error updating profile:', error);
     return {

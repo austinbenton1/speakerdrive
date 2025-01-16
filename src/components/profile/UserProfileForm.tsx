@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Input from '../Input';
-import ServicesList from './ServicesList';
-import IndustriesList from './IndustriesList';
+import ServiceSelector from './ServiceIndustrySelector';
 import type { UserProfile } from '../../types/profile';
 
 interface UserProfileFormProps {
   profile: UserProfile;
   isEditing: boolean;
   onProfileChange: (updates: Partial<UserProfile>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (values: Partial<UserProfile>) => void;
 }
 
 export default function UserProfileForm({ 
@@ -17,20 +16,24 @@ export default function UserProfileForm({
   onProfileChange, 
   onSubmit 
 }: UserProfileFormProps) {
-  const [formValues, setFormValues] = React.useState({
+  console.log('UserProfileForm - Initial profile:', profile);
+
+  // Local state for form values
+  const [formValues, setFormValues] = useState({
     display_name: profile.display_name || '',
     email: profile.email,
-    services: profile.services || [],
-    industries: profile.industries || []
+    services: profile.services || ''
   });
+
+  console.log('UserProfileForm - Initial formValues:', formValues);
 
   // Update form values when profile changes
   useEffect(() => {
+    console.log('UserProfileForm - Profile changed:', profile);
     setFormValues({
       display_name: profile.display_name || '',
       email: profile.email,
-      services: profile.services || [],
-      industries: profile.industries || []
+      services: profile.services || ''
     });
   }, [profile]);
 
@@ -42,41 +45,29 @@ export default function UserProfileForm({
   };
 
   const handleServiceChange = (serviceId: string) => {
+    console.log('UserProfileForm - Service changed to:', serviceId);
     setFormValues(prev => ({
       ...prev,
-      services: prev.services.includes(serviceId)
-        ? prev.services.filter(id => id !== serviceId)
-        : [...prev.services, serviceId]
-    }));
-  };
-
-  const handleIndustryChange = (industryId: string) => {
-    setFormValues(prev => ({
-      ...prev,
-      industries: prev.industries.includes(industryId)
-        ? prev.industries.filter(id => id !== industryId)
-        : [...prev.industries, industryId]
+      services: serviceId
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onProfileChange({
+    console.log('UserProfileForm - Submitting values:', formValues);
+    onSubmit({
       display_name: formValues.display_name,
-      services: formValues.services,
-      industries: formValues.industries
+      services: formValues.services
     });
-    onSubmit(e);
   };
 
   const handleCancel = () => {
+    // Reset form to original values
     setFormValues({
       display_name: profile.display_name || '',
       email: profile.email,
-      services: profile.services || [],
-      industries: profile.industries || []
+      services: profile.services || ''
     });
-    onProfileChange({ isEditing: false });
   };
 
   return (
@@ -102,19 +93,9 @@ export default function UserProfileForm({
       />
 
       <div className={isEditing ? '' : 'opacity-75'}>
-        <h3 className="text-sm font-medium text-gray-700 mb-4">Services You Provide</h3>
-        <ServicesList
-          selectedServices={formValues.services}
-          onChange={handleServiceChange}
-          disabled={!isEditing}
-        />
-      </div>
-
-      <div className={isEditing ? '' : 'opacity-75'}>
-        <h3 className="text-sm font-medium text-gray-700 mb-4">Industries You Target</h3>
-        <IndustriesList
-          selectedIndustries={formValues.industries}
-          onChange={handleIndustryChange}
+        <ServiceSelector
+          selectedService={formValues.services}
+          onServiceChange={handleServiceChange}
           disabled={!isEditing}
         />
       </div>
@@ -124,13 +105,13 @@ export default function UserProfileForm({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700"
           >
             Save Changes
           </button>
