@@ -9,10 +9,9 @@ export function useLeadFilters() {
     eventFormat: [],
     organization: [],
     organizationType: [],
-    pastSpeakers: '',
+    pastSpeakers: [],
     searchAll: '',
     unlockType: undefined,
-    jobTitle: '',
     region: '',
     state: [],
     city: []
@@ -23,7 +22,9 @@ export function useLeadFilters() {
     industry: false,
     organization: false,
     organizationType: false,
-    location: false
+    location: false,
+    unlockType: false,
+    region: false
   });
 
   useEffect(() => {
@@ -43,12 +44,20 @@ export function useLeadFilters() {
       
       // If only Contacts is selected, set unlock type to Contact Email
       if (newTypes.length === 1 && newTypes[0] === 'Contacts') {
-        setFilters(prev => ({ ...prev, unlockType: 'Unlock Contact Email' }));
+        setFilters(prev => ({ 
+          ...prev, 
+          unlockType: 'Unlock Contact Email',
+          jobTitle: prev.jobTitle // Preserve job title filter
+        }));
         setOpenSections(prev => ({ ...prev, jobTitle: true }));
       } 
       // If only Events is selected, clear job title
       else if (newTypes.length === 1 && newTypes[0] === 'Events') {
-        setFilters(prev => ({ ...prev, jobTitle: '', unlockType: undefined }));
+        setFilters(prev => ({ 
+          ...prev, 
+          jobTitle: [], // Reset job title filter for events
+          unlockType: undefined 
+        }));
         setOpenSections(prev => ({ ...prev, jobTitle: false }));
       }
       // If no types are selected, add both back
@@ -58,6 +67,43 @@ export function useLeadFilters() {
       
       return newTypes;
     });
+  };
+
+  const handleUnlockTypeChange = (type: string | undefined) => {
+    setFilters(prev => {
+      // Get current unlock types
+      const currentTypes = prev.unlockType ? [prev.unlockType] : [];
+      
+      // If type is already selected, remove it
+      if (currentTypes.includes(type)) {
+        return {
+          ...prev,
+          unlockType: undefined,
+          jobTitle: []
+        };
+      }
+      
+      // Add the new type
+      return {
+        ...prev,
+        unlockType: type,
+        jobTitle: type === 'Unlock Contact Email' ? prev.jobTitle : []
+      };
+    });
+
+    // Update lead types based on current selection
+    const currentTypes = filters.unlockType ? [filters.unlockType] : [];
+    const newTypes = currentTypes.includes(type)
+      ? currentTypes.filter(t => t !== type)
+      : [...currentTypes, type];
+    
+    setSelectedLeadTypes(
+      newTypes.length === 0
+        ? ['Events', 'Contacts']
+        : newTypes.some(t => t === 'Unlock Contact Email')
+          ? ['Contacts']
+          : ['Events']
+    );
   };
 
   const toggleEventUnlockType = (type: string) => {
@@ -86,5 +132,6 @@ export function useLeadFilters() {
     toggleLeadType,
     toggleEventUnlockType,
     toggleSection,
+    handleUnlockTypeChange // Export the handler
   };
 }

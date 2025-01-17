@@ -7,24 +7,25 @@ export const usRegions = {
 };
 
 export const industries = [
-  { id: 'tech-media', label: 'Technology & Media', icon: 'Monitor' },
-  { id: 'education', label: 'Education & Training', icon: 'GraduationCap' },
-  { id: 'business', label: 'General Business & Entrepreneurship', icon: 'Briefcase' },
-  { id: 'finance', label: 'Finance, Business & Cooperative Services', icon: 'LineChart' },
-  { id: 'community', label: 'Community, Culture & Inclusion', icon: 'Users2' },
-  { id: 'leadership', label: 'Leadership & Corporate Development', icon: 'Target' },
-  { id: 'nonprofit', label: 'NonProfit, Associations & Public Sector', icon: 'Heart' },
-  { id: 'sales', label: 'Sales & Consumer Services', icon: 'Store' },
-  { id: 'healthcare', label: 'Healthcare professionals and stakeholders', icon: 'Stethoscope' },
-  { id: 'wellness', label: 'Health, Wellness & Sustainability', icon: 'Leaf' }
+  { id: 'tech-media', label: 'Technology & Media', iconName: 'Monitor' },
+  { id: 'education', label: 'Education & Training', iconName: 'GraduationCap' },
+  { id: 'business', label: 'General Business & Entrepreneurship', iconName: 'Briefcase' },
+  { id: 'finance', label: 'Finance, Business & Cooperative Services', iconName: 'LineChart' },
+  { id: 'community', label: 'Community, Culture & Inclusion', iconName: 'Users2' },
+  { id: 'leadership', label: 'Leadership & Corporate Development', iconName: 'Target' },
+  { id: 'nonprofit', label: 'NonProfit, Associations & Public Sector', iconName: 'Heart' },
+  { id: 'sales', label: 'Sales & Consumer Services', iconName: 'Store' },
+  { id: 'healthcare', label: 'Healthcare professionals and stakeholders', iconName: 'Stethoscope' },
+  { id: 'wellness', label: 'Health, Wellness & Sustainability', iconName: 'Leaf' }
 ];
 
 export const services = [
-  { id: 'keynote', label: 'Keynote Speaker', icon: 'Mic2' },
-  { id: 'workshop', label: 'Workshop Leader', icon: 'Users' },
-  { id: 'moderator', label: 'Panel Moderator', icon: 'GitCommit' },
-  { id: 'facilitator', label: 'Facilitator', icon: 'Presentation' },
-  { id: 'coach', label: 'Coach/Consultant', icon: 'Lightbulb' }
+  { id: 'keynote', label: 'Keynote Speaking', icon: 'Presentation' },
+  { id: 'workshops', label: 'Workshops', icon: 'School' },
+  { id: 'coaching', label: 'Coaching', icon: 'Target' },
+  { id: 'consulting', label: 'Consulting', icon: 'Briefcase' },
+  { id: 'facilitation', label: 'Facilitation', icon: 'Users' },
+  { id: 'other', label: 'Other', icon: 'Plus' }
 ];
 
 export const eventFormats = [

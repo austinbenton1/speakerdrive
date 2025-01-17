@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { getUniqueLeads } from '../utils/deduplication';
+import SmartFiltersBar from '../components/filters/SmartFiltersBar';
 import { supabase } from '../lib/supabase';
 import { useRandomSort } from '../hooks/useRandomSort';
 import LeadsTable from '../components/leads/LeadsTable';
@@ -14,7 +15,20 @@ import type { Lead } from '../types';
 
 export default function FindLeads() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Initialize filters from location state if available
+  useEffect(() => {
+    const state = location.state as { preservedFilters?: any };
+    if (state?.preservedFilters) {
+      setFilters(state.preservedFilters);
+      setEventsFilter(state.preservedFilters.eventsFilter || '');
+      setOpportunityTags(state.preservedFilters.opportunityTags || []);
+      setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
+      setShowAllEvents(state.preservedFilters.showAllEvents || false);
+    }
+  }, [location.state]);
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
   const [showAllEvents, setShowAllEvents] = useState(false);
@@ -333,7 +347,15 @@ export default function FindLeads() {
       state: {
         leadIds: currentLeadIds,
         currentIndex,
-        fromFindLeads: true
+        fromFindLeads: true,
+        returnPath: `/find-leads?${params.toString()}`,
+        filters: {
+          ...filters,
+          eventsFilter,
+          opportunityTags,
+          selectedLeadType,
+          showAllEvents
+        }
       }
     });
 
@@ -393,7 +415,9 @@ export default function FindLeads() {
       organizationType: false,
       location: false,
       jobTitle: false,
-      moreFilters: false
+      region: false,
+      moreFilters: false,
+      unlockType: true
     });
   };
 
@@ -410,6 +434,24 @@ export default function FindLeads() {
         setFilters={setFilters}
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
+        handleUnlockTypeChange={(type) => {
+          const selectedType = leadTypes.find(t => t.unlockValue === type);
+          if (selectedType) {
+            setSelectedLeadType(selectedType.id);
+            setFilters(prev => ({
+              ...prev,
+              unlockType: type,
+              jobTitle: type === 'Unlock Contact Email' ? prev.jobTitle : []
+            }));
+          } else {
+            setSelectedLeadType('all');
+            setFilters(prev => ({
+              ...prev,
+              unlockType: undefined,
+              jobTitle: []
+            }));
+          }
+        }}
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
@@ -417,7 +459,7 @@ export default function FindLeads() {
         uniqueCount={uniqueLeadsCount}
       />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="p-6">
           <div className="mb-6">
             {error ? (
@@ -437,14 +479,26 @@ export default function FindLeads() {
                   onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
                 />
               </div>
-              <div className="max-w-[650px]">
-                <QuickLeadTypeFilter
-                  selectedType={selectedLeadType}
-                  onTypeChange={handleLeadTypeChange}
-                />
-              </div>
             </div>
           </div>
+          
+          {hasActiveFilters && (
+            <SmartFiltersBar
+              filters={filters}
+              onRemoveFilter={(key, value) => {
+                // Handle string vs array values
+                setFilters(prev => ({
+                  ...prev,
+                  [key]: Array.isArray(prev[key])
+                    ? (prev[key] as string[]).filter(v => v !== value)
+                    : typeof prev[key] === 'string' && prev[key] === value
+                      ? ''
+                      : prev[key]
+                }));
+              }}
+              onClearAllFilters={handleResetFilters}
+            />
+          )}
 
           <div className="bg-white border border-gray-200 rounded-lg mt-6">
             <LeadsTable 

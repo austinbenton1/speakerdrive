@@ -76,8 +76,10 @@ export default function LeadDetails() {
   const handlePrevious = async () => {
     if (state?.leadIds && state.currentIndex > 0) {
       const previousId = state.leadIds[state.currentIndex - 1];
+      const searchString = location.search;
+      
       await recordVisit(previousId);
-      navigate(`/leads/${previousId}${location.search}`, {
+      navigate(`/leads/${previousId}${searchString}`, {
         state: {
           ...state,
           currentIndex: state.currentIndex - 1
@@ -89,8 +91,10 @@ export default function LeadDetails() {
   const handleNext = async () => {
     if (state?.leadIds && state.currentIndex < state.leadIds.length - 1) {
       const nextId = state.leadIds[state.currentIndex + 1];
+      const searchString = location.search;
+      
       await recordVisit(nextId);
-      navigate(`/leads/${nextId}${location.search}`, {
+      navigate(`/leads/${nextId}${searchString}`, {
         state: {
           ...state,
           currentIndex: state.currentIndex + 1

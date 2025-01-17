@@ -23,12 +23,12 @@ export interface Lead {
 }
 
 export interface FilterOptions {
-  jobTitle: string[];
+  jobTitle?: string[] | string;
   searchEvent: string;
   organization: string[];
   pastSpeakers: string[];
   searchAll: string;
-  location: string[];
+  location: string[] | string;
   industry: string[];
   timeframe: string[];
   eventFormat: string[];
@@ -46,6 +46,6 @@ export interface OpenSections {
   moreFilters: boolean;
   organizationType: boolean;
   location: boolean;
-  jobTitle: boolean;
   region: boolean;
+  unlockType: boolean;
 }

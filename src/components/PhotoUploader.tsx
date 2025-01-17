@@ -19,19 +19,12 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
       setIsUploading(true);
       setError(null);
 
-      // Upload the file and get public URL, passing current avatarUrl for deletion
-      const publicUrl = await uploadAvatar(file, avatarUrl);
-
-      // Update profiles table
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error('No authenticated user');
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
+      // Upload the file and get public URL, passing current avatarUrl for deletion
+      const publicUrl = await uploadAvatar(file, user.id, avatarUrl);
 
       onPhotoChange(publicUrl);
       setGlobalAvatarUrl(publicUrl);
@@ -63,6 +56,16 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
       setIsUploading(true);
       setError(null);
 
+      // Get current user and profile for webhook
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('No authenticated user');
+
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
       if (avatarUrl) {
         // Delete the old avatar from storage
         const fileName = avatarUrl.split('/').pop();
@@ -74,15 +77,34 @@ export default function PhotoUploader({ avatarUrl, onPhotoChange }: PhotoUploade
       }
 
       // Update profiles table
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error('No authenticated user');
-
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      // Send webhook for avatar removal
+      const webhookPayload = {
+        user: {
+          id: user.id,
+          display_name: currentProfile?.display_name || null
+        },
+        changes: {
+          avatar_url: null
+        }
+      };
+
+      // Fire and forget webhook
+      fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      }).catch(err => {
+        console.error('Webhook error:', err);
+      });
 
       onPhotoChange(null);
       setGlobalAvatarUrl(null);

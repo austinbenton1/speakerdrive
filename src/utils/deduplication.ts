@@ -15,8 +15,19 @@ const isEventUrlType = (lead: Lead) => lead.unlock_type === 'Unlock Event URL';
 const isContactEmailType = (lead: Lead) => lead.unlock_type === 'Unlock Contact Email';
 
 export function getUniqueLeads(leads: Lead[]): Lead[] {
+  // Special handling for Contact Email and Event URL leads
+  const contactEmailLeads = leads.filter(lead => lead.unlock_type === 'Unlock Contact Email');
+  const eventUrlLeads = leads.filter(lead => lead.unlock_type === 'Unlock Event URL');
+  const otherLeads = leads.filter(lead => 
+    lead.unlock_type !== 'Unlock Contact Email' && 
+    lead.unlock_type !== 'Unlock Event URL'
+  );
+
+  // If all leads are Contact Email type, return them all
+  if (leads.length === contactEmailLeads.length) return leads;
+
   // First, group leads by event name and organization
-  const groupedLeads = leads.reduce<Map<string, Lead[]>>((groups, lead) => {
+  const groupedLeads = otherLeads.reduce<Map<string, Lead[]>>((groups, lead) => {
     const eventName = (lead.event_name || '').toLowerCase().trim();
     const organization = (lead.organization || '').toLowerCase().trim();
     const key = `${eventName}|${organization}`;
@@ -32,38 +43,26 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   const resultLeads: Lead[] = [];
   
   groupedLeads.forEach((groupLeads, key) => {
-    // Sort leads within group by priority
+    // For other leads, just take the highest priority one from each group
     const sortedGroupLeads = [...groupLeads].sort((a, b) => {
       const priorityA = getUnlockPriority(a.unlock_type);
       const priorityB = getUnlockPriority(b.unlock_type);
-      return priorityB - priorityA;  // Higher priority first
+      return priorityB - priorityA;
     });
+    resultLeads.push(sortedGroupLeads[0]);
+  });
 
-    // Check if group has any Event URL leads
-    const hasEventUrl = sortedGroupLeads.some(isEventUrlType);
-
-    if (hasEventUrl) {
-      // If there's an Event URL lead, just take the highest priority lead
-      resultLeads.push(sortedGroupLeads[0]);
-    } else {
-      // If no Event URL lead, include all Contact Email leads plus the highest priority of other types
-      const contactLeads = sortedGroupLeads.filter(isContactEmailType);
-      const otherLeads = sortedGroupLeads.filter(lead => !isContactEmailType(lead));
-
-      if (contactLeads.length > 0) {
-        // Add all Contact Email leads
-        resultLeads.push(...contactLeads);
-        
-        // If there are other types and none were Contact Email, add the highest priority one
-        if (otherLeads.length > 0 && contactLeads.length === 0) {
-          resultLeads.push(otherLeads[0]);
-        }
-      } else {
-        // If no Contact Email leads, just add the highest priority lead
-        resultLeads.push(sortedGroupLeads[0]);
-      }
+  // Group Event URL leads by URL to deduplicate
+  const eventUrlGroups = new Map<string, Lead>();
+  eventUrlLeads.forEach(lead => {
+    const key = `${lead.event_name}|${lead.organization}`;
+    if (!eventUrlGroups.has(key)) {
+      eventUrlGroups.set(key, lead);
     }
   });
+
+  // Combine all leads
+  resultLeads.push(...contactEmailLeads, ...Array.from(eventUrlGroups.values()));
 
   // Sort final results by event name, organization, and then priority
   return resultLeads.sort((a, b) => {

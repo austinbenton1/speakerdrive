@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Tooltip } from '../ui/Tooltip';
 
 interface FilterSectionProps {
   title: string;
@@ -10,6 +11,7 @@ interface FilterSectionProps {
   children: React.ReactNode;
   onUnselectAll?: () => void;
   showUnselectAll?: boolean;
+  tooltip?: React.ReactNode;
 }
 
 export default function FilterSection({ 
@@ -19,7 +21,8 @@ export default function FilterSection({
   onToggle, 
   children,
   onUnselectAll,
-  showUnselectAll = false
+  showUnselectAll = false,
+  tooltip
 }: FilterSectionProps) {
   return (
     <div className="mb-2">
@@ -30,7 +33,14 @@ export default function FilterSection({
       >
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
-          <span className="font-medium">{title}</span>
+          <div className="flex items-center gap-1">
+            <span className="font-medium">{title}</span>
+            {tooltip && (
+              <Tooltip content={tooltip}>
+                <HelpCircle className="w-4 h-4 text-gray-400" />
+              </Tooltip>
+            )}
+          </div>
         </div>
         {isOpen ? (
           <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />

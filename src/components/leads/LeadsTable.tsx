@@ -16,6 +16,7 @@ interface LeadsTableProps {
   showAllEvents?: boolean;
   uniqueCount?: number;
   selectedLeadType?: string;
+  filters?: any; // Added to support the new condition
 }
 
 const LoadingRow = () => (
@@ -43,47 +44,43 @@ export default function LeadsTable({
   onLeadClick,
   showAllEvents = false,
   uniqueCount = 0,
-  selectedLeadType = 'all'
+  selectedLeadType = 'all',
+  filters
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Paginate the leads directly (no sorting)
-  const paginatedLeads = paginate(leads);
-
-  // Setup wheel event handler
   React.useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (e.shiftKey || Math.abs(e.deltaX) > 0) {
-        // Only prevent default for horizontal scrolling
+      // Only handle horizontal scroll events
+      if (e.deltaX !== 0 || e.shiftKey) {
         e.preventDefault();
-        
-        // Handle horizontal scrolling
-        if (e.shiftKey) {
-          // Shift + wheel scrolls horizontally
-          container.scrollLeft += e.deltaY;
-        } else {
-          // Trackpad/mouse horizontal scroll
-          container.scrollLeft += e.deltaX;
-        }
+        const delta = e.shiftKey ? e.deltaY : e.deltaX;
+        container.scrollLeft += delta;
       }
-      // Let vertical scrolling behave naturally
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
   }, []);
+
+  // Paginate the leads directly (no sorting)
+  const paginatedLeads = paginate(leads);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg">
       <div 
         ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+        className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="min-w-[1500px] w-full">
+        <div className="min-w-[1500px] w-full relative">
           <div className="grid grid-cols-[575px_275px_230px_200px_240px] gap-0">
             {/* Header */}
             <div className="contents">
@@ -91,11 +88,13 @@ export default function LeadsTable({
                 <div className="flex items-center gap-2 text-[13.5px] font-medium text-gray-800 ml-2">
                   <Layers className="w-4 h-4 text-gray-500" />
                   <div>
-                    Showing <span className="font-medium">
-                      {selectedLeadType === 'all' 
-                        ? (showAllEvents ? leads.length : uniqueCount)
-                        : leads.length}
-                    </span>
+                    Showing <span className="font-medium">{
+                      selectedLeadType === 'contacts' || filters?.unlockType === 'Unlock Contact Email'
+                        ? leads.length // Always show total for contact leads
+                        : showAllEvents 
+                          ? leads.length 
+                          : uniqueCount
+                    }</span>
                     {selectedLeadType === 'contacts' 
                       ? ' contacts'
                       : selectedLeadType === 'all'
@@ -127,15 +126,15 @@ export default function LeadsTable({
             {loading ? (
               <div className="contents">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <React.Fragment key={index}>
-                    <div className="px-3 py-4 border-t border-gray-200">
+                  <div key={index} className="contents">
+                    <div className="px-3 py-4 border-t border-gray-200 bg-white">
                       <LoadingRow />
                     </div>
                     <div className="border-t border-gray-200" />
                     <div className="border-t border-gray-200" />
                     <div className="border-t border-gray-200" />
                     <div className="border-t border-gray-200" />
-                  </React.Fragment>
+                  </div>
                 ))}
               </div>
             ) : (

@@ -1,12 +1,13 @@
 import React from 'react';
-import { Briefcase, Check } from 'lucide-react';
+import { Mic2, BookOpen, GraduationCap, Brain, Users2, HelpCircle, Check } from 'lucide-react';
 
 export const services = [
-  { id: 'keynote', label: 'Keynote Speaker' },
-  { id: 'workshop', label: 'Workshop Leader' },
-  { id: 'moderator', label: 'Panel Moderator' },
-  { id: 'facilitator', label: 'Facilitator' },
-  { id: 'coach', label: 'Coach/Consultant' },
+  { id: 'keynote', label: 'Keynote Speaking', icon: Mic2 },
+  { id: 'workshops', label: 'Workshops', icon: BookOpen },
+  { id: 'coaching', label: 'Coaching', icon: GraduationCap },
+  { id: 'consulting', label: 'Consulting', icon: Brain },
+  { id: 'facilitation', label: 'Facilitation', icon: Users2 },
+  { id: 'other', label: 'Other', icon: HelpCircle },
 ];
 
 interface ServiceSelectorProps {
@@ -54,13 +55,13 @@ export default function ServiceSelector({ selectedServices, onChange, error, dis
                 disabled={disabled}
                 className="sr-only"
               />
-              <Briefcase
-                className={`w-4 h-4 mr-2 ${
+              {React.createElement(service.icon, {
+                className: `w-4 h-4 mr-2 ${
                   selectedServices.includes(service.id)
                     ? 'text-blue-500'
                     : 'text-gray-400'
-                }`}
-              />
+                }`,
+              })}
               <span className="text-sm font-medium">{service.label}</span>
             </div>
             {selectedServices.includes(service.id) && (

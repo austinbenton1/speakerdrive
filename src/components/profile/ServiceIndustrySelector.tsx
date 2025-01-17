@@ -1,8 +1,8 @@
 import React from 'react';
 import { 
   Mic2, Users, GitCommit, Presentation, Lightbulb,
-  Monitor, GraduationCap, Briefcase, LineChart, Users2,
-  Target, Heart, Store, Stethoscope, Leaf 
+  Monitor, GraduationCap, Briefcase, LineChart, School,
+  Target, Heart, Store, Stethoscope, Leaf, Plus
 } from 'lucide-react';
 import { services } from '../../utils/constants';
 import { useProfile } from '../../hooks/useProfile';
@@ -23,12 +23,13 @@ const iconMap = {
   GraduationCap,
   Briefcase,
   LineChart,
-  Users2,
+  School,
   Target,
   Heart,
   Store,
   Stethoscope,
-  Leaf
+  Leaf,
+  Plus
 };
 
 export default function ServiceSelector({

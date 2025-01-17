@@ -3,10 +3,11 @@ import {
   PaperclipIcon, Image, Send, X, Wand2, ArrowUpDown, 
   ShrinkIcon, MoreHorizontal, Lock, Trash2, Link, TextSelect,
   FileText, Mail, Linkedin, ChevronDown, Edit2, Eye, Copy,
-  Mic2, Users, Target, Briefcase, GitCommit, Plus
+  Presentation, School, Target, Briefcase, Users, Plus
 } from 'lucide-react';
 import { MinimalToggle } from '../ui/toggle';
 import { useProfile } from '../../hooks/useProfile';
+import { services } from '../../utils/constants';
 
 interface EmailComposerProps {
   lead: any;
@@ -16,14 +17,25 @@ interface EmailComposerProps {
 
 type MessageType = 'proposal' | 'linkedin' | 'email';
 
+// Helper function to parse services string from profile
+const parseProfileServices = (services: string | null): string[] => {
+  if (!services) return [];
+  
+  try {
+    if (services.startsWith('[') && services.endsWith(']')) {
+      return JSON.parse(services);
+    }
+    return [services]; // Single service as string
+  } catch {
+    return [];
+  }
+};
+
 interface PreviewProps {
   content: string;
   type: MessageType;
   lead: any;
 }
-
-const MAX_CHARS = 1000;
-const LINKEDIN_MAX_CHARS = 300;
 
 const MessagePreview = ({ content, type, lead }: PreviewProps) => {
   if (type === 'email') {
@@ -37,7 +49,7 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Subject:</span>
-              <span className="text-sm font-medium">Speaking Opportunity: {lead.event_name}</span>
+              <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
             </div>
           </div>
         </div>
@@ -76,7 +88,7 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{lead.event_name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{lead.eventName}</h1>
         <div className="space-y-6">
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaking Proposal</h2>
@@ -99,28 +111,40 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
 };
 
 export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerProps) {
+  const { profile } = useProfile();
   const [input, setInput] = useState('');
   const [messageType, setMessageType] = useState<MessageType>('email');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showLeadContext, setShowLeadContext] = useState(true);
   const [showCustomization, setShowCustomization] = useState(false);
-  const [selectedServices, setSelectedServices] = useState<string[]>(['Keynote Speaking']);
+  const [customizationText, setCustomizationText] = useState('');
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { profile } = useProfile();
 
+  // Initialize selected services from profile and check if we need to expand additional services
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    if (profile?.services) {
+      const profileServices = parseProfileServices(profile.services);
+      setSelectedServices(profileServices.length > 0 ? [profileServices[0]] : ['keynote']);
+      
+      // Check if any profile service is in the additional services section
+      const additionalServices = services.slice(3).map(s => s.id);
+      const hasAdditionalProfileService = profileServices.some(service => 
+        additionalServices.includes(service)
+      );
+      
+      if (hasAdditionalProfileService) {
+        setShowCustomization(true);
+      }
     }
-  }, [input]);
+  }, [profile?.services]);
 
   const handleSubmit = async () => {
-    if (!input.trim() || isSubmitting || input.length > MAX_CHARS) return;
+    if (!input.trim() || isSubmitting || input.length > 1000) return;
     
     try {
       setIsSubmitting(true);
@@ -134,11 +158,52 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
-  const handleGenerate = () => {
-    setShowMessage(true);
-    setShowAdvanced(false);
-    setIsPreviewMode(false);
-    setInput("Dear [Name],\n\nI hope this email finds you well. I came across your event and I believe I could add significant value as a speaker...");
+  const handleGenerate = async () => {
+    // Collect data for context
+    const contextData = {
+      // Lead details
+      detailed_info: lead.detailedInfo || null,
+      outreach_pathways: lead.outreachPathways || null,
+      unlock_value: lead.unlockValue || null,
+      unlock_type: lead.unlockType || null,
+      organization: lead.organization || null,
+      location: `${lead.city || ''}${lead.city && (lead.state || lead.region) ? ', ' : ''}${lead.state || ''}${lead.state && lead.region ? ', ' : ''}${lead.region || ''}`.trim() || null,
+      event_url: lead.eventUrl || null,
+      event_name: lead.eventName || null,
+      job_title: lead.jobTitle || null,
+
+      // EmailComposer details
+      ...(selectedServices.length > 0 && { pitching: selectedServices[0] }),
+      ...(showMyContext && { context: profile?.offering || null }),
+      message_format: messageType,
+      ...(showCustomization && { message_customization: customizationText || null })
+    };
+
+    try {
+      // Send data to webhook
+      const response = await fetch('https://n8n.speakerdrive.com/webhook/composer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contextData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Original functionality
+      setShowMessage(true);
+      setShowAdvanced(false);
+      setIsPreviewMode(false);
+      setInput("Dear [Name],\n\nI hope this email finds you well. I came across your event and I believe I could add significant value as a speaker...");
+    } catch (error) {
+      console.error('Error sending data to webhook:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -170,7 +235,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   <div className="flex-shrink-0">
                     <img
                       src={lead.image}
-                      alt={lead.lead_name}
+                      alt={lead.leadName}
                       className={`h-12 w-12 rounded-lg object-cover shadow-lg ${
                         lead.leadType === 'Contact'
                           ? 'ring-4 ring-blue-100/50'
@@ -183,12 +248,12 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       {lead.leadType === 'Contact' 
                         ? (
                           <>
-                            <div>{lead.lead_name}</div>
+                            <div>{lead.leadName}</div>
                             <div className="text-[14px] text-gray-600">{lead.jobTitle}</div>
                           </>
                         )
                         : (
-                          <div>{lead.eventName || lead.event_name}</div>
+                          <div>{lead.eventName || lead.eventName}</div>
                         )
                       }
                     </div>
@@ -251,7 +316,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                               if (!e.target.checked) {
                                 setSelectedServices([]);
                               } else {
-                                setSelectedServices(['Keynote Speaking']);
+                                // Use first service from profile, or default to keynote
+                                const profileServices = profile?.services ? parseProfileServices(profile.services) : [];
+                                setSelectedServices(profileServices.length > 0 ? [profileServices[0]] : ['keynote']);
                               }
                             }}
                           />
@@ -260,27 +327,51 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                           </label>
                         </div>
                         <div className="flex items-center gap-2">
-                          {['Keynote Speaking', 'Workshops', 'Coaching'].map((service) => (
-                            <button
-                              key={service}
-                              onClick={() => {
-                                setSelectedServices([service]);
-                              }}
-                              className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                transition-colors duration-200
-                                border
-                                ${selectedServices.includes(service) 
-                                  ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                }
-                              `}
-                            >
-                              {service === 'Keynote Speaking' && <Mic2 className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                              {service === 'Workshops' && <Users className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                              {service === 'Coaching' && <Target className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                              {service}
-                            </button>
-                          ))}
+                          {services.slice(0, 3).map((service) => {
+                            const Icon = {
+                              'Presentation': Presentation,
+                              'School': School,
+                              'Target': Target,
+                              'Briefcase': Briefcase,
+                              'Users': Users,
+                              'Plus': Plus
+                            }[service.icon];
+
+                            // Check if this service is in user's profile services
+                            const profileServices = parseProfileServices(profile?.services || '');
+                            const isProfileService = profileServices.includes(service.id);
+
+                            return (
+                              <button
+                                key={service.id}
+                                onClick={() => setSelectedServices([service.id])}
+                                className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                  transition-colors duration-200
+                                  border
+                                  ${selectedServices.includes(service.id)
+                                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
+                                    : isProfileService
+                                      ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                  }
+                                `}
+                              >
+                                {Icon && (
+                                  <Icon 
+                                    className={`w-3 h-3 ${
+                                      selectedServices.includes(service.id)
+                                        ? 'text-white'
+                                        : 'text-gray-500'
+                                    }`}
+                                  />
+                                )}
+                                {service.label}
+                                {isProfileService && (
+                                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                )}
+                              </button>
+                            );
+                          })}
                           <div
                             className="relative"
                             onClick={() => setShowCustomization(!showCustomization)}
@@ -293,30 +384,52 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                           </div>
                         </div>
                         {showCustomization && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <div className="w-full">
-                            {['Consulting', 'Facilitation', 'Other'].map((service) => (
-                              <button
-                                key={service}
-                                onClick={() => {
-                                  setSelectedServices([service]);
-                                }}
-                                className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                  transition-colors duration-200
-                                  border
-                                  ${selectedServices.includes(service) 
-                                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                  }
-                                `}
-                              >
-                                {service === 'Consulting' && <Briefcase className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                                {service === 'Facilitation' && <GitCommit className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                                {service === 'Other' && <Plus className={`w-3 h-3 ${selectedServices.includes(service) ? 'text-white' : 'text-gray-500'}`} />}
-                                {service}
-                              </button>
-                            ))}
-                            </div>
+                          <div className="flex gap-2 mt-2">
+                            {services.slice(3).map((service) => {
+                              const Icon = {
+                                'Presentation': Presentation,
+                                'School': School,
+                                'Target': Target,
+                                'Briefcase': Briefcase,
+                                'Users': Users,
+                                'Plus': Plus
+                              }[service.icon];
+
+                              // Check if this service is in user's profile services
+                              const profileServices = parseProfileServices(profile?.services || '');
+                              const isProfileService = profileServices.includes(service.id);
+
+                              return (
+                                <button
+                                  key={service.id}
+                                  onClick={() => setSelectedServices([service.id])}
+                                  className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                    transition-colors duration-200
+                                    border
+                                    ${selectedServices.includes(service.id)
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
+                                      : isProfileService
+                                        ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    }
+                                  `}
+                                >
+                                  {Icon && (
+                                    <Icon 
+                                      className={`w-3 h-3 ${
+                                        selectedServices.includes(service.id)
+                                          ? 'text-white'
+                                          : 'text-gray-500'
+                                      }`}
+                                    />
+                                  )}
+                                  {service.label}
+                                  {isProfileService && (
+                                    <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -432,6 +545,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         </p>
                         {showCustomization && (
                         <textarea
+                          value={customizationText}
+                          onChange={(e) => setCustomizationText(e.target.value)}
                           placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
                           className={`
                             w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white rounded-lg resize-none mt-2
@@ -519,16 +634,16 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         </div>
                         <div className={`
                           flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium
-                          ${input.length > MAX_CHARS 
+                          ${input.length > 1000 
                             ? 'bg-red-50 text-red-600' 
-                            : input.length > MAX_CHARS * 0.9
+                            : input.length > 1000 * 0.9
                             ? 'bg-yellow-50 text-yellow-600'
                             : 'bg-gray-100 text-gray-600'
                           }
                         `}>
                           <span>{input.length}</span>
                           <span className="text-gray-400">/</span>
-                          <span className="text-gray-500">{MAX_CHARS}</span>
+                          <span className="text-gray-500">1000</span>
                         </div>
                       </div>
                     </div>

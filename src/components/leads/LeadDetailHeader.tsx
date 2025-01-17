@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import LeadDetailHeaderActions from './LeadDetailHeaderActions';
 import type { SpeakerLead } from '../../types';
@@ -29,16 +29,28 @@ export default function LeadDetailHeader({
 }: LeadDetailHeaderProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const handleBack = () => {
-    // Get all current URL parameters
-    const params = new URLSearchParams();
-    searchParams.forEach((value, key) => {
-      params.set(key, value);
-    });
+    const state = location.state as { 
+      fromFindLeads?: boolean; 
+      fromUnlockedLeads?: boolean;
+      returnPath?: string;
+      filters?: any;
+    };
 
-    // Navigate back to find leads with the same filters
-    navigate(`/find-leads?${params.toString()}`);
+    if (state?.returnPath) {
+      // Preserve filters when returning
+      navigate(state.returnPath, {
+        state: { preservedFilters: state.filters }
+      });
+    } else if (state?.fromFindLeads) {
+      navigate(`/find-leads?${searchParams.toString()}`);
+    } else if (state?.fromUnlockedLeads) {
+      navigate('/leads');
+    } else {
+      navigate(-1);
+    }
   };
 
   return (

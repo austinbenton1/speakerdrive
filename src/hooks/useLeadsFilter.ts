@@ -204,7 +204,7 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
     // Quick Lead Type filter - applied last
     if (filters.unlockType) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.unlock_type === filters.unlockType
+        lead.unlock_type.toLowerCase() === filters.unlockType.toLowerCase()
       );
     }
 

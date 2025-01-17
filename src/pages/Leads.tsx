@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Loader } from 'lucide-react';
 import { useUnlockedLeads } from '../hooks/useUnlockedLeads';
 import UnlockedLeadsList from '../components/leads/UnlockedLeadsList';
@@ -12,6 +12,7 @@ const tabs = [
 
 export default function Leads() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { leads, loading, error } = useUnlockedLeads();
@@ -25,6 +26,20 @@ export default function Leads() {
       lead.focus.toLowerCase().includes(term)
     );
   });
+
+  const handleLeadClick = async (leadId: string) => {
+    const currentPath = location.pathname;
+    const currentSearch = location.search;
+
+    navigate(`/leads/${leadId}`, {
+      state: {
+        fromUnlockedLeads: true,
+        leadIds: filteredLeads.map(lead => lead.id),
+        currentIndex: filteredLeads.findIndex(lead => lead.id === leadId),
+        returnPath: `${currentPath}${currentSearch}`
+      }
+    });
+  };
 
   return (
     <div className="p-8">
