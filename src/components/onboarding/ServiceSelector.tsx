@@ -11,7 +11,7 @@ export const services = [
 ];
 
 interface ServiceSelectorProps {
-  selectedServices: string[];
+  selectedServices: string;
   onChange: (value: string) => void;
   error?: string;
   disabled?: boolean;
@@ -25,50 +25,40 @@ export default function ServiceSelector({ selectedServices, onChange, error, dis
         <label className="text-sm font-medium text-gray-700 mb-1 block">
           Services You Provide
           <span className="ml-2 text-sm font-normal text-gray-500">
-            (Select all that apply)
+            (Select one)
           </span>
         </label>
       )}
-      <div className="mt-2 grid grid-cols-1 gap-3">
-        {services.map((service) => (
-          <label
-            key={service.id}
-            className={`
-              relative flex items-center justify-between px-4 py-3 border rounded-lg
-              focus:outline-none transition-colors
-              ${disabled ? 'cursor-default' : 'cursor-pointer'}
-              ${
-                selectedServices.includes(service.id)
+      <div className="space-y-2">
+        {services.map((service) => {
+          const isSelected = selectedServices === service.id;
+          return (
+            <button
+              key={service.id}
+              onClick={() => !disabled && onChange(service.id)}
+              disabled={disabled}
+              className={`
+                w-full flex items-center justify-between px-4 py-3 border rounded-full
+                transition-colors
+                ${disabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
+                ${isSelected
                   ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-white border-gray-200 text-gray-700'
-              }
-              ${!disabled && !selectedServices.includes(service.id) ? 'hover:bg-gray-50' : ''}
-              ${disabled ? 'opacity-75' : ''}
-            `}
-          >
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                value={service.id}
-                checked={selectedServices.includes(service.id)}
-                onChange={(e) => !disabled && onChange(e.target.value)}
-                disabled={disabled}
-                className="sr-only"
-              />
-              {React.createElement(service.icon, {
-                className: `w-4 h-4 mr-2 ${
-                  selectedServices.includes(service.id)
-                    ? 'text-blue-500'
-                    : 'text-gray-400'
-                }`,
-              })}
-              <span className="text-sm font-medium">{service.label}</span>
-            </div>
-            {selectedServices.includes(service.id) && (
-              <Check className="w-4 h-4 text-blue-500" />
-            )}
-          </label>
-        ))}
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-center">
+                {React.createElement(service.icon, {
+                  className: `w-5 h-5 mr-3 ${
+                    isSelected ? 'text-blue-500' : 'text-gray-400'
+                  }`,
+                })}
+                <span className="text-sm font-medium">{service.label}</span>
+              </div>
+              {isSelected && <Check className="w-4 h-4 text-blue-500" />}
+            </button>
+          );
+        })}
       </div>
       {error && (
         <p className="mt-2 text-sm text-red-600">{error}</p>

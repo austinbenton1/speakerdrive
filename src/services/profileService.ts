@@ -32,11 +32,6 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
       updateData.services = Array.isArray(updates.services) ? updates.services : [];
     }
 
-    // Handle industries array
-    if (updates.industries !== undefined) {
-      updateData.industries = Array.isArray(updates.industries) ? updates.industries : [];
-    }
-
     // Update profile data
     const { error: profileError } = await supabase
       .from('profiles')
@@ -44,13 +39,11 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
       .eq('id', userId);
 
     if (profileError) {
-      console.error('Profile update error:', profileError);
       throw new ProfileError(profileError.message);
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error updating profile:', error);
     return {
       success: false,
       error: error instanceof ProfileError ? error.message : 'Failed to update profile'

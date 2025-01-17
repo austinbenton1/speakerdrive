@@ -3,7 +3,7 @@ export interface UserProfile {
   name: string | null;
   display_name: string | null;
   email: string | null;
-  services: string;
+  services: string[];
   avatarUrl: string | null;
   quick_start_guide_tip: boolean | null;
   offering: string | null;
@@ -14,7 +14,7 @@ export interface UserProfile {
 
 export interface ProfileUpdateData {
   display_name?: string | null;
-  services?: string;
+  services?: string[];
   offering?: string | null;
   website?: string | null;
 }

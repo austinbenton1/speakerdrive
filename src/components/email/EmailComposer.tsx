@@ -123,6 +123,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [showMessage, setShowMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Initialize selected services from profile and check if we need to expand additional services
@@ -151,7 +152,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       // TODO: Implement email sending logic
       onClose();
     } catch (error) {
-      console.error('Failed to send email:', error);
+      throw error;
     } finally {
       setIsSubmitting(false);
       setInput('');
@@ -159,6 +160,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   };
 
   const handleGenerate = async () => {
+    setIsGenerating(true);
+    
     // Collect data for context
     const contextData = {
       // Lead details
@@ -195,14 +198,23 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
       const result = await response.json();
       
-      // Original functionality
+      // Check if result is an array and get the first item
+      const responseData = Array.isArray(result) ? result[0] : result;
+      const message = responseData?.message;
+      
+      if (!message) {
+        throw new Error('Invalid response format');
+      }
+
+      // Use the message from n8n response
       setShowMessage(true);
       setShowAdvanced(false);
       setIsPreviewMode(false);
-      setInput("Dear [Name],\n\nI hope this email finds you well. I came across your event and I believe I could add significant value as a speaker...");
+      setInput(message);
     } catch (error) {
-      console.error('Error sending data to webhook:', error);
-      // You might want to show an error message to the user here
+      setInput("We encountered an error. Please contact the administrators.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -598,10 +610,28 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   <div className="flex items-start gap-3">
                     <button 
                       onClick={handleGenerate}
-                      className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-[#00B341] to-[#009938] hover:from-[#009938] hover:to-[#008530] text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                      disabled={isGenerating}
+                      className={`
+                        flex items-center gap-2 px-6 py-2 
+                        ${isGenerating 
+                          ? 'bg-gray-300 text-gray-600' 
+                          : 'bg-gradient-to-r from-[#00B341] to-[#009938] hover:from-[#009938] hover:to-[#008530] text-white'
+                        } 
+                        rounded-lg shadow-sm hover:shadow-md transition-all duration-200
+                        ${isGenerating ? 'cursor-not-allowed' : ''}
+                      `}
                     >
-                      <Wand2 className="w-4 h-4" />
-                      <span className="text-sm font-medium">Write {messageType === 'linkedin' ? 'LinkedIn' : messageType === 'email' ? 'Email' : 'Proposal'} Message</span>
+                      {isGenerating ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                          <span className="font-medium">Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          <span className="font-medium">Write {messageType === 'linkedin' ? 'LinkedIn' : messageType === 'email' ? 'Email' : 'Proposal'} Message</span>
+                        </>
+                      )}
                     </button>
                     <div className="flex-1" />
                     <button 
