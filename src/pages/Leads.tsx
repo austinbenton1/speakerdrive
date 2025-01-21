@@ -13,11 +13,17 @@ export default function Leads() {
   const filteredLeads = leads.filter(lead => {
     if (!searchQuery) return true;
     const searchTerms = searchQuery.toLowerCase().split(' ');
-    return searchTerms.every(term =>
-      lead.name.toLowerCase().includes(term) ||
-      lead.industry.toLowerCase().includes(term) ||
-      lead.focus.toLowerCase().includes(term)
-    );
+    return searchTerms.every(term => {
+      const searchableFields = [
+        lead.event_name || '',
+        lead.industry || '',
+        lead.focus || '',
+        lead.subtext || ''
+      ];
+      return searchableFields.some(field => 
+        field.toLowerCase().includes(term)
+      );
+    });
   });
 
   const handleLeadClick = async (leadId: string) => {
