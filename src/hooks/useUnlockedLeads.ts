@@ -27,7 +27,9 @@ export function useUnlockedLeads() {
               industry,
               image_url,
               lead_type,
-              keywords
+              keywords,
+              unlock_value,
+              focus
             )
           `)
           .eq('user_id', session.user.id)
@@ -47,7 +49,9 @@ export function useUnlockedLeads() {
           image: item.leads.image_url,
           unlockDate: new Date(item.created_at),
           lead_type: item.leads.lead_type,
-          keywords: item.leads.keywords
+          keywords: item.leads.keywords,
+          unlock_value: item.leads.unlock_value,
+          focus: item.leads.focus
         })) || [];
 
         setLeads(formattedLeads);

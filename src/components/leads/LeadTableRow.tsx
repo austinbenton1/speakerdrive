@@ -186,7 +186,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
           <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 shadow-sm border border-gray-100">
               <Loader className="w-4 h-4 text-blue-600 animate-spin" />
-              <span className="text-sm text-gray-600">Recording visit...</span>
+              <span className="text-sm text-gray-600">Fetching lead details...</span>
             </div>
           </div>
         )}

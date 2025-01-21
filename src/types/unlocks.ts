@@ -7,6 +7,8 @@ export interface UnlockedLead {
   unlockDate: Date;
   lead_type: 'Event' | 'Contact';
   keywords: string | null;
+  unlock_value: string | null;
+  focus: string | null;
 }
 
 export interface UnlockStatus {

@@ -17,12 +17,29 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const cache = new Map<string, CacheEntry>();
+// Helper functions for localStorage cache
+const getLocalCache = (key: string): CacheEntry | null => {
+  const cached = localStorage.getItem(key);
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached);
+  } catch {
+    return null;
+  }
+};
+
+const setLocalCache = (key: string, entry: CacheEntry) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (error) {
+    console.error('Error setting cache:', error);
+  }
+};
 
 export function useAvailableLeads() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { recordedLeads } = useUnlockedLeadsData();
+  const { unlockedLeadIds } = useUnlockedLeadsData();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +52,9 @@ export function useAvailableLeads() {
           return;
         }
 
-        // Check cache first
+        // Check localStorage cache first
         const cacheKey = `available_leads_${user.id}`;
-        const cachedData = cache.get(cacheKey);
+        const cachedData = getLocalCache(cacheKey);
         const now = Date.now();
 
         if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
@@ -55,15 +72,10 @@ export function useAvailableLeads() {
         setLoading(true);
         setError(null);
         
-        // Get unlocked lead IDs
-        const unlockedLeadIds = recordedLeads
-          .filter(lead => lead.unlocked)
-          .map(lead => lead.lead_id);
-        
         const availableLeads = await fetchAvailableLeads(user.id, unlockedLeadIds);
         
-        // Update cache
-        cache.set(cacheKey, {
+        // Update cache with new data
+        setLocalCache(cacheKey, {
           data: availableLeads,
           timestamp: now
         });
@@ -88,7 +100,7 @@ export function useAvailableLeads() {
     };
 
     loadLeads();
-  }, [isAuthenticated, navigate, user, recordedLeads]);
+  }, [isAuthenticated, navigate, user, unlockedLeadIds]);
 
   return { leads, loading, error };
 }
