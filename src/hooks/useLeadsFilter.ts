@@ -27,9 +27,11 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       const searchTerm = filters.opportunitiesFilter.toLowerCase();
       filteredLeads = filteredLeads.filter(lead => {
         const searchFields = [
+          lead.event_name,
+          lead.keywords,
+          lead.job_title,
           lead.lead_name,
-          lead.focus,
-          lead.keywords
+          lead.subtext
         ];
         return searchFields.some(field => field?.toLowerCase().includes(searchTerm));
       });

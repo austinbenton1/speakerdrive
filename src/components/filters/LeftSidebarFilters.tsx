@@ -102,57 +102,35 @@ export default function LeftSidebarFilters({
   return (
     <div
       className={`
-        bg-white border-r border-gray-200 flex flex-col h-full
-        transition-all duration-300 ease-in-out relative
-        ${isCollapsed ? 'w-16' : 'w-64'}
+        bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden w-56
       `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Collapse Toggle Button */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className={`
-          absolute top-4 -right-3 w-6 h-12 bg-white border border-gray-200 
-          rounded-lg shadow-md z-10 flex items-center justify-center
-          hover:bg-blue-50 hover:border-blue-200 hover:text-blue-500
-          transition-all duration-300 group
-          ${isCollapsed ? 'rotate-180' : ''}
-        `}
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-
       {/* Main Scrollable Content */}
       <div className={`
         flex-1 overflow-y-auto
-        transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'invisible w-0' : 'visible w-full'}
       `}>
-        <div className="p-3 pt-6">
+        <div className="p-2 pt-8">
           {/* Section Headers */}
-          <div className={`mb-8 ${isCollapsed ? 'px-2' : ''}`}>
+          <div className="mb-4">
             <h2 className={`
-              px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide
-              ${isCollapsed ? 'sr-only' : ''}
+              px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide
             `}>
               Unlock Types
             </h2>
-            <div className={isCollapsed ? 'space-y-4' : ''}>
+            <div>
               <UnlockTypeFilter
                 selectedTypes={filters.unlockType ? [filters.unlockType] : []}
                 onTypeSelect={handleUnlockTypeChange}
-                isOpen={!isCollapsed && openSections.unlockType}
+                isOpen={openSections.unlockType}
                 onToggle={() => toggleSection('unlockType')}
-                isCollapsed={isCollapsed}
               />
             </div>
           </div>
 
           {/* Event Filters */}
-          <div className={`mb-8 ${isCollapsed ? 'px-2' : ''}`}>
+          <div className="mb-6">
             <h2 className={`
-              px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide
+              px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide
               ${isCollapsed ? 'sr-only' : ''}
             `}>
               Event Filters
@@ -243,12 +221,12 @@ export default function LeftSidebarFilters({
           </div>
 
           {/* Event Location */}
-          <div className="mb-8">
-            <h2 className="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <div className="mb-6">
+            <h2 className="px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide">
               Event Location
             </h2>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <LocationFilter
                 region={filters.region || ''}
                 state={filters.state || []}
@@ -263,12 +241,12 @@ export default function LeftSidebarFilters({
           </div>
 
           {/* Organization Filters */}
-          <div className="mb-8">
-            <h2 className="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <div className="mb-6">
+            <h2 className="px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide">
               Organization Filters
             </h2>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <FilterSection
                 title="Organization"
                 icon={Building2}
@@ -334,8 +312,6 @@ export default function LeftSidebarFilters({
       {/* Views Section */}
       <div className={`
         p-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm
-        transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'invisible w-0' : 'visible w-full'}
       `}>
         <ViewsSection
           showAllEvents={showAllEvents}

@@ -72,27 +72,31 @@ export default function UserProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Input
-        id="fullName"
-        name="fullName"
-        label="Full Name"
-        type="text"
-        value={formValues.display_name}
-        onChange={handleNameChange}
-        disabled={!isEditing}
-        placeholder="Enter your full name"
-      />
+      <div className="max-w-[320px]">
+        <Input
+          id="fullName"
+          name="fullName"
+          label="Full Name"
+          type="text"
+          value={formValues.display_name}
+          onChange={handleNameChange}
+          disabled={!isEditing}
+          placeholder="Enter your full name"
+        />
+      </div>
 
-      <Input
-        id="email"
-        name="email"
-        label="Email"
-        type="email"
-        value={formValues.email}
-        disabled={true}
-      />
+      <div className="max-w-[320px]">
+        <Input
+          id="email"
+          name="email"
+          label="Email"
+          type="email"
+          value={formValues.email}
+          disabled={true}
+        />
+      </div>
 
-      <div className={isEditing ? '' : 'opacity-75'}>
+      <div className={`${isEditing ? '' : 'opacity-75'} mt-8`}>
         <ServiceSelector
           selectedService={formValues.services}
           onServiceChange={handleServiceChange}
@@ -101,17 +105,17 @@ export default function UserProfileForm({
       </div>
 
       {isEditing && (
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end space-x-3 mt-8">
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
           >
             Save Changes
           </button>

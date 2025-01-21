@@ -35,15 +35,15 @@ export default function MultiSelect({ options, selected, onChange }: MultiSelect
         <label
           key={option}
           className={`
-            flex items-center w-full px-3 py-2 rounded-md cursor-pointer
+            flex items-center justify-between w-full px-3 py-2 rounded-md cursor-pointer
             transition-all duration-200 group
             ${selected.includes(option)
-              ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-              : 'hover:bg-white text-gray-700'
+              ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
+              : 'text-gray-600 hover:bg-white hover:text-gray-900'
             }
           `}
         >
-          <div className="flex-1 flex items-center">
+          <div className="flex items-center min-w-0">
             <input
               type="checkbox"
               checked={selected.includes(option)}
@@ -52,12 +52,12 @@ export default function MultiSelect({ options, selected, onChange }: MultiSelect
                 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
                 transition-colors"
             />
-            <span className="ml-3 text-sm group-hover:text-gray-900 transition-colors">
+            <span className="ml-3 text-sm font-medium truncate">
               {option}
             </span>
           </div>
           {selected.includes(option) && (
-            <Check className="w-4 h-4 text-blue-600" />
+            <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
           )}
         </label>
       ))}

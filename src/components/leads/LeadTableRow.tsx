@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, Mail, Eye, Layers, ArrowUpRight, Calendar, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe, Loader } from 'lucide-react';
+import { Link, Mail, Eye, Layers, ArrowUpRight, Target, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe, Loader, Calendar } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { supabase } from '../../lib/supabase';
 import type { Lead } from '../../types';
@@ -7,12 +7,12 @@ import { useUnlockedLeadsData } from '../../hooks/useUnlockedLeadsData';
 
 interface LeadTableRowProps {
   lead: Lead;
-  onClick: () => Promise<void>;
+  onRowClick: (leadId: string) => Promise<void>;
 }
 
-export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
   const { recordedLeads } = useUnlockedLeadsData();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get topic from keywords (first keyword)
   const topic = lead.keywords?.split(',')[0]?.trim();
@@ -31,8 +31,6 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
   };
 
   const handleViewMore = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
     // Create URL parameters
     const params = new URLSearchParams();
     if (lead.event_name) params.set('event', lead.event_name);
@@ -151,16 +149,6 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     </div>
   ), [lead]);
 
-  const handleClick = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
-    try {
-      await onClick();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const getFormattedUrl = (url: string | undefined | null) => {
     if (!url) return null;
     
@@ -183,14 +171,22 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
     <div className="contents">
       {/* Main Content */}
       <div 
-        onClick={handleClick}
+        onClick={async () => {
+          if (isLoading) return;
+          setIsLoading(true);
+          try {
+            await onRowClick(lead.id);
+          } finally {
+            setIsLoading(false);
+          }
+        }}
         className={`w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer bg-white relative ${isLoading ? 'pointer-events-none' : ''}`}
       >
         {isLoading && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 shadow-sm border border-gray-100">
               <Loader className="w-4 h-4 text-blue-600 animate-spin" />
-              <span className="text-sm text-gray-600">Opening...</span>
+              <span className="text-sm text-gray-600">Recording visit...</span>
             </div>
           </div>
         )}
@@ -211,7 +207,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
                 {/* Name */}
                 <div className="text-[16.5px] leading-6 font-medium text-gray-900 truncate">
                   {lead.unlock_type === 'Unlock Contact Email' 
-                    ? lead.subtext
+                    ? `${lead.lead_name}${lead.job_title ? `, ${lead.job_title}` : ''}`
                     : lead.event_name
                   }
                 </div>
@@ -220,9 +216,9 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
               {/* Subtext */}
               <div className="mt-1">
                 <span className="text-[15.5px] leading-5 text-gray-500 truncate block">
-                  {lead.unlock_type === 'Unlock Contact Email'
-                    ? lead.event_name
-                    : lead.subtext
+                  {lead.unlock_type === 'Unlock Contact Email' 
+                    ? (lead.event_name || 'No event specified')
+                    : (lead.organization || 'No organization specified')
                   }
                 </span>
               </div>
@@ -242,7 +238,16 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
 
                 {/* Eye Icon with Tooltip */}
                 <Tooltip content={<TooltipContent />} side="right" delayShow={100}>
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 hover:bg-gray-100 hover:shadow-gray-300 transition-all duration-200">
+                  <div 
+                    role="button"
+                    tabIndex={0}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center bg-gray-50 shadow-[0_0_0_1px] shadow-gray-200 hover:bg-gray-100 hover:shadow-gray-300 transition-all duration-200 cursor-pointer"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
                     <Eye className="w-3.5 h-3.5 text-gray-400 hover:text-gray-500 transition-colors" />
                   </div>
                 </Tooltip>
@@ -253,8 +258,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Topic Column */}
-      <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative ${isLoading ? 'pointer-events-none' : ''}`}>
-        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
+      <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative`}>
         {topic && (
           <div className="inline-flex items-center max-w-full relative">
             <span className={`
@@ -267,19 +271,18 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
             </span>
           </div>
         )}
-        {lead.event_format && (
-          <div className="flex items-center gap-1.5 text-gray-500 ml-6 relative">
+        {lead.focus && (
+          <div className="flex items-start gap-1.5 text-gray-500 ml-6 relative max-w-full">
             <div className="absolute -left-3 top-[calc(50%-12px)] h-3 w-[1.5px] bg-gray-300/75 rounded-full"></div>
             <div className="absolute -left-3 top-[calc(50%-1px)] w-2 h-[1.5px] bg-gray-300/75 rounded-full"></div>
-            <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="text-xs truncate">{lead.event_format}</span>
+            <Calendar className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span className="text-xs line-clamp-2">{lead.subtext}</span>
           </div>
         )}
       </div>
 
       {/* Event URL Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
-        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative`}>
         {urlData && (
           <button
             onClick={(e) => {
@@ -305,8 +308,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Location Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
-        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative`}>
         {lead.region && (
           <div className="flex items-center text-[14.5px] text-gray-700">
             <MapPin className="w-4 h-4 mr-1.5 text-[#DD4B3E] flex-shrink-0" />
@@ -320,8 +322,7 @@ export default function LeadTableRow({ lead, onClick }: LeadTableRowProps) {
       </div>
 
       {/* Group Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative ${isLoading ? 'pointer-events-none' : ''}`}>
-        {isLoading && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10" />}
+      <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative`}>
         <button
           onClick={handleViewMore}
           className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200"

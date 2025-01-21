@@ -13,16 +13,14 @@ interface ProfileUpdateData {
 export function useProfileUpdate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const updateProfileState = useProfileStore(state => state.updateProfile);
   const { user } = useAuthStore();
 
   const handleProfileUpdate = async (userId: string, updates: ProfileUpdateData) => {
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
-
     try {
+      setIsSubmitting(true);
+      setError(null);
+
       // Convert services to string if it's an array
       const servicesString = Array.isArray(updates.services) 
         ? updates.services[0] || null 
@@ -30,17 +28,11 @@ export function useProfileUpdate() {
           ? updates.services
           : null;
 
-      // Get current profile data for comparison
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('display_name, services, offering, website')
-        .eq('id', userId)
-        .single();
-
       // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
+          id: userId,
           display_name: updates.display_name,
           services: servicesString,
           offering: updates.offering,
@@ -48,29 +40,26 @@ export function useProfileUpdate() {
         })
         .eq('id', userId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        throw updateError;
+      }
 
       // Prepare changes object with only updated fields
       const changes: Record<string, any> = {};
       
-      if (updates.display_name !== undefined && updates.display_name !== currentProfile?.display_name) {
+      if (updates.display_name !== undefined) {
         changes.display_name = updates.display_name;
       }
       
       if (updates.services !== undefined) {
-        const currentService = currentProfile?.services || null;
-        const newService = servicesString;
-        
-        if (currentService !== newService) {
-          changes.services = newService;
-        }
+        changes.services = servicesString;
       }
 
-      if (updates.offering !== undefined && updates.offering !== currentProfile?.offering) {
+      if (updates.offering !== undefined) {
         changes.offering = updates.offering;
       }
 
-      if (updates.website !== undefined && updates.website !== currentProfile?.website) {
+      if (updates.website !== undefined) {
         changes.website = updates.website;
       }
 
@@ -79,7 +68,7 @@ export function useProfileUpdate() {
         const webhookPayload = {
           user: {
             id: userId,
-            display_name: currentProfile?.display_name || null
+            display_name: updates.display_name || null
           },
           changes
         };
@@ -96,10 +85,22 @@ export function useProfileUpdate() {
         });
       }
 
-      setSuccess(true);
+      // Update local state
+      updateProfileState({
+        display_name: updates.display_name,
+        services: servicesString,
+        offering: updates.offering,
+        website: updates.website
+      });
+
+      return { success: true };
     } catch (err) {
       console.error('Error updating profile:', err);
       setError(err instanceof Error ? err.message : 'Failed to update profile');
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Failed to update profile'
+      };
     } finally {
       setIsSubmitting(false);
     }
@@ -116,7 +117,6 @@ export function useProfileUpdate() {
     updateLocalProfile,
     isSubmitting,
     error,
-    success,
     clearError
   };
 }

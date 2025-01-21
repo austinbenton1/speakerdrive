@@ -2,37 +2,9 @@ import { supabase } from '../supabase';
 import type { UnlockedLead } from '../../types/unlocks';
 import { User } from '@supabase/supabase-js';
 
-export interface UnlockResponse {
-  success: boolean;
-  error?: string;
-}
-
 export interface UnlockStatus {
   isUnlocked: boolean;
   unlockValue?: string | null;
-}
-
-/**
- * Unlocks a lead for the current user by setting the unlocked field to true
- */
-export async function unlockLead(leadId: string, user: User): Promise<UnlockResponse> {
-  try {
-    const { error } = await supabase
-      .from('unlocked_leads')
-      .update({ unlocked: true })
-      .eq('user_id', user.id)
-      .eq('lead_id', leadId);
-
-    if (error) throw error;
-
-    return { success: true };
-  } catch (error) {
-    console.error('Error unlocking lead:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to unlock lead'
-    };
-  }
 }
 
 /**
@@ -75,32 +47,25 @@ export async function fetchRecentUnlocks(user: User): Promise<UnlockedLead[]> {
     .from('unlocked_leads')
     .select(`
       id,
-      lead_id,
+      unlocked,
       created_at,
       leads (
+        id,
+        unlock_value,
+        unlock_type,
         event_name,
-        subtext,
-        industry,
-        image_url,
-        lead_type,
-        keywords
+        event_date,
+        organization_name
       )
     `)
     .eq('user_id', user.id)
     .eq('unlocked', true)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(50);
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
-  return data.map(item => ({
-    id: item.lead_id,
-    event_name: item.leads.event_name,
-    subtext: item.leads.subtext,
-    industry: item.leads.industry,
-    image: item.leads.image_url,
-    unlockDate: new Date(item.created_at),
-    lead_type: item.leads.lead_type,
-    keywords: item.leads.keywords
-  }));
+  return data || [];
 }

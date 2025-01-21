@@ -90,19 +90,21 @@ export default function EditableField({
 
   return (
     <div className="space-y-2">
-      <input
-        type={type}
-        value={tempValue}
-        onChange={(e) => setTempValue(e.target.value)}
-        className={`
-          w-full px-3 py-2 border rounded-md shadow-sm text-sm
-          focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-          ${error ? 'border-red-300' : 'border-gray-300'}
-        `}
-      />
+      <div className="max-w-md">
+        <input
+          type={type}
+          value={tempValue}
+          onChange={(e) => setTempValue(e.target.value)}
+          className={`
+            w-full px-3 py-2 border rounded-md shadow-sm text-sm
+            focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            ${error ? 'border-red-300' : 'border-gray-300'}
+          `}
+        />
+      </div>
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
       )}
 
       <div className="flex items-center space-x-2">

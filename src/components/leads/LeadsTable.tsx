@@ -4,6 +4,8 @@ import type { Lead } from '../../types';
 import LeadTableRow from './LeadTableRow';
 import TablePagination from './TablePagination';
 import { usePagination } from '../../hooks/usePagination';
+import { supabase } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 type SortField = 'topic' | 'url' | 'location';
 type SortDirection = 'asc' | 'desc';
@@ -12,11 +14,12 @@ interface LeadsTableProps {
   leads: Lead[];
   loading?: boolean;
   onResetFilters: () => void;
-  onLeadClick: (leadId: string) => Promise<void>;
-  showAllEvents?: boolean;
-  uniqueCount?: number;
-  selectedLeadType?: string;
-  filters?: any; // Added to support the new condition
+  showAllEvents: boolean;
+  uniqueCount: number;
+  selectedLeadType: string;
+  filters: any;
+  eventsFilter: string;
+  opportunityTags: string[];
 }
 
 const LoadingRow = () => (
@@ -40,15 +43,17 @@ const LoadingRow = () => (
 export default function LeadsTable({ 
   leads, 
   loading = false, 
-  onResetFilters, 
-  onLeadClick,
-  showAllEvents = false,
-  uniqueCount = 0,
-  selectedLeadType = 'all',
-  filters
+  onResetFilters,
+  showAllEvents,
+  uniqueCount,
+  selectedLeadType,
+  filters,
+  eventsFilter,
+  opportunityTags
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     const container = scrollContainerRef.current;
@@ -73,6 +78,61 @@ export default function LeadsTable({
   // Paginate the leads directly (no sorting)
   const paginatedLeads = paginate(leads);
 
+  const handleRowClick = async (leadId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    // Record the visit
+    const { error } = await supabase.rpc('record_visit', {
+      var_lead: leadId,
+      var_user: session.user.id
+    });
+
+    if (error) {
+      console.error('Error recording visit:', error);
+    }
+
+    // Get all lead IDs for navigation
+    const leadIds = leads.map(lead => lead.id);
+    const currentIndex = leadIds.indexOf(leadId);
+
+    // Create URL parameters for filters
+    const params = new URLSearchParams();
+
+    // Add display settings
+    params.set('event_display', showAllEvents ? 'all' : 'unique');
+    params.set('type', selectedLeadType);
+
+    // Add event filter and tags
+    if (eventsFilter) params.set('event', eventsFilter);
+    if (opportunityTags?.length) params.set('tags', opportunityTags.join(','));
+
+    // Add all other filters
+    if (filters) {
+      if (filters.industry?.length) params.set('industry', filters.industry.join(','));
+      if (filters.eventFormat?.length) params.set('format', filters.eventFormat.join(','));
+      if (filters.organization?.length) params.set('organization', filters.organization.join(','));
+      if (filters.organizationType?.length) params.set('orgType', filters.organizationType.join(','));
+      if (filters.pastSpeakers?.length) params.set('speakers', filters.pastSpeakers.join(','));
+      if (filters.searchAll) params.set('search', filters.searchAll);
+      if (filters.jobTitle?.length) params.set('job', filters.jobTitle.join(','));
+      if (filters.region) params.set('region', filters.region);
+      if (filters.state?.length) params.set('state', filters.state.join(','));
+      if (filters.city?.length) params.set('city', filters.city.join(','));
+      if (filters.unlockType) params.set('unlock_type', filters.unlockType);
+    }
+
+    // Navigate to lead details with state and URL parameters
+    navigate(`/leads/${leadId}?${params.toString()}`, {
+      state: {
+        leadIds,
+        currentIndex,
+        fromFindLeads: true,
+        returnPath: `/find-leads?${params.toString()}`
+      }
+    });
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg">
       <div 
@@ -80,8 +140,8 @@ export default function LeadsTable({
         className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="min-w-[1500px] w-full relative">
-          <div className="grid grid-cols-[575px_275px_230px_200px_240px] gap-0">
+        <div className="min-w-[1400px] w-full relative">
+          <div className="grid grid-cols-[500px_275px_230px_200px_240px] gap-0">
             {/* Header */}
             <div className="contents">
               <div className="bg-white px-3 py-3">
@@ -105,7 +165,7 @@ export default function LeadsTable({
               </div>
               
               {/* Topic Header */}
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[16px] border-b-2 border-gray-100">
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[8px] border-b-2 border-gray-100">
                 Event Topic
               </div>
 
@@ -143,7 +203,7 @@ export default function LeadsTable({
                   <LeadTableRow 
                     key={lead.id} 
                     lead={lead}
-                    onClick={() => onLeadClick(lead.id)}
+                    onRowClick={handleRowClick}
                   />
                 ))}
               </div>

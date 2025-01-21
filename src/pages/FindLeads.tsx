@@ -130,7 +130,10 @@ export default function FindLeads() {
       location: Boolean(urlParams.region || urlParams.state.length || urlParams.city.length),
       
       // Target Audience (based on job title or past speakers)
-      targetAudience: urlParams.jobTitle.length > 0 || urlParams.pastSpeakers.length > 0
+      targetAudience: urlParams.jobTitle.length > 0 || urlParams.pastSpeakers.length > 0,
+
+      // Lead Type Filter
+      unlockType: urlParams.type && urlParams.type !== 'all'
     };
 
     // Open sections that have active filters
@@ -143,7 +146,7 @@ export default function FindLeads() {
     const hasActiveFilters = Boolean(
       urlParams.event ||
       urlParams.tags.length > 0 ||
-      urlParams.type !== 'all' ||
+      (urlParams.type && urlParams.type !== 'all') ||
       urlParams.industry.length > 0 ||
       urlParams.eventFormat.length > 0 ||
       urlParams.organization.length > 0 ||
@@ -509,6 +512,9 @@ export default function FindLeads() {
               showAllEvents={showAllEvents}
               uniqueCount={uniqueLeadsCount}
               selectedLeadType={selectedLeadType}
+              filters={filters}
+              eventsFilter={eventsFilter}
+              opportunityTags={opportunityTags}
             />
           </div>
         </div>

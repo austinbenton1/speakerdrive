@@ -12,6 +12,28 @@ interface AvatarState {
   setAvatarUrl: (url: string | null) => void;
 }
 
+interface UploadStatus {
+  isUploading: boolean;
+  message?: string;
+  error?: string;
+}
+
+interface UploadStatusState {
+  status: UploadStatus;
+  setStatus: (status: UploadStatus) => void;
+}
+
+interface UploadStatus {
+  isUploading: boolean;
+  message?: string;
+  error?: string;
+}
+
+interface UploadStatusState {
+  status: UploadStatus;
+  setStatus: (status: UploadStatus) => void;
+}
+
 interface ProfileState {
   profile: {
     display_name: string | null;
@@ -39,6 +61,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 export const useAvatarStore = create<AvatarState>((set) => ({
   avatarUrl: null,
   setAvatarUrl: (url) => set({ avatarUrl: url }),
+}));
+
+export const useUploadStatusStore = create<UploadStatusState>((set) => ({
+  status: { isUploading: false },
+  setStatus: (status) => set({ status }),
 }));
 
 export const useProfileStore = create<ProfileState>((set) => ({

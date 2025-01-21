@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { unlockLead, checkLeadUnlocked } from '../lib/api/unlocks';
+import { checkLeadUnlocked } from '../lib/api/unlocks';
 import type { UnlockStatus } from '../types/unlocks';
 import { User } from '@supabase/supabase-js';
 import type { SpeakerLead } from '../types/leads';
+import { supabase } from '../lib/supabase';
 
 interface UseLeadUnlockResult {
   isUnlocked: boolean;
@@ -27,7 +28,6 @@ export function useLeadUnlock(leadId: string, user: User | null, lead?: SpeakerL
     try {
       const status = await checkLeadUnlocked(leadId, user);
       setIsUnlocked(status.isUnlocked);
-      // Use unlock value from status instead of lead data
       setUnlockValue(status.isUnlocked ? status.unlockValue : null);
       setError(null);
       setRetryCount(0);
@@ -54,10 +54,17 @@ export function useLeadUnlock(leadId: string, user: User | null, lead?: SpeakerL
       setIsUnlocking(true);
       setError(null);
       
-      const response = await unlockLead(leadId, user);
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to unlock lead');
-      }
+      // Update unlocked_leads table
+      const { error: updateError } = await supabase
+        .from('unlocked_leads')
+        .update({ 
+          unlocked: true,
+          unlocked_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('lead_id', leadId);
+
+      if (updateError) throw updateError;
       
       await checkUnlockStatus();
     } catch (err) {

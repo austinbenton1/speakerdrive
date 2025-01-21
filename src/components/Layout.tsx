@@ -3,12 +3,14 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { User, Shield, Image, Users, ChevronDown } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useProfile } from '../hooks/useProfile';
+import { useAvatarStore } from '../lib/store';
 import { useAdminRole } from '../hooks/useAdminRole';
 import LoadingSpinner from './common/LoadingSpinner';
 
 export default function Layout() {
   const navigate = useNavigate();
   const { profile, loading, error } = useProfile();
+  const globalAvatarUrl = useAvatarStore((state) => state.avatarUrl);
   const { isAdmin } = useAdminRole();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
@@ -88,9 +90,10 @@ export default function Layout() {
             className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors ml-auto"
           >
             <div className="flex-shrink-0">
-              {profile.avatar_url ? (
+              {(globalAvatarUrl || profile.avatar_url) ? (
                 <img
-                  src={profile.avatar_url}
+                  key={globalAvatarUrl || profile.avatar_url}
+                  src={globalAvatarUrl || profile.avatar_url}
                   alt={getDisplayName()}
                   className="w-8 h-8 rounded-full border border-gray-200 shadow-sm object-cover"
                   onError={(e) => {

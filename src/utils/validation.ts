@@ -1,3 +1,22 @@
+export const validatePassword = (password: string): string | undefined => {
+  if (!password) return 'Password is required';
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one special character';
+  return undefined;
+};
+
+export const isValidUrl = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export const validateName = (name: string) => {
   if (!name.trim()) return 'Name is required';
   if (name.length < 2) return 'Name must be at least 2 characters';

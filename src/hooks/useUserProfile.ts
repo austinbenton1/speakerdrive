@@ -21,19 +21,6 @@ export function useUserProfile() {
   const parseServices = (services: any): string | null => {
     if (!services) return null;
 
-    // If it's already a string but looks like a JSON array
-    if (typeof services === 'string' && services.startsWith('[') && services.endsWith(']')) {
-      try {
-        // Parse the JSON string and get the first item
-        const parsed = JSON.parse(services);
-        if (Array.isArray(parsed)) {
-          return parsed[0] || null;
-        }
-      } catch (e) {
-        return null;
-      }
-    }
-
     // If it's already a string but not JSON, return as is
     if (typeof services === 'string') {
       return services;
@@ -50,20 +37,42 @@ export function useUserProfile() {
   const loadProfile = useCallback(async () => {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        throw new Error('Failed to get session: ' + sessionError.message);
+      }
       
       if (!session?.user) {
-        setProfile(null);
+        setError(new Error('No authenticated user'));
+        setLoading(false);
         return;
       }
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          email,
+          display_name,
+          avatar_url,
+          user_type,
+          services,
+          industries,
+          quick_start_guide_tip,
+          offering,
+          random_lead_sort,
+          random_lead_sort_date,
+          website
+        `)
         .eq('id', session.user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        throw new Error('Failed to fetch profile: ' + profileError.message);
+      }
+
+      if (!profileData) {
+        throw new Error('Profile not found');
+      }
 
       const parsedServices = parseServices(profileData.services);
 
@@ -80,8 +89,11 @@ export function useUserProfile() {
         random_lead_sort_date: profileData.random_lead_sort_date,
         website: profileData.website
       });
+      setError(null);
     } catch (err) {
+      console.error('Error loading profile:', err);
       setError(err instanceof Error ? err : new Error('Failed to load profile'));
+      setProfile(null);
     } finally {
       setLoading(false);
     }
@@ -93,12 +105,19 @@ export function useUserProfile() {
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
+      if (!profile?.id) {
+        return { success: false, error: 'No profile ID available' };
+      }
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', profile?.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        return { success: false, error: updateError.message };
+      }
 
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       return { success: true };

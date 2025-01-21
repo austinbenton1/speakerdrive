@@ -21,16 +21,16 @@ export default function ViewsSection({
     <div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-gray-400" />
+          <Eye className="w-3.5 h-3.5 text-gray-400" />
           <span className="font-medium">Views</span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
         )}
       </button>
 
@@ -40,14 +40,14 @@ export default function ViewsSection({
           ${isExpanded ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}
         `}
       >
-        <div className="px-3 pt-2 pb-1 space-y-3">
+        <div className="px-2.5 pt-1.5 pb-1 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Event Display</span>
+            <span className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Event Display</span>
             <a 
               href="https://google.com" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-xs text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
+              className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
             >
               Learn more
             </a>

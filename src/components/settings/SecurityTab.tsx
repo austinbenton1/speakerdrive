@@ -1,285 +1,348 @@
-import React, { useState, useEffect } from 'react';
-import { Key, Mail as MailIcon, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Key, Shield, AlertCircle, Check, LogOut, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import GmailConnectionModal from '../modals/GmailConnectionModal';
-import OutlookConnectionModal from '../modals/OutlookConnectionModal';
 import { useAuth } from '../../hooks/useAuth';
+import Input from '../Input';
+import { validatePassword, validateEmail } from '../../utils/validation';
 
-interface SmtpStatus {
-  is_gmail_smtp: boolean | null;
-  smtp_email: string | null;
-  smtp_host?: string | null;
+interface PasswordFormData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface EmailChangeFormData {
+  currentPassword: string;
+  newEmail: string;
 }
 
 export default function SecurityTab() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showGmailModal, setShowGmailModal] = useState(false);
-  const [showOutlookModal, setShowOutlookModal] = useState(false);
-  const [smtpStatus, setSmtpStatus] = useState<SmtpStatus>({
-    is_gmail_smtp: null,
-    smtp_email: null,
-    smtp_host: null
+  const [success, setSuccess] = useState<string | null>(null);
+  const [emailFormData, setEmailFormData] = useState<EmailChangeFormData>({
+    currentPassword: '',
+    newEmail: ''
+  });
+  const [formData, setFormData] = useState<PasswordFormData>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
-  useEffect(() => {
-    const fetchSmtpStatus = async () => {
-      if (!user?.id) return;
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSuccess(null);
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_gmail_smtp, smtp_email, smtp_host')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          setSmtpStatus({
-            is_gmail_smtp: data.is_gmail_smtp,
-            smtp_email: data.smtp_email,
-            smtp_host: data.smtp_host
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching SMTP status:', err);
+      // Validate email format
+      const emailError = validateEmail(emailFormData.newEmail);
+      if (emailError) {
+        setError(emailError);
+        return;
       }
+
+      // Update email
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: emailFormData.newEmail
+      });
+
+      if (updateError) throw updateError;
+
+      setSuccess('Email update initiated. Please check your new email for verification.');
+      setEmailFormData({
+        currentPassword: '',
+        newEmail: ''
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+
+    } catch (err) {
+      console.error('Error updating email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Password strength indicators
+  const getPasswordStrength = (password: string): {
+    score: number;
+    color: string;
+    text: string;
+  } => {
+    let score = 0;
+    let checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password)
     };
 
-    fetchSmtpStatus();
-  }, [user?.id]);
+    score = Object.values(checks).filter(Boolean).length;
 
-  const handleGmailConnect = async (data: { email: string; appPassword: string }) => {
+    if (score === 0) return { score: 0, color: 'bg-gray-200', text: 'No password' };
+    if (score === 1) return { score: 1, color: 'bg-red-500', text: 'Very weak' };
+    if (score === 2) return { score: 2, color: 'bg-orange-500', text: 'Weak' };
+    if (score === 3) return { score: 3, color: 'bg-yellow-500', text: 'Fair' };
+    if (score === 4) return { score: 4, color: 'bg-blue-500', text: 'Good' };
+    return { score: 5, color: 'bg-green-500', text: 'Strong' };
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       setIsLoading(true);
       setError(null);
+      setSuccess(null);
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          smtp_email: data.email,
-          smtp_password: data.appPassword,
-          is_gmail_smtp: true,
-          smtp_host: null,
-          smtp_port: null
-        })
-        .eq('id', user?.id);
+      // Validate new password
+      const passwordError = validatePassword(formData.newPassword);
+      if (passwordError) {
+        setError(passwordError);
+        return;
+      }
+
+      // Validate password confirmation
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.newPassword
+      });
 
       if (updateError) throw updateError;
 
-      setSmtpStatus({
-        is_gmail_smtp: true,
-        smtp_email: data.email,
-        smtp_host: null
+      setSuccess('Password updated successfully');
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
       });
 
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+
     } catch (err) {
-      console.error('Error connecting Gmail:', err);
-      setError('Failed to connect Gmail account. Please try again.');
-      throw err;
+      console.error('Error updating password:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update password');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOutlookConnect = async (data: { email: string; password: string; host: string; port: string }) => {
+  const handleLogoutAllDevices = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          smtp_email: data.email,
-          smtp_password: data.password,
-          smtp_host: data.host,
-          smtp_port: data.port,
-          is_gmail_smtp: false
-        })
-        .eq('id', user?.id);
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) throw error;
 
-      if (updateError) throw updateError;
+      setSuccess('Successfully logged out from all devices');
 
-      setSmtpStatus({
-        is_gmail_smtp: false,
-        smtp_email: data.email,
-        smtp_host: data.host
-      });
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
 
     } catch (err) {
-      console.error('Error connecting Outlook:', err);
-      setError('Failed to connect Outlook account. Please try again.');
-      throw err;
+      console.error('Error logging out from all devices:', err);
+      setError(err instanceof Error ? err.message : 'Failed to logout from all devices');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDisconnect = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          smtp_email: null,
-          smtp_password: null,
-          smtp_host: null,
-          smtp_port: null,
-          is_gmail_smtp: null
-        })
-        .eq('id', user?.id);
-
-      if (updateError) throw updateError;
-
-      setSmtpStatus({
-        is_gmail_smtp: null,
-        smtp_email: null,
-        smtp_host: null
-      });
-
-    } catch (err) {
-      console.error('Error disconnecting email:', err);
-      setError('Failed to disconnect email account. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isOutlookConnected = !smtpStatus.is_gmail_smtp && smtpStatus.smtp_email && smtpStatus.smtp_host;
+  const passwordStrength = getPasswordStrength(formData.newPassword);
 
   return (
-    <div className="space-y-8">
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
-
-      {/* Password Reset Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Password Reset</h3>
-        <p className="text-sm text-gray-500 mb-4">Change your account password</p>
-        <button
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          disabled={isLoading}
-        >
-          <Key className="w-4 h-4 mr-2" />
-          Reset Password
-        </button>
-      </div>
-
-      {/* Email Authentication Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Email Authentication</h3>
-        <p className="text-sm text-gray-500 mb-4">Connect your email account to streamline communications</p>
-        
-        <div className="space-y-4">
-          {/* Gmail Connection */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg"
-                alt="Gmail"
-                className="h-6 w-6 mr-3"
-              />
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Gmail Account</h4>
-                <p className="text-xs text-gray-500">
-                  {smtpStatus.is_gmail_smtp 
-                    ? `Connected: ${smtpStatus.smtp_email}` 
-                    : 'Not connected'}
-                </p>
-              </div>
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Shield className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="flex items-center space-x-2">
-              {smtpStatus.is_gmail_smtp && (
-                <button
-                  onClick={handleDisconnect}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Disconnect
-                </button>
-              )}
-              <button
-                onClick={() => setShowGmailModal(true)}
-                disabled={isLoading || (smtpStatus.is_gmail_smtp === false)}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <MailIcon className="w-4 h-4 mr-2" />
-                    {smtpStatus.is_gmail_smtp ? 'Reconnect' : 'Connect'}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Outlook Connection */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg"
-                alt="Outlook"
-                className="h-6 w-6 mr-3"
-              />
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Outlook Account</h4>
-                <p className="text-xs text-gray-500">
-                  {isOutlookConnected 
-                    ? `Connected: ${smtpStatus.smtp_email}` 
-                    : 'Not connected'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              {isOutlookConnected && (
-                <button
-                  onClick={handleDisconnect}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Disconnect
-                </button>
-              )}
-              <button
-                onClick={() => setShowOutlookModal(true)}
-                disabled={isLoading || (smtpStatus.is_gmail_smtp === true)}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <MailIcon className="w-4 h-4 mr-2" />
-                    {isOutlookConnected ? 'Reconnect' : 'Connect'}
-                  </>
-                )}
-              </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Security Settings</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {user?.email}
+              </p>
             </div>
           </div>
         </div>
+
+        <div className="space-y-6">
+          {/* Alerts */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <p className="text-sm text-green-700">{success}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Email Change Form */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Change Email Address</h3>
+            <form onSubmit={handleEmailChange} className="space-y-4">
+              <Input
+                label="Current Password"
+                type="password"
+                value={emailFormData.currentPassword}
+                onChange={(e) => setEmailFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                placeholder="Enter your current password"
+                disabled={isLoading}
+                icon={Key}
+              />
+
+              <Input
+                label="New Email Address"
+                type="email"
+                value={emailFormData.newEmail}
+                onChange={(e) => setEmailFormData(prev => ({ ...prev, newEmail: e.target.value }))}
+                placeholder="Enter your new email address"
+                disabled={isLoading}
+                icon={Mail}
+              />
+
+              <button
+                type="submit"
+                disabled={isLoading || !emailFormData.currentPassword || !emailFormData.newEmail}
+                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Updating...' : 'Update Email'}
+              </button>
+            </form>
+          </div>
+
+          {/* Password Change Form */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+            <form onSubmit={handlePasswordChange} className="space-y-6">
+              <div className="space-y-4">
+                <Input
+                  label="Current Password"
+                  type="password"
+                  value={formData.currentPassword}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  placeholder="Enter your current password"
+                  disabled={isLoading}
+                  icon={Key}
+                />
+
+                <div>
+                  <Input
+                    label="New Password"
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="Enter your new password"
+                    disabled={isLoading}
+                    icon={Key}
+                  />
+                  
+                  {/* Password Strength Indicator */}
+                  {formData.newPassword && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-500">Password strength:</span>
+                        <span className="text-xs font-medium" style={{ color: passwordStrength.color }}>
+                          {passwordStrength.text}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full ${passwordStrength.color} transition-all duration-300`}
+                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        />
+                      </div>
+                      
+                      {/* Password Requirements */}
+                      <div className="mt-2 space-y-1">
+                        <p className={`text-xs ${formData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                          • At least 8 characters
+                        </p>
+                        <p className={`text-xs ${/[A-Z]/.test(formData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                          • At least one uppercase letter
+                        </p>
+                        <p className={`text-xs ${/[a-z]/.test(formData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                          • At least one lowercase letter
+                        </p>
+                        <p className={`text-xs ${/[0-9]/.test(formData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                          • At least one number
+                        </p>
+                        <p className={`text-xs ${/[^A-Za-z0-9]/.test(formData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                          • At least one special character
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Input
+                  label="Confirm New Password"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="Confirm your new password"
+                  disabled={isLoading}
+                  icon={Key}
+                  error={
+                    formData.confirmPassword && 
+                    formData.newPassword !== formData.confirmPassword ? 
+                    'Passwords do not match' : undefined
+                  }
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
+                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+          </div>
+
+          {/* Security Actions */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Security Actions</h3>
+            <button
+              onClick={handleLogoutAllDevices}
+              disabled={isLoading}
+              className="flex items-center px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              Sign Out from All Devices
+            </button>
+          </div>
+        </div>
       </div>
-
-      {/* Gmail Connection Modal */}
-      <GmailConnectionModal
-        isOpen={showGmailModal}
-        onClose={() => setShowGmailModal(false)}
-        onSubmit={handleGmailConnect}
-      />
-
-      {/* Outlook Connection Modal */}
-      <OutlookConnectionModal
-        isOpen={showOutlookModal}
-        onClose={() => setShowOutlookModal(false)}
-        onSubmit={handleOutlookConnect}
-      />
     </div>
   );
 }

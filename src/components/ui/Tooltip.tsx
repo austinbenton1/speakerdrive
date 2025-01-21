@@ -36,74 +36,23 @@ export function Tooltip({
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    let top = 0;
-    let left = 0;
+    let top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+    let left = triggerRect.right + 8; // Position 8px to the right of the trigger
     let actualSide = tooltipSide;
 
-    // Calculate positions for each side
-    const positions = {
-      top: {
-        top: triggerRect.top - tooltipRect.height - 8,
-        left: triggerRect.left + (triggerRect.width - tooltipRect.width) / 2
-      },
-      right: {
-        top: triggerRect.top + (triggerRect.height - tooltipRect.height) / 2,
-        left: triggerRect.right + 8
-      },
-      bottom: {
-        top: triggerRect.bottom + 8,
-        left: triggerRect.left + (triggerRect.width - tooltipRect.width) / 2
-      },
-      left: {
-        top: triggerRect.top + (triggerRect.height - tooltipRect.height) / 2,
-        left: triggerRect.left - tooltipRect.width - 8
-      }
-    };
-
-    // Check if tooltip would be cut off in preferred position
-    switch (actualSide) {
-      case 'top':
-        if (positions.top.top < 0) {
-          actualSide = 'bottom';
-        }
-        break;
-      case 'right':
-        if (positions.right.left + tooltipRect.width > viewportWidth) {
-          actualSide = 'left';
-        }
-        break;
-      case 'bottom':
-        if (positions.bottom.top + tooltipRect.height > viewportHeight) {
-          actualSide = 'top';
-        }
-        break;
-      case 'left':
-        if (positions.left.left < 0) {
-          actualSide = 'right';
-        }
-        break;
+    // Prevent tooltip from going off screen
+    if (left + tooltipRect.width > viewportWidth) {
+      left = triggerRect.left - tooltipRect.width - 8;
     }
 
-    // Get final position based on actual side
-    const finalPosition = positions[actualSide];
-    
-    // Adjust horizontal position if needed
-    if (finalPosition.left < 0) {
-      finalPosition.left = 8;
-    } else if (finalPosition.left + tooltipRect.width > viewportWidth) {
-      finalPosition.left = viewportWidth - tooltipRect.width - 8;
-    }
-
-    // Adjust vertical position if needed
-    if (finalPosition.top < 0) {
-      finalPosition.top = 8;
-    } else if (finalPosition.top + tooltipRect.height > viewportHeight) {
-      finalPosition.top = viewportHeight - tooltipRect.height - 8;
+    if (top < 0) {
+      top = 8;
+    } else if (top + tooltipRect.height > viewportHeight) {
+      top = viewportHeight - tooltipRect.height - 8;
     }
 
     // Update position and side
-    setPosition(finalPosition);
-    setTooltipSide(actualSide);
+    setPosition({ top, left });
   };
 
   const handleMouseEnter = () => {
@@ -151,7 +100,7 @@ export function Tooltip({
           ref={tooltipRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed z-[100] bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-fade-in"
+          className="fixed z-[100] bg-white text-gray-900 text-sm rounded-lg shadow-lg overflow-hidden animate-fade-in text-left border border-gray-200/60 min-w-[200px]"
           style={{ top: `${position.top}px`, left: `${position.left}px` }}
         >
           {content}

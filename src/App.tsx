@@ -2,8 +2,10 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import SecurityTab from './components/settings/SecurityTab';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -23,6 +25,7 @@ import InstantIntel from './pages/InstantIntel';
 import ChatConversation from './pages/ChatConversation';
 import SalesCoach from './pages/SalesCoach';
 import StoreImagePage from './pages/StoreImagePage';
+import Settings from './pages/Settings';
 
 function App() {
   const { loading } = useAuth();
@@ -37,6 +40,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <UploadStatusIndicator />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
@@ -68,7 +72,18 @@ function App() {
           <Route path="/contact-finder" element={<EmailFinder />} />
           <Route path="/company-finder" element={<CompanyFinder />} />
           <Route path="/mobile-finder" element={<MobileFinder />} />
-          <Route path="/settings" element={<UserManagement />} />
+          {/* Settings Routes */}
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/profile" element={<UserManagement />} />
+          <Route path="/settings/security" element={<SecurityTab />} />
+          <Route path="/settings/billing" element={
+            <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-medium text-gray-900">Billing Coming Soon</h2>
+                <p className="mt-2 text-sm text-gray-500">Billing features will be available soon.</p>
+              </div>
+            </div>
+          } />
           <Route path="/users" element={
             <ProtectedRoute>
               <AdminRoute>
@@ -86,6 +101,17 @@ function App() {
                 <StoreImagePage />
               </AdminRoute>
             </ProtectedRoute>
+          } />
+          {/* Settings Routes */}
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/profile" element={<UserManagement />} />
+          <Route path="/settings/billing" element={
+            <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-medium text-gray-900">Billing Coming Soon</h2>
+                <p className="mt-2 text-sm text-gray-500">Billing features will be available soon.</p>
+              </div>
+            </div>
           } />
         </Route>
 

@@ -1,43 +1,68 @@
-import React, { useState } from 'react';
-import { User, MessageSquare, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Loader2 } from 'lucide-react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useProfileUpdate } from '../hooks/useProfileUpdate';
 import ProfileForm from '../components/profile/ProfileForm';
-import PhotoUploader from '../components/PhotoUploader';
-import SecurityTab from '../components/settings/SecurityTab';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 import SuccessAlert from '../components/common/SuccessAlert';
-
-const tabs = [
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'support', label: 'Get Support', icon: MessageSquare },
-];
 
 export default function UserManagement() {
   const { profile, loading, error: profileError } = useUserProfile();
   const { 
     updateProfile, 
     isSubmitting, 
-    error: updateError, 
-    success,
+    error: updateError,
     clearError 
   } = useProfileUpdate();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [success, setSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState<'personal' | 'professional' | null>(null);
+  const [formState, setFormState] = useState({
+    fullName: profile?.display_name || '',
+    services: Array.isArray(profile?.services) 
+      ? profile.services 
+      : profile?.services 
+        ? [profile.services]
+        : [],
+    industries: profile?.industries || [],
+    offering: profile?.offering || '',
+    website: profile?.website || ''
+  });
+
+  // Update form state when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormState({
+        fullName: profile.display_name || '',
+        services: Array.isArray(profile.services)
+          ? profile.services
+          : profile.services
+            ? [profile.services]
+            : [],
+        industries: profile.industries || [],
+        offering: profile.offering || '',
+        website: profile.website || ''
+      });
+    }
+  }, [profile]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm text-gray-600">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   if (profileError || !profile) {
     return (
-      <div className="p-8">
-        <ErrorAlert message={profileError || 'Failed to load profile'} />
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <ErrorAlert message={profileError || 'Failed to load profile'} />
+        </div>
       </div>
     );
   }
@@ -49,98 +74,97 @@ export default function UserManagement() {
     offering: string;
     website: string;
   }) => {
-    // Clear any existing error before submitting
-    clearError();
+    try {
+      if (!profile?.id) {
+        throw new Error('No profile ID available');
+      }
 
-    if (!profile.id) return;
+      clearError();
+      setSuccess(false);
 
-    await updateProfile(profile.id, {
-      display_name: formData.fullName,
-      services: formData.services,
-      industries: formData.industries,
-      offering: formData.offering,
-      website: formData.website
+      const result = await updateProfile(profile.id, {
+        display_name: formData.fullName,
+        services: formData.services,
+        industries: formData.industries,
+        offering: formData.offering,
+        website: formData.website
+      });
+
+      if (result.success) {
+        setFormState(formData);
+        setSuccess(true);
+        setActiveSection(null);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error(result.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      setError(errorMessage);
+    } finally {
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset form to original values
+    setFormState({
+      fullName: profile.display_name || '',
+      services: profile.services || [],
+      industries: profile.industries || [],
+      offering: profile.offering || '',
+      website: profile.website || ''
     });
   };
 
+  const handleSubmit = () => {
+    handleProfileSubmit(formState);
+  };
+
   return (
-    <div className="min-h-full bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white shadow-sm rounded-lg">
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px" aria-label="Tabs">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    group relative min-w-0 flex-1 overflow-hidden py-4 px-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10
-                    ${activeTab === tab.id
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 border-b-2 border-transparent'
-                    }
-                  `}
-                >
-                  <div className="flex items-center justify-center">
-                    <tab.icon className="w-5 h-5 mr-2" />
-                    {tab.label}
-                  </div>
-                </button>
-              ))}
-            </nav>
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <User className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {profile.email}
+              </p>
+            </div>
           </div>
+        </div>
 
-          {/* Content */}
-          <div className="p-6">
-            {activeTab === 'profile' && (
-              <div className="space-y-6">
-                {updateError && (
-                  <ErrorAlert message={updateError} />
-                )}
+        {/* Main Content */}
+        <div className="space-y-6">
+          {updateError && <ErrorAlert message={updateError} />}
+          {success && <SuccessAlert message="Profile updated successfully!" />}
 
-                {success && (
-                  <SuccessAlert message="Profile updated successfully!" />
-                )}
-
-                <PhotoUploader
-                  avatarUrl={profile.avatarUrl}
-                  onPhotoChange={(url) => {
-                    handleProfileSubmit({
-                      fullName: profile.display_name || '',
-                      services: profile.services || [],
-                      industries: profile.industries || [],
-                      offering: profile.offering || '',
-                      website: profile.website || ''
-                    });
-                  }}
-                />
-
-                <ProfileForm
-                  initialData={{
-                    fullName: profile.display_name || '',
-                    services: Array.isArray(profile.services) ? profile.services : [],
-                    industries: Array.isArray(profile.industries) ? profile.industries : [],
-                    offering: profile.offering || '',
-                    website: profile.website || ''
-                  }}
-                  onSubmit={handleProfileSubmit}
-                  isSubmitting={isSubmitting}
-                />
-              </div>
-            )}
-
-            {activeTab === 'security' && <SecurityTab />}
-
-            {activeTab === 'support' && (
-              <div className="text-center py-12">
-                <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  Support section coming soon
-                </h3>
-              </div>
-            )}
-          </div>
+          <ProfileForm
+            initialData={formState}
+            avatarUrl={profile.avatarUrl}
+            onPhotoChange={async (url) => {
+              // Only trigger profile update if avatar URL actually changed
+              if (url === profile.avatarUrl) return;
+              
+              // Update profile with current form state
+              await handleProfileSubmit({
+                ...formState,
+                // Ensure we use latest avatar URL
+                avatarUrl: url
+              });
+            }}
+            onSubmit={handleProfileSubmit}
+            isSubmitting={isSubmitting}
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+          />
         </div>
       </div>
     </div>

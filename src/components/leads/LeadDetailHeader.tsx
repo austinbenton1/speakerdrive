@@ -125,13 +125,16 @@ export default function LeadDetailHeader({
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl font-semibold text-gray-900 leading-tight break-words">
-                  {lead.eventName || lead.name}
+                  {lead.leadType === 'Contact' 
+                    ? `${lead.name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
+                    : lead.eventName
+                  }
                 </h1>
-                {lead.subtext && (
-                  <div className="mt-2">
-                    <span className="text-lg text-gray-600 leading-normal">{lead.subtext}</span>
-                  </div>
-                )}
+                <div className="mt-2">
+                  <span className="text-lg text-gray-600 leading-normal">
+                    {lead.focus || 'No focus specified'}
+                  </span>
+                </div>
               </div>
             </div>
 
