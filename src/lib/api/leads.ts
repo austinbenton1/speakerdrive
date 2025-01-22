@@ -3,7 +3,8 @@ import type { SpeakerLead } from '../../types';
 
 export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
   try {
-    const { data, error } = await supabase
+    // First get the lead data
+    const { data: leadData, error: leadError } = await supabase
       .from('leads')
       .select(`
         id,
@@ -40,42 +41,54 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
-    
-    if (!data) return null;
+    if (leadError) throw leadError;
+    if (!leadData) return null;
+
+    // Then get the unlocked lead data if it exists
+    const { data: unlockedData, error: unlockedError } = await supabase
+      .from('unlocked_leads')
+      .select('id, pitch')
+      .eq('lead_id', id)
+      .single();
+
+    if (unlockedError && unlockedError.code !== 'PGRST116') { // Ignore "no rows returned" error
+      throw unlockedError;
+    }
 
     return {
-      id: data.id,
-      image: data.image_url,
-      name: data.lead_name,
-      lead_name: data.lead_name,
-      focus: data.focus,
-      unlockType: data.unlock_type,
-      leadType: data.lead_type,
-      industry: data.industry,
-      organization: data.organization,
-      organizationType: data.organization_type,
-      eventName: data.event_name,
-      eventUrl: data.event_url,
-      createdAt: data.created_at,
-      eventInfo: data.event_info,
-      detailedInfo: data.detailed_info,
-      valueProfile: data.value_profile,
-      outreachPathways: data.outreach_pathways,
-      unlockValue: data.unlock_value,
-      infoUrl: data.info_url,
-      eventFormat: data.event_format,
-      tooltipIndustryCategory: data.tooltip_industry_category,
-      tooltipEventFormat: data.tooltip_event_format,
-      tooltipOrganization: data.tooltip_organization,
-      tooltipOrganizationType: data.tooltip_organization_type,
-      tooltipLocation: data.tooltip_location,
-      keywords: data.keywords,
-      jobTitle: data.job_title,
-      subtext: data.subtext,
-      region: data.region,
-      state: data.state,
-      city: data.city
+      id: leadData.id,
+      unlocked_lead_id: unlockedData?.id || null,
+      pitch: unlockedData?.pitch || null,
+      image: leadData.image_url,
+      name: leadData.lead_name,
+      lead_name: leadData.lead_name,
+      focus: leadData.focus,
+      unlockType: leadData.unlock_type,
+      leadType: leadData.lead_type,
+      industry: leadData.industry,
+      organization: leadData.organization,
+      organizationType: leadData.organization_type,
+      eventName: leadData.event_name,
+      eventUrl: leadData.event_url,
+      createdAt: leadData.created_at,
+      eventInfo: leadData.event_info,
+      detailedInfo: leadData.detailed_info,
+      valueProfile: leadData.value_profile,
+      outreachPathways: leadData.outreach_pathways,
+      unlockValue: leadData.unlock_value,
+      infoUrl: leadData.info_url,
+      eventFormat: leadData.event_format,
+      tooltipIndustryCategory: leadData.tooltip_industry_category,
+      tooltipEventFormat: leadData.tooltip_event_format,
+      tooltipOrganization: leadData.tooltip_organization,
+      tooltipOrganizationType: leadData.tooltip_organization_type,
+      tooltipLocation: leadData.tooltip_location,
+      keywords: leadData.keywords,
+      jobTitle: leadData.job_title,
+      subtext: leadData.subtext,
+      region: leadData.region,
+      state: leadData.state,
+      city: leadData.city
     };
   } catch (error) {
     console.error('Error fetching lead by ID:', error);

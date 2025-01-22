@@ -8,6 +8,8 @@ import {
 import { MinimalToggle } from '../ui/toggle';
 import { useProfile } from '../../hooks/useProfile';
 import { services } from '../../utils/constants';
+import { supabase } from '../../lib/supabase';
+import Toast from '../ui/Toast';
 
 interface EmailComposerProps {
   lead: {
@@ -27,6 +29,9 @@ interface EmailComposerProps {
     city?: any;
     state?: any;
     region?: any;
+    pitch?: string;
+    id?: string;
+    unlocked_lead_id?: string;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -129,7 +134,7 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
 
 export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerProps) {
   const { profile } = useProfile();
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(lead.pitch || '');
   const [outreachChannel, setOutreachChannel] = useState<MessageType>('email');
   const [messageFormat, setMessageFormat] = useState<'concise' | 'expanded'>('concise');
   const [showMyContext, setShowMyContext] = useState(true);
@@ -145,7 +150,17 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [showAdvanced, setShowAdvanced] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showInputs, setShowInputs] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Helper function to truncate text
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
 
   // Initialize selected service and check if we need to expand additional services
   useEffect(() => {
@@ -173,6 +188,32 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       setShowAdditionalServices(true);
     }
   }, [selectedService]);
+
+  // Initialize input with pitch if available
+  useEffect(() => {
+    if (lead.pitch) {
+      setInput(lead.pitch);
+      setShowMessage(true);  // Show Response textarea
+      setShowInputs(false);  // Hide Editor
+    } else {
+      setShowMessage(false); // Hide Response textarea
+      setShowInputs(true);   // Show Editor
+    }
+  }, [lead.pitch]);
+
+  useEffect(() => {
+    // Reset states when modal is opened
+    if (isOpen) {
+      if (lead.pitch) {
+        setShowMessage(true);  // Show Response textarea
+        setShowInputs(false);  // Hide Editor
+      } else {
+        setShowMessage(false); // Hide Response textarea
+        setShowInputs(true);   // Show Editor
+      }
+      setSelectedService(null);
+    }
+  }, [isOpen, lead.pitch]);
 
   const handleSubmit = async () => {
     if (!input.trim() || isSubmitting || input.length > 1000) return;
@@ -258,7 +299,38 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  const handleSavePitch = async () => {
+    if (!lead.unlocked_lead_id || isSaving) return;
+    
+    setIsSaving(true);
+    
+    try {
+      const { error } = await supabase
+        .from('unlocked_leads')
+        .update({ pitch: input })
+        .eq('id', lead.unlocked_lead_id);
+
+      if (error) throw error;
+
+      setToastMessage('Message saved successfully');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      setToastMessage('Failed to save message');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsSaving(false);
+    }
+  };
+
   if (!isOpen) return null;
+
+  // Get the header title
+  const headerTitle = lead.unlockType === 'Unlock Contact Email'
+    ? `${lead.lead_name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
+    : lead.eventName || '';
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/50" onClick={onClose}>
@@ -291,10 +363,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       </div>
                       <div className="min-w-0 flex-1">
                         <h2 className="text-xl font-semibold text-gray-900 leading-6 break-words">
-                          {lead.unlockType === 'Unlock Contact Email'
-                            ? `${lead.lead_name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
-                            : lead.eventName
-                          }
+                          {truncateText(headerTitle, 30)}
                         </h2>
                         <div className="mt-1">
                           <p className="text-sm text-gray-500">
@@ -638,6 +707,31 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
                       transition-all duration-200 bg-white"
                   />
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      onClick={handleSavePitch}
+                      disabled={isSaving}
+                      className={`
+                        inline-flex items-center gap-2 px-4 py-2 
+                        ${isSaving ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} 
+                        text-white rounded-lg shadow-sm transition-colors duration-200
+                      `}
+                    >
+                      {isSaving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 14a3 3 0 110-6 3 3 0 010 6zm0 0V7" />
+                          </svg>
+                          <span>Save Message</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -725,6 +819,13 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           </div>
         </div>
       </div>
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }
