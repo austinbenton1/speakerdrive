@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  PaperclipIcon, Image, Send, X, Wand2, ArrowUpDown, 
+  PaperclipIcon, Image, Send, X, Wand2, ArrowUpDown, ArrowLeft,
   ShrinkIcon, MoreHorizontal, Lock, Trash2, Link, TextSelect,
   FileText, Mail, Linkedin, ChevronDown, Edit2, Eye, Copy,
   Presentation, School, Target, Briefcase, Users, Plus
@@ -10,7 +10,24 @@ import { useProfile } from '../../hooks/useProfile';
 import { services } from '../../utils/constants';
 
 interface EmailComposerProps {
-  lead: any;
+  lead: {
+    leadType: 'Contact' | 'Event';
+    leadName: string;
+    eventName?: string;
+    jobTitle?: string;
+    image: string;
+    email?: string;
+    detailedInfo?: any;
+    outreachPathways?: any;
+    unlockValue?: any;
+    unlockType?: any;
+    organization?: any;
+    location?: any;
+    eventUrl?: any;
+    city?: any;
+    state?: any;
+    region?: any;
+  };
   isOpen: boolean;
   onClose: () => void;
 }
@@ -34,7 +51,7 @@ const parseProfileServices = (services: string | null): string[] => {
 interface PreviewProps {
   content: string;
   type: MessageType;
-  lead: any;
+  lead: EmailComposerProps['lead'];
 }
 
 const MessagePreview = ({ content, type, lead }: PreviewProps) => {
@@ -113,24 +130,28 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
 export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerProps) {
   const { profile } = useProfile();
   const [input, setInput] = useState('');
-  const [messageType, setMessageType] = useState<MessageType>('email');
+  const [outreachChannel, setOutreachChannel] = useState<MessageType>('email');
+  const [messageFormat, setMessageFormat] = useState<'concise' | 'expanded'>('concise');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showLeadContext, setShowLeadContext] = useState(true);
-  const [showCustomization, setShowCustomization] = useState(false);
+  const [showCustomization, setShowCustomization] = useState(true);
+  const [showAdditionalServices, setShowAdditionalServices] = useState(false);
   const [customizationText, setCustomizationText] = useState('');
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedService, setSelectedService] = useState<string>('');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showInputs, setShowInputs] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initialize selected services from profile and check if we need to expand additional services
+  // Initialize selected service and check if we need to expand additional services
   useEffect(() => {
     if (profile?.services) {
       const profileServices = parseProfileServices(profile.services);
-      setSelectedServices(profileServices.length > 0 ? [profileServices[0]] : ['keynote']);
+      setSelectedService(profileServices.length > 0 ? profileServices[0] : 'keynote');
       
       // Check if any profile service is in the additional services section
       const additionalServices = services.slice(3).map(s => s.id);
@@ -138,11 +159,20 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         additionalServices.includes(service)
       );
       
+      // Auto-expand if profile service is in additional services
       if (hasAdditionalProfileService) {
-        setShowCustomization(true);
+        setShowAdditionalServices(true);
       }
     }
   }, [profile?.services]);
+
+  // Also expand additional services if selected service is in that section
+  useEffect(() => {
+    const additionalServices = services.slice(3).map(s => s.id);
+    if (selectedService && additionalServices.includes(selectedService)) {
+      setShowAdditionalServices(true);
+    }
+  }, [selectedService]);
 
   const handleSubmit = async () => {
     if (!input.trim() || isSubmitting || input.length > 1000) return;
@@ -174,12 +204,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       event_url: lead.eventUrl || null,
       event_name: lead.eventName || null,
       job_title: lead.jobTitle || null,
+      lead_name: lead.leadName || null,
 
       // EmailComposer details
-      ...(selectedServices.length > 0 && { pitching: selectedServices[0] }),
+      pitching: selectedService || null,
       ...(showMyContext && { context: profile?.offering || null }),
-      message_format: messageType,
-      ...(showCustomization && { message_customization: customizationText || null })
+      message_format: messageFormat === 'concise' ? 'email' : 'proposal',
+      outreach_channel: outreachChannel,
+      ...(showCustomization && customizationText?.trim() && { message_customization: customizationText })
     };
 
     try {
@@ -206,13 +238,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         throw new Error('Invalid response format');
       }
 
-      // Use the message from n8n response
+      // Show message and update UI only after successful response
       setShowMessage(true);
-      setShowAdvanced(false);
-      setIsPreviewMode(false);
+      setShowInputs(false);
       setInput(message);
     } catch (error) {
       setInput("We encountered an error. Please contact the administrators.");
+      setShowMessage(true);
+      setShowInputs(false);
     } finally {
       setIsGenerating(false);
     }
@@ -236,376 +269,383 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         >
           <div className="flex h-full flex-col overflow-hidden bg-white shadow-2xl rounded-l-2xl">
             {/* Lead Info Header */}
-            <div className={`bg-gradient-to-b py-3 ${
-              lead.leadType === 'Contact' 
-                ? 'from-white via-blue-50/20 to-blue-100/10'
-                : 'from-white via-emerald-50/20 to-emerald-100/10'
-            } border-b border-gray-100 relative z-10`}>
-              <div className="px-4">
-                {/* Lead Info */}
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={lead.image}
-                      alt={lead.leadName}
-                      className={`h-12 w-12 rounded-lg object-cover shadow-lg ${
-                        lead.leadType === 'Contact'
-                          ? 'ring-4 ring-blue-100/50'
-                          : 'ring-4 ring-emerald-100/50'
-                      }`}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[16.5px] leading-6 font-medium text-gray-900 break-words">
-                      {lead.leadType === 'Contact' 
-                        ? (
-                          <>
-                            <div>{lead.leadName}</div>
-                            <div className="text-[14px] text-gray-600">{lead.jobTitle}</div>
-                          </>
-                        )
-                        : (
-                          <div>{lead.eventName || lead.eventName}</div>
-                        )
-                      }
+            <div className="relative">
+              <div className={`bg-gradient-to-b ${
+                lead.leadType === 'Contact' 
+                  ? 'from-blue-50/30 to-white'
+                  : 'from-emerald-50/30 to-white'
+              } border-b border-gray-200`}>
+                <div className="px-6 py-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={lead.image}
+                          alt={lead.leadType === 'Contact' ? lead.leadName : lead.eventName}
+                          className={`h-16 w-16 rounded-xl object-cover shadow-md ${
+                            lead.leadType === 'Contact'
+                              ? 'ring-2 ring-blue-100'
+                              : 'ring-2 ring-emerald-100'
+                          }`}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h2 className="text-xl font-semibold text-gray-900 leading-6 break-words">
+                          {lead.unlockType === 'Unlock Contact Email'
+                            ? `${lead.lead_name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
+                            : lead.eventName
+                          }
+                        </h2>
+                        <div className="mt-1">
+                          <p className="text-sm text-gray-500">
+                            {lead.focus}
+                          </p>
+                        </div>
+                      </div>
                     </div>
+                    <button
+                      onClick={onClose}
+                      className="flex-shrink-0 rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
             
-            {/* Outreach Channels */}
-            <div className="bg-white p-4 border-b border-gray-200">
-              <p className="mb-3 text-sm font-medium text-gray-700">
-                Outreach Channel
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {[
-                    { id: 'email', icon: Mail, label: 'Email' },
-                    { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
-                    { id: 'proposal', icon: FileText, label: 'Proposal' }
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => setMessageType(type.id as MessageType)}
-                      className={`
-                        flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                        transition-colors duration-200
-                        border shadow-sm
-                        ${messageType === type.id
-                          ? 'bg-blue-500 border-blue-500 text-white'
-                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
-                        }
-                      `}
-                    >
-                      <type.icon className={`w-4 h-4 ${messageType === type.id ? 'text-white' : 'text-gray-400'}`} />
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Message Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <div className="space-y-4">
-                {/* AI Tools Bar */}
-                {/* Advanced Options Panel */}
-                {showAdvanced && (
-                  <div className="bg-white rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2 pl-1">
-                      Outreach Settings
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col overflow-y-auto">
+              {/* Input Fields */}
+              {showInputs && (
+                <>
+                  {/* Outreach Channels */}
+                  <div className="bg-white p-4 border-b border-gray-200">
+                    <p className="mb-3 text-sm font-medium text-gray-700">
+                      Outreach Channel
                     </p>
-                    <div className="space-y-6 px-3">
-                      {/* Services */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <MinimalToggle
-                            className="scale-[0.35] -ml-1"
-                            checked={selectedServices.length > 0}
-                            onChange={(e) => {
-                              if (!e.target.checked) {
-                                setSelectedServices([]);
-                              } else {
-                                // Use first service from profile, or default to keynote
-                                const profileServices = profile?.services ? parseProfileServices(profile.services) : [];
-                                setSelectedServices(profileServices.length > 0 ? [profileServices[0]] : ['keynote']);
-                              }
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {[
+                          { id: 'email', icon: Mail, label: 'Email' },
+                          { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
+                          { id: 'proposal', icon: FileText, label: 'Proposal' }
+                        ].map((type) => (
+                          <button
+                            key={type.id}
+                            onClick={() => {
+                              setOutreachChannel(type.id as MessageType);
                             }}
-                          />
-                          <label className="text-sm font-medium text-gray-900">
-                            I'm Pitching
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {services.slice(0, 3).map((service) => {
-                            const Icon = {
-                              'Presentation': Presentation,
-                              'School': School,
-                              'Target': Target,
-                              'Briefcase': Briefcase,
-                              'Users': Users,
-                              'Plus': Plus
-                            }[service.icon];
-
-                            // Check if this service is in user's profile services
-                            const profileServices = parseProfileServices(profile?.services || '');
-                            const isProfileService = profileServices.includes(service.id);
-
-                            return (
-                              <button
-                                key={service.id}
-                                onClick={() => setSelectedServices([service.id])}
-                                className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                  transition-colors duration-200
-                                  border
-                                  ${selectedServices.includes(service.id)
-                                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                    : isProfileService
-                                      ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                  }
-                                `}
-                              >
-                                {Icon && (
-                                  <Icon 
-                                    className={`w-3 h-3 ${
-                                      selectedServices.includes(service.id)
-                                        ? 'text-white'
-                                        : 'text-gray-500'
-                                    }`}
-                                  />
-                                )}
-                                {service.label}
-                                {isProfileService && (
-                                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                                )}
-                              </button>
-                            );
-                          })}
-                          <div
-                            className="relative"
-                            onClick={() => setShowCustomization(!showCustomization)}
-                          >
-                            <button
-                              className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                            >
-                              <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                            </button>
-                          </div>
-                        </div>
-                        {showCustomization && (
-                          <div className="flex gap-2 mt-2">
-                            {services.slice(3).map((service) => {
-                              const Icon = {
-                                'Presentation': Presentation,
-                                'School': School,
-                                'Target': Target,
-                                'Briefcase': Briefcase,
-                                'Users': Users,
-                                'Plus': Plus
-                              }[service.icon];
-
-                              // Check if this service is in user's profile services
-                              const profileServices = parseProfileServices(profile?.services || '');
-                              const isProfileService = profileServices.includes(service.id);
-
-                              return (
-                                <button
-                                  key={service.id}
-                                  onClick={() => setSelectedServices([service.id])}
-                                  className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                    transition-colors duration-200
-                                    border
-                                    ${selectedServices.includes(service.id)
-                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                      : isProfileService
-                                        ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                    }
-                                  `}
-                                >
-                                  {Icon && (
-                                    <Icon 
-                                      className={`w-3 h-3 ${
-                                        selectedServices.includes(service.id)
-                                          ? 'text-white'
-                                          : 'text-gray-500'
-                                      }`}
-                                    />
-                                  )}
-                                  {service.label}
-                                  {isProfileService && (
-                                    <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* My Context */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <MinimalToggle 
-                            className="scale-[0.35] mr-1" 
-                            checked={showMyContext}
-                            onChange={(e) => setShowMyContext(e.target.checked)}
-                          />
-                          <label className="text-sm font-medium text-gray-900">
-                            My Context
-                          </label>
-                        </div>
-                        {showMyContext && (
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-gray-600 flex-1 min-w-0">
-                              <span className={`line-clamp-1 inline ${profile?.offering ? '' : 'italic'}`}>
-                                {profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation"}
-                                <span className="mx-1">...</span>
-                              </span>
-                              <a 
-                                href="/settings"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
-                              >
-                                Edit
-                              </a>
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Message Format */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-gray-900">
-                            Message Format
-                          </label>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => setMessageType('email')}
                             className={`
-                              relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                              flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                               transition-colors duration-200
-                              border
-                              ${messageType === 'email'
-                                ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                              border shadow-sm
+                              ${outreachChannel === type.id
+                                ? 'bg-blue-500 border-blue-500 text-white'
+                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
                               }
-                              flex items-center justify-center
                             `}
                           >
-                            Concise
-                            {messageType === 'email' && (
-                              <span className="text-yellow-500 ml-1.5 hover:scale-110 transition-transform">✨</span>
-                            )}
+                            <type.icon className={`w-4 h-4 ${outreachChannel === type.id ? 'text-white' : 'text-gray-400'}`} />
+                            {type.label}
                           </button>
-                          <button
-                            onClick={() => setMessageType('proposal')}
-                            className={`
-                              relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                              transition-colors duration-200
-                              border
-                              ${messageType === 'proposal'
-                                ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                              }
-                              flex items-center justify-center
-                            `}
-                          >
-                            Expanded
-                          </button>
-                        </div>
-                        <div className="flex gap-2 text-xs text-gray-500">
-                          {messageType === 'email' && (
-                            <div className="flex items-center gap-1 ml-2">
-                              <span>Recommended</span>
-                              <a 
-                                href="#"
-                                className="text-blue-600 hover:text-blue-700 hover:underline ml-1"
-                              >
-                                Learn more
-                              </a>
-                            </div>
-                          )}
-                          {messageType === 'proposal' && (
-                            <div className="ml-[82px]">
-                              <span>More detailed message</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Message Customization */}
-                      <div className="pb-2">
-                        <div className="flex items-center gap-2 mb-2">
-                          <MinimalToggle 
-                            className="scale-[0.35] mr-1"
-                            checked={showCustomization}
-                            onChange={(e) => setShowCustomization(e.target.checked)}
-                          />
-                          <label className="text-sm font-medium text-gray-900">
-                            Message Customization
-                          </label>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          Add override or customization instructions for your outreach message
-                        </p>
-                        {showCustomization && (
-                        <textarea
-                          value={customizationText}
-                          onChange={(e) => setCustomizationText(e.target.value)}
-                          placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
-                          className={`
-                            w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white rounded-lg resize-none mt-2
-                            focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
-                          `}
-                        />
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Message Body */}
-                {showMessage && (
-                  <>
-                    {isPreviewMode ? (
-                      <MessagePreview 
-                        content={input} 
-                        type={messageType}
-                        lead={lead}
-                      />
-                    ) : (
-                      <textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={`Write your ${messageType} message...`}
-                        rows={3}
-                        disabled={isSubmitting}
-                        className={`w-full resize-none p-4 text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
-                          disabled:opacity-50 min-h-[200px] border border-gray-200 rounded-lg
-                          shadow-[0_1px_2px_rgba(0,0,0,0.05)]
-                          hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
-                          transition-all duration-200
-                          ${messageType === 'email' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
+                  {/* Message Content with Advanced Options */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div className="space-y-4">
+                      {/* AI Tools Bar */}
+                      {/* Advanced Options Panel */}
+                      {showAdvanced && (
+                        <div className="bg-white rounded-lg">
+                          <p className="text-sm text-gray-500 mb-2 pl-1">
+                            Outreach Settings
+                          </p>
+                          <div className="space-y-6 px-3">
+                            {/* Services */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <MinimalToggle
+                                  className="scale-[0.35] -ml-1"
+                                  checked={selectedService !== ''}
+                                  onChange={(e) => {
+                                    if (!e.target.checked) {
+                                      setSelectedService('');
+                                    } else {
+                                      // Use first service from profile, or default to keynote
+                                      const profileServices = profile?.services ? parseProfileServices(profile.services) : [];
+                                      setSelectedService(profileServices.length > 0 ? profileServices[0] : 'keynote');
+                                    }
+                                  }}
+                                />
+                                <label className="text-sm font-medium text-gray-900">
+                                  I'm Pitching
+                                </label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {services.slice(0, 3).map((service) => {
+                                  const Icon = {
+                                    'Presentation': Presentation,
+                                    'School': School,
+                                    'Target': Target,
+                                    'Briefcase': Briefcase,
+                                    'Users': Users,
+                                    'Plus': Plus
+                                  }[service.icon];
+
+                                  // Check if this service is in user's profile services
+                                  const profileServices = parseProfileServices(profile?.services || '');
+                                  const isProfileService = profileServices.includes(service.id);
+
+                                  return (
+                                    <button
+                                      key={service.id}
+                                      onClick={() => setSelectedService(service.id)}
+                                      className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                        transition-colors duration-200
+                                        border
+                                        ${selectedService === service.id
+                                          ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
+                                          : isProfileService
+                                            ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                        }
+                                      `}
+                                    >
+                                      {Icon && (
+                                        <Icon 
+                                          className={`w-3 h-3 ${
+                                            selectedService === service.id
+                                              ? 'text-white'
+                                              : 'text-gray-500'
+                                          }`}
+                                        />
+                                      )}
+                                      {service.label}
+                                      {isProfileService && (
+                                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                                <div
+                                  className="relative"
+                                  onClick={() => setShowAdditionalServices(!showAdditionalServices)}
+                                >
+                                  <button
+                                    className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                                  >
+                                    <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                                  </button>
+                                </div>
+                              </div>
+                              {showAdditionalServices && (
+                                <div className="flex gap-2 mt-2">
+                                  {services.slice(3).map((service) => {
+                                    const Icon = {
+                                      'Presentation': Presentation,
+                                      'School': School,
+                                      'Target': Target,
+                                      'Briefcase': Briefcase,
+                                      'Users': Users,
+                                      'Plus': Plus
+                                    }[service.icon];
+
+                                    // Check if this service is in user's profile services
+                                    const profileServices = parseProfileServices(profile?.services || '');
+                                    const isProfileService = profileServices.includes(service.id);
+
+                                    return (
+                                      <button
+                                        key={service.id}
+                                        onClick={() => setSelectedService(service.id)}
+                                        className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                          transition-colors duration-200
+                                          border
+                                          ${selectedService === service.id
+                                            ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
+                                            : isProfileService
+                                              ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                          }
+                                        `}
+                                      >
+                                        {Icon && (
+                                          <Icon 
+                                            className={`w-3 h-3 ${
+                                              selectedService === service.id
+                                                ? 'text-white'
+                                                : 'text-gray-500'
+                                            }`}
+                                          />
+                                        )}
+                                        {service.label}
+                                        {isProfileService && (
+                                          <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* My Context */}
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <MinimalToggle 
+                                  className="scale-[0.35] mr-1" 
+                                  checked={showMyContext}
+                                  onChange={(e) => setShowMyContext(e.target.checked)}
+                                />
+                                <label className="text-sm font-medium text-gray-900">
+                                  My Context
+                                </label>
+                              </div>
+                              {showMyContext && (
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-gray-600 flex-1 min-w-0">
+                                    <span className={`line-clamp-1 inline ${profile?.offering ? '' : 'italic'}`}>
+                                      {profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation"}
+                                      <span className="mx-1">...</span>
+                                    </span>
+                                    <a 
+                                      href="/settings"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
+                                    >
+                                      Edit
+                                    </a>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Message Format */}
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium text-gray-900">
+                                  Message Format
+                                </label>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => setMessageFormat('concise')}
+                                  className={`
+                                    relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                    transition-colors duration-200
+                                    border
+                                    ${messageFormat === 'concise'
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    }
+                                    flex items-center justify-center
+                                  `}
+                                >
+                                  Concise
+                                  {messageFormat === 'concise' && (
+                                    <span className="text-yellow-500 ml-1.5 hover:scale-110 transition-transform">✨</span>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setMessageFormat('expanded')}
+                                  className={`
+                                    relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                    transition-colors duration-200
+                                    border
+                                    ${messageFormat === 'expanded'
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    }
+                                    flex items-center justify-center
+                                  `}
+                                >
+                                  Expanded
+                                </button>
+                              </div>
+                              <div className="flex gap-2 text-xs text-gray-500">
+                                {messageFormat === 'concise' && (
+                                  <div className="flex items-center gap-1 ml-2">
+                                    <span>Recommended</span>
+                                    <a 
+                                      href="#"
+                                      className="text-blue-600 hover:text-blue-700 hover:underline ml-1"
+                                    >
+                                      Learn more
+                                    </a>
+                                  </div>
+                                )}
+                                {messageFormat === 'expanded' && (
+                                  <div className="ml-[82px]">
+                                    <span>More detailed message</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Message Customization */}
+                            <div className="pb-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <MinimalToggle 
+                                  className="scale-[0.35] mr-1"
+                                  checked={showCustomization}
+                                  onChange={(e) => setShowCustomization(e.target.checked)}
+                                />
+                                <label className="text-sm font-medium text-gray-900">
+                                  Message Customization
+                                </label>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                Add override or customization instructions for your outreach message
+                              </p>
+                              {showCustomization && (
+                              <textarea
+                                value={customizationText}
+                                onChange={(e) => setCustomizationText(e.target.value)}
+                                placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
+                                className={`
+                                  w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white rounded-lg resize-none mt-2
+                                  focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
+                                `}
+                              />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Message Textarea */}
+              {showMessage && !isGenerating && (
+                <div className="flex-1 p-4">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={`Your message to ${lead.leadName}...`}
+                    rows={3}
+                    className="w-full resize-none p-4 text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
+                      min-h-[200px] border border-gray-200 rounded-lg
+                      shadow-[0_1px_2px_rgba(0,0,0,0.05)]
+                      hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
+                      transition-all duration-200 bg-white"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Footer */}
             <div className="border-t border-gray-200">
               {/* Write Message Button */}
-              {!showMessage && (
+              {!showMessage ? (
                 <div className="px-4 py-1.5 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
                   <div className="flex items-start gap-3">
                     <button 
@@ -629,9 +669,40 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       ) : (
                         <>
                           <Wand2 className="w-4 h-4" />
-                          <span className="font-medium">Write {messageType === 'linkedin' ? 'LinkedIn' : messageType === 'email' ? 'Email' : 'Proposal'} Message</span>
+                          <span className="font-medium">Write {messageFormat === 'concise' ? 'Email' : 'Proposal'} Message</span>
                         </>
                       )}
+                    </button>
+                    {!isGenerating && (
+                      <button 
+                        onClick={() => setIsPreviewMode(!isPreviewMode)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all mt-0.5
+                          ${isPreviewMode 
+                            ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
+                            : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                          }
+                        `}
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 py-1.5 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+                  <div className="flex items-start gap-3">
+                    <button 
+                      onClick={() => {
+                        setShowMessage(false);
+                        setShowInputs(true);
+                        setIsPreviewMode(false);
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-[#0066FF] text-white rounded-lg shadow-sm hover:bg-[#0052CC] transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span className="font-medium">Back to Editor</span>
                     </button>
                     <div className="flex-1" />
                     <button 
@@ -650,48 +721,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   </div>
                 </div>
               )}
-
-              {/* Message Actions */}
-              <div className="px-3 py-1.5">
-                <div className="flex items-center justify-between gap-4">
-                  {/* Character Counter and Copy Text Button */}
-                  <div className="flex items-center gap-3 ml-auto">
-                    <div className={`flex items-center gap-2 ${!showMessage ? 'hidden' : ''}`}>
-                      <div className="relative group">
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 text-xs text-white bg-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-                          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                          Character limit for {messageType} messages
-                        </div>
-                        <div className={`
-                          flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium
-                          ${input.length > 1000 
-                            ? 'bg-red-50 text-red-600' 
-                            : input.length > 1000 * 0.9
-                            ? 'bg-yellow-50 text-yellow-600'
-                            : 'bg-gray-100 text-gray-600'
-                          }
-                        `}>
-                          <span>{input.length}</span>
-                          <span className="text-gray-400">/</span>
-                          <span className="text-gray-500">1000</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Copy Text Button */}
-                    <button
-                      onClick={() => {/* TODO: Implement copy text */}}
-                      className={`${!showMessage ? 'hidden' : ''}
-                        inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
-                        border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm
-                      `}
-                    >
-                      <Copy className="w-4 h-4" />
-                      Copy Text
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

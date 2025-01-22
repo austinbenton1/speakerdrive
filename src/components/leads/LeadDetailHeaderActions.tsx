@@ -35,30 +35,32 @@ export default function LeadDetailHeaderActions({
   const truncateValue = (value: string) => {
     if (!value) return '';
     
-    // For URLs, show just the domain
+    // For URLs, show just the domain and first path segment
     if (unlockType.toLowerCase().includes('url')) {
       try {
         const url = new URL(value);
-        return url.hostname;
+        const domain = url.hostname;
+        return domain.length > 15 ? `${domain.substring(0, 12)}...` : domain;
       } catch {
-        return value.length > 25 ? value.slice(0, 22) + '...' : value;
+        return value.length > 15 ? `${value.substring(0, 12)}...` : value;
       }
     }
     
-    // For emails, show the full value if it's short enough
-    if (value.length <= 25) return value;
+    // For emails, truncate to 15 characters
+    if (value.length <= 15) return value;
     
-    // For longer emails, truncate while preserving the @ symbol
+    // For longer emails, try to preserve the @ symbol if possible
     const atIndex = value.indexOf('@');
-    if (atIndex > -1) {
+    if (atIndex > -1 && atIndex <= 12) {
       const username = value.slice(0, atIndex);
       const domain = value.slice(atIndex);
-      if (username.length > 15) {
-        return username.slice(0, 12) + '...' + domain;
+      const remainingSpace = 12 - username.length;
+      if (remainingSpace > 0) {
+        return username + domain.slice(0, remainingSpace) + '...';
       }
     }
     
-    return value.slice(0, 22) + '...';
+    return value.substring(0, 12) + '...';
   };
 
   const handleUnlockClick = async () => {
@@ -99,14 +101,15 @@ export default function LeadDetailHeaderActions({
         const url = new URL(unlockValue);
         // Show domain and first part of path if it exists
         const path = url.pathname === '/' ? '' : url.pathname.split('/')[1];
-        return `${url.hostname}${path ? '/' + path : ''}`;
+        const formattedUrl = `${url.hostname}${path ? '/' + path : ''}`;
+        return truncateValue(formattedUrl);
       } catch {
         return truncateValue(unlockValue);
       }
     }
     
-    // For emails, show the full value
-    return unlockValue;
+    // For emails, show the truncated value
+    return truncateValue(unlockValue);
   };
 
   return (

@@ -36,6 +36,11 @@ export default function UnlockButton({ type, isLoading, isUnlocked, unlockValue,
     }
   };
 
+  const truncateValue = (value: string) => {
+    if (!value) return '';
+    return value.length > 15 ? `${value.substring(0, 12)}...` : value;
+  };
+
   const getTooltipContent = () => {
     if (type === 'Contact Email' || type === 'Unlock Contact Email') {
       return (
