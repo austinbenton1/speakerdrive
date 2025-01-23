@@ -27,11 +27,13 @@ export default function FindLeads() {
       setOpportunityTags(state.preservedFilters.opportunityTags || []);
       setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
       setShowAllEvents(state.preservedFilters.showAllEvents || false);
+      setShowAll(state.preservedFilters.showAll || false);
     }
   }, [location.state]);
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
   const [showAllEvents, setShowAllEvents] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
@@ -204,6 +206,11 @@ export default function FindLeads() {
     
     // Then apply filters to the deduplicated results
     let results = uniqueLeads;
+
+    // Apply USA location filter immediately after deduplication
+    if (!showAll) {
+      results = results.filter(lead => lead.region === 'United States');
+    }
     
     if (hasActiveFilters) {
       // Filter by opportunities search term
@@ -321,7 +328,7 @@ export default function FindLeads() {
     // Update both states with the filtered results
     setDisplayedLeads(results);
     setCurrentLeadIds(results.map(lead => lead.id));
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents]);
+  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params
@@ -344,6 +351,7 @@ export default function FindLeads() {
 
     // Add display mode
     if (showAllEvents) params.set('event_display', 'all');
+    if (!showAll) params.set('location', 'usa');
 
     // Use the pre-computed lead IDs
     const currentIndex = currentLeadIds.indexOf(leadId);
@@ -360,7 +368,8 @@ export default function FindLeads() {
           eventsFilter,
           opportunityTags,
           selectedLeadType,
-          showAllEvents
+          showAllEvents,
+          showAll
         }
       }
     });
@@ -408,6 +417,7 @@ export default function FindLeads() {
     setOpportunityTags([]);
     setSelectedLeadType('all');
     setShowAllEvents(false);
+    setShowAll(false);
   };
 
   const handleCompleteReset = () => {
@@ -431,6 +441,12 @@ export default function FindLeads() {
   const uniqueLeadsCount = useMemo(() => 
     getUniqueLeads(displayedLeads).length,
   [displayedLeads]);
+
+  // Calculate USA leads count
+  const usaLeadsCount = useMemo(() => {
+    const baseLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
+    return baseLeads.filter(lead => lead.region === 'United States').length;
+  }, [availableLeads, showAllEvents]);
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -461,8 +477,11 @@ export default function FindLeads() {
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
+        showAll={showAll}
+        onLocationToggle={() => setShowAll(!showAll)}
         totalCount={displayedLeads.length}
         uniqueCount={uniqueLeadsCount}
+        usaCount={usaLeadsCount}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -516,8 +535,9 @@ export default function FindLeads() {
               uniqueCount={uniqueLeadsCount}
               selectedLeadType={selectedLeadType}
               filters={filters}
-              eventsFilter={eventsFilter}
-              opportunityTags={opportunityTags}
+              eventsFilter={filters.searchAll}
+              opportunityTags={filters.opportunities || []}
+              showAll={showAll}
             />
           </div>
         </div>

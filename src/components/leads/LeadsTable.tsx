@@ -20,6 +20,7 @@ interface LeadsTableProps {
   filters: any;
   eventsFilter: string;
   opportunityTags: string[];
+  showAll: boolean;
 }
 
 const LoadingRow = () => (
@@ -49,7 +50,8 @@ export default function LeadsTable({
   selectedLeadType,
   filters,
   eventsFilter,
-  opportunityTags
+  opportunityTags,
+  showAll
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -160,6 +162,7 @@ export default function LeadsTable({
                       : selectedLeadType === 'all'
                         ? (showAllEvents ? ' total contacts & events' : ' unique contacts & events')
                         : ' events'}
+                    {!showAll && ' from USA'}
                   </div>
                 </div>
               </div>

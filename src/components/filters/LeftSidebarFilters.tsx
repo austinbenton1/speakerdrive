@@ -6,6 +6,7 @@ import UnlockTypeFilter from './UnlockTypeFilter';
 import MultiSelect from './MultiSelect';
 import ViewsSection from './ViewsSection';
 import LocationFilter from './LocationFilter';
+import LocationSection from './LocationSection';
 import { eventFormats, industries, organizationTypes } from '../../constants/filters';
 import type { FilterOptions, OpenSections } from '../../types';
 
@@ -19,8 +20,11 @@ interface LeftSidebarFiltersProps {
   selectedUnlockType?: string | null;
   showAllEvents?: boolean;
   onViewToggle?: () => void;
+  showAll?: boolean;
+  onLocationToggle?: () => void;
   totalCount?: number;
   uniqueCount?: number;
+  usaCount?: number;
 }
 
 export default function LeftSidebarFilters({
@@ -33,8 +37,11 @@ export default function LeftSidebarFilters({
   selectedUnlockType,
   showAllEvents = true,
   onViewToggle,
+  showAll = false,
+  onLocationToggle,
   totalCount = 0,
-  uniqueCount = 0
+  uniqueCount = 0,
+  usaCount = 0
 }: LeftSidebarFiltersProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -318,6 +325,12 @@ export default function LeftSidebarFilters({
           onToggle={onViewToggle}
           totalCount={totalCount}
           uniqueCount={uniqueCount}
+        />
+        <LocationSection
+          showAll={showAll}
+          onToggle={onLocationToggle}
+          totalCount={totalCount}
+          usaCount={usaCount}
         />
       </div>
     </div>
