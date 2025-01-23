@@ -44,11 +44,27 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
 
   const TooltipContent = React.memo(() => (
     <div className="w-[500px] divide-y divide-gray-100">
-      {/* Event Name Header */}
-      <div className="px-5 py-4 bg-gradient-to-r from-gray-50/90 via-white to-gray-50/90 backdrop-blur-sm space-y-4">
-        <h3 className="text-xl font-semibold text-gray-900 leading-tight">
-          {lead.event_name || lead.lead_name}
-        </h3>
+      {/* Event/Lead Name Header */}
+      <div className="px-5 py-4 bg-gradient-to-r from-gray-50/90 via-white to-gray-50/90 backdrop-blur-sm space-y-1">
+        {lead.lead_type === 'Contact' ? (
+          <>
+            <h3 className="text-xl font-semibold text-gray-900 leading-tight">
+              {lead.lead_name}{lead.job_title && `, ${lead.job_title}`}
+            </h3>
+            <div className="text-base text-gray-600">
+              {lead.focus}
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="text-xl font-semibold text-gray-900 leading-tight">
+              {lead.event_name || lead.lead_name}
+            </h3>
+            <div className="text-base text-gray-600">
+              {lead.focus}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="p-4 bg-white space-y-4">

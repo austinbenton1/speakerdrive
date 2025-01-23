@@ -139,8 +139,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [messageFormat, setMessageFormat] = useState<'concise' | 'expanded'>('concise');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showLeadContext, setShowLeadContext] = useState(true);
-  const [showCustomization, setShowCustomization] = useState(true);
+  const [showCustomization, setShowCustomization] = useState(false);
   const [showAdditionalServices, setShowAdditionalServices] = useState(false);
+  const [isPitching, setIsPitching] = useState(true);
   const [customizationText, setCustomizationText] = useState('');
   const [selectedService, setSelectedService] = useState<string>('');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -162,32 +163,25 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return text.slice(0, maxLength) + '...';
   };
 
-  // Initialize selected service and check if we need to expand additional services
+  // Initialize the selected service when component mounts
   useEffect(() => {
     if (profile?.services) {
       const profileServices = parseProfileServices(profile.services);
-      setSelectedService(profileServices.length > 0 ? profileServices[0] : 'keynote');
       
-      // Check if any profile service is in the additional services section
-      const additionalServices = services.slice(3).map(s => s.id);
-      const hasAdditionalProfileService = profileServices.some(service => 
-        additionalServices.includes(service)
+      // Find the service that matches the profile's service
+      const matchingService = services.find(service => 
+        profileServices.some(ps => service.id === ps)
       );
-      
-      // Auto-expand if profile service is in additional services
-      if (hasAdditionalProfileService) {
-        setShowAdditionalServices(true);
+
+      if (matchingService) {
+        setSelectedService(matchingService.id);
       }
     }
-  }, [profile?.services]);
+  }, [profile?.services]); // Only run when profile services change
 
-  // Also expand additional services if selected service is in that section
   useEffect(() => {
-    const additionalServices = services.slice(3).map(s => s.id);
-    if (selectedService && additionalServices.includes(selectedService)) {
-      setShowAdditionalServices(true);
-    }
-  }, [selectedService]);
+    setShowMyContext(true);
+  }, []);
 
   // Initialize input with pitch if available
   useEffect(() => {
@@ -245,11 +239,11 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       event_url: lead.eventUrl || null,
       event_name: lead.eventName || null,
       job_title: lead.jobTitle || null,
-      lead_name: lead.leadName || null,
+      lead_name: lead.lead_name || null,
 
       // EmailComposer details
-      pitching: selectedService || null,
-      ...(showMyContext && { context: profile?.offering || null }),
+      ...(isPitching && { pitching: selectedService || (profile?.services ? parseProfileServices(profile.services)[0] : null) }),
+      ...(showMyContext && profile?.offering && { context: profile.offering }),
       message_format: messageFormat === 'concise' ? 'email' : 'proposal',
       outreach_channel: outreachChannel,
       ...(showCustomization && customizationText?.trim() && { message_customization: customizationText })
@@ -300,8 +294,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   };
 
   const handleSavePitch = async () => {
-    if (!lead.unlocked_lead_id || isSaving) return;
-    
     setIsSaving(true);
     
     try {
@@ -312,15 +304,18 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
       if (error) throw error;
 
+      // Update the lead.pitch value to match the saved input
+      lead.pitch = input;
+
       setToastMessage('Message saved successfully');
       setToastType('success');
       setShowToast(true);
     } catch (error) {
+      console.error('Error saving pitch:', error);
       setToastMessage('Failed to save message');
       setToastType('error');
       setShowToast(true);
     } finally {
-      await new Promise(resolve => setTimeout(resolve, 500));
       setIsSaving(false);
     }
   };
@@ -439,79 +434,75 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                               <div className="flex items-center gap-2 mb-3">
                                 <MinimalToggle
                                   className="scale-[0.35] -ml-1"
-                                  checked={selectedService !== ''}
-                                  onChange={(e) => {
-                                    if (!e.target.checked) {
-                                      setSelectedService('');
-                                    } else {
-                                      // Use first service from profile, or default to keynote
-                                      const profileServices = profile?.services ? parseProfileServices(profile.services) : [];
-                                      setSelectedService(profileServices.length > 0 ? profileServices[0] : 'keynote');
-                                    }
-                                  }}
+                                  checked={isPitching}
+                                  onChange={(e) => setIsPitching(e.target.checked)}
                                 />
                                 <label className="text-sm font-medium text-gray-900">
                                   I'm Pitching
                                 </label>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {services.slice(0, 3).map((service) => {
-                                  const Icon = {
-                                    'Presentation': Presentation,
-                                    'School': School,
-                                    'Target': Target,
-                                    'Briefcase': Briefcase,
-                                    'Users': Users,
-                                    'Plus': Plus
-                                  }[service.icon];
+                              {isPitching && (
+                                <div className="flex items-center gap-2">
+                                  {services.slice(0, 3).map((service) => {
+                                    const Icon = {
+                                      'Presentation': Presentation,
+                                      'School': School,
+                                      'Target': Target,
+                                      'Briefcase': Briefcase,
+                                      'Users': Users,
+                                      'Plus': Plus
+                                    }[service.icon];
 
-                                  // Check if this service is in user's profile services
-                                  const profileServices = parseProfileServices(profile?.services || '');
-                                  const isProfileService = profileServices.includes(service.id);
+                                    // Check if this service is in user's profile services
+                                    const profileServices = parseProfileServices(profile?.services || '');
+                                    const isInProfile = profileServices.some(ps => ps === service.id);
+                                    // Use selectedService if set, otherwise fall back to profile selection
+                                    const isSelected = selectedService ? selectedService === service.id : isInProfile;
 
-                                  return (
-                                    <button
-                                      key={service.id}
-                                      onClick={() => setSelectedService(service.id)}
-                                      className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                        transition-colors duration-200
-                                        border
-                                        ${selectedService === service.id
-                                          ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                          : isProfileService
-                                            ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                        }
-                                      `}
-                                    >
-                                      {Icon && (
-                                        <Icon 
-                                          className={`w-3 h-3 ${
-                                            selectedService === service.id
-                                              ? 'text-white'
-                                              : 'text-gray-500'
-                                          }`}
-                                        />
-                                      )}
-                                      {service.label}
-                                      {isProfileService && (
-                                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                                <div
-                                  className="relative"
-                                  onClick={() => setShowAdditionalServices(!showAdditionalServices)}
-                                >
-                                  <button
-                                    className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                                    const buttonClasses = [
+                                      'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                                      'transition-colors duration-200',
+                                      'border',
+                                      isSelected
+                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    ].join(' ');
+
+                                    return (
+                                      <button
+                                        key={service.id}
+                                        onClick={() => setSelectedService(service.id)}
+                                        className={buttonClasses}
+                                      >
+                                        {Icon && (
+                                          <Icon 
+                                            className={`w-3 h-3 ${
+                                              isSelected
+                                                ? 'text-white'
+                                                : 'text-gray-500'
+                                            }`}
+                                          />
+                                        )}
+                                        {service.label}
+                                        {isInProfile && (
+                                          <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                  <div
+                                    className="relative"
+                                    onClick={() => setShowAdditionalServices(!showAdditionalServices)}
                                   >
-                                    <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                                  </button>
+                                    <button
+                                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                                    >
+                                      <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                              {showAdditionalServices && (
+                              )}
+                              {isPitching && showAdditionalServices && (
                                 <div className="flex gap-2 mt-2">
                                   {services.slice(3).map((service) => {
                                     const Icon = {
@@ -525,34 +516,36 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
                                     // Check if this service is in user's profile services
                                     const profileServices = parseProfileServices(profile?.services || '');
-                                    const isProfileService = profileServices.includes(service.id);
+                                    const isInProfile = profileServices.some(ps => ps === service.id);
+                                    // Use selectedService if set, otherwise fall back to profile selection
+                                    const isSelected = selectedService ? selectedService === service.id : isInProfile;
+
+                                    const buttonClasses = [
+                                      'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                                      'transition-colors duration-200',
+                                      'border',
+                                      isSelected
+                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    ].join(' ');
 
                                     return (
                                       <button
                                         key={service.id}
                                         onClick={() => setSelectedService(service.id)}
-                                        className={`relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                          transition-colors duration-200
-                                          border
-                                          ${selectedService === service.id
-                                            ? 'bg-blue-500 border-blue-500 text-white shadow-sm' 
-                                            : isProfileService
-                                              ? 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                          }
-                                        `}
+                                        className={buttonClasses}
                                       >
                                         {Icon && (
                                           <Icon 
                                             className={`w-3 h-3 ${
-                                              selectedService === service.id
+                                              isSelected
                                                 ? 'text-white'
                                                 : 'text-gray-500'
                                             }`}
                                           />
                                         )}
                                         {service.label}
-                                        {isProfileService && (
+                                        {isInProfile && (
                                           <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
                                         )}
                                       </button>
@@ -691,7 +684,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                 </>
               )}
 
-              {/* Message Textarea */}
+              {/* Response Textarea */}
               {showMessage && !isGenerating && (
                 <div className="flex-1 p-4">
                   <textarea
@@ -708,29 +701,31 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       transition-all duration-200 bg-white"
                   />
                   <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={handleSavePitch}
-                      disabled={isSaving}
-                      className={`
-                        inline-flex items-center gap-2 px-4 py-2 
-                        ${isSaving ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} 
-                        text-white rounded-lg shadow-sm transition-colors duration-200
-                      `}
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 14a3 3 0 110-6 3 3 0 010 6zm0 0V7" />
-                          </svg>
-                          <span>Save Message</span>
-                        </>
-                      )}
-                    </button>
+                    {input !== lead.pitch && (
+                      <button
+                        onClick={handleSavePitch}
+                        disabled={isSaving}
+                        className={`
+                          inline-flex items-center gap-2 px-4 py-2 
+                          ${isSaving ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} 
+                          text-white rounded-lg shadow-sm transition-colors duration-200
+                        `}
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 14a3 3 0 110-6 3 3 0 010 6zm0 0V7" />
+                            </svg>
+                            <span>Save Message</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

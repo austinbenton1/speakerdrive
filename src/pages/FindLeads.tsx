@@ -211,9 +211,12 @@ export default function FindLeads() {
         results = results.filter(lead => {
           // Combine all searchable fields
           const searchableText = [
+            lead.lead_name,
             lead.event_name,
             lead.keywords,
-            lead.subtext
+            lead.subtext,
+            lead.job_title,
+            lead.organization
           ].filter(Boolean).join(' ').toLowerCase();
           
           // Check text search
