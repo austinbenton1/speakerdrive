@@ -6,7 +6,6 @@ import UnlockTypeFilter from './UnlockTypeFilter';
 import MultiSelect from './MultiSelect';
 import ViewsSection from './ViewsSection';
 import LocationFilter from './LocationFilter';
-import LocationSection from './LocationSection';
 import { eventFormats, industries, organizationTypes } from '../../constants/filters';
 import type { FilterOptions, OpenSections } from '../../types';
 
@@ -323,13 +322,10 @@ export default function LeftSidebarFilters({
         <ViewsSection
           showAllEvents={showAllEvents}
           onToggle={onViewToggle}
+          showAll={showAll}
+          onLocationToggle={onLocationToggle}
           totalCount={totalCount}
           uniqueCount={uniqueCount}
-        />
-        <LocationSection
-          showAll={showAll}
-          onToggle={onLocationToggle}
-          totalCount={totalCount}
           usaCount={usaCount}
         />
       </div>
