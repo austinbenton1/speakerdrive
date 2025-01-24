@@ -114,16 +114,7 @@ export default function LeadDetailHeaderActions({
 
   return (
     <>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setShowEmailComposer(true)}
-          disabled={!isUnlocked}
-          className="h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 hover:bg-[#00B341]/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-        >
-          <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
-          Create Outreach
-        </button>
-
+      <div className="flex flex-col gap-3">
         <button
           onClick={handleUnlockClick}
           disabled={isUnlocking}
@@ -144,9 +135,19 @@ export default function LeadDetailHeaderActions({
             unlockType === 'Event URL' || unlockType === 'Unlock Event URL' ? (
               <ExternalLink className="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" />
             ) : (
-              <Copy className={`w-4 h-4 ml-2 flex-shrink-0 ${copied ? 'text-green-500' : 'text-gray-400'}`} />
+              <Copy className="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" />
             )
           )}
+        </button>
+
+        <button
+          onClick={() => setShowEmailComposer(true)}
+          disabled={!isUnlocked}
+          title={!isUnlocked ? "Unlock Lead To Generate Outreach" : undefined}
+          className="h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 hover:bg-[#00B341]/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
+          {isUnlocked && lead.pitch ? 'View Saved Outreach' : 'Generate Outreach'}
         </button>
       </div>
 

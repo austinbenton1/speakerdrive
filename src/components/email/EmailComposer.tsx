@@ -19,7 +19,11 @@ interface EmailComposerProps {
     jobTitle?: string;
     image: string;
     email?: string;
-    detailedInfo?: any;
+    infoUrl?: string;
+    detailedInfo?: {
+      infoUrl?: string;
+      [key: string]: any;
+    };
     outreachPathways?: any;
     unlockValue?: any;
     unlockType?: any;
@@ -163,6 +167,21 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return text.slice(0, maxLength) + '...';
   };
 
+  // Helper function to check if a button is disabled
+  const isButtonDisabled = (buttonId: string) => {
+    return (
+      (buttonId === 'proposal' && lead.unlockType === 'Unlock Contact Email') ||
+      ((buttonId === 'linkedin' || buttonId === 'proposal') && lead.unlockType === 'Unlock Event Email') ||
+      ((buttonId === 'email' || buttonId === 'linkedin') && lead.unlockType === 'Unlock Event URL')
+    );
+  };
+
+  // Helper function to find the first enabled button
+  const findFirstEnabledButton = () => {
+    const buttons = ['email', 'linkedin', 'proposal'];
+    return buttons.find(buttonId => !isButtonDisabled(buttonId)) || 'email';
+  };
+
   // Initialize the selected service when component mounts
   useEffect(() => {
     if (profile?.services) {
@@ -209,6 +228,12 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [isOpen, lead.pitch]);
 
+  useEffect(() => {
+    if (isButtonDisabled('email')) {
+      setOutreachChannel(findFirstEnabledButton() as MessageType);
+    }
+  }, [lead.unlockType]);
+
   const handleSubmit = async () => {
     if (!input.trim() || isSubmitting || input.length > 1000) return;
     
@@ -243,7 +268,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
       // EmailComposer details
       ...(isPitching && { pitching: selectedService || (profile?.services ? parseProfileServices(profile.services)[0] : null) }),
-      ...(showMyContext && profile?.offering && { context: profile.offering }),
+      ...(showMyContext && profile?.offering && { message_context: profile.offering }),
       message_format: messageFormat === 'concise' ? 'email' : 'proposal',
       outreach_channel: outreachChannel,
       ...(showCustomization && customizationText?.trim() && { message_customization: customizationText })
@@ -393,13 +418,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         {[
                           { id: 'email', icon: Mail, label: 'Email' },
                           { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
-                          { id: 'proposal', icon: FileText, label: 'Proposal' }
+                          { id: 'proposal', icon: FileText, label: 'Apply' }
                         ].map((type) => (
                           <button
                             key={type.id}
                             onClick={() => {
                               setOutreachChannel(type.id as MessageType);
                             }}
+                            disabled={isButtonDisabled(type.id)}
                             className={`
                               flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                               transition-colors duration-200
@@ -407,6 +433,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                               ${outreachChannel === type.id
                                 ? 'bg-blue-500 border-blue-500 text-white'
                                 : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                              } ${isButtonDisabled(type.id)
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : ''
                               }
                             `}
                           >
@@ -416,6 +445,30 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         ))}
                       </div>
                     </div>
+                    {(lead.unlockType === 'Unlock Contact Email' || 
+                      lead.unlockType === 'Unlock Event Email' || 
+                      lead.unlockType === 'Unlock Event URL') && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        {outreachChannel === 'email' && lead.unlockValue && 
+                         (lead.unlockType === 'Unlock Contact Email' || lead.unlockType === 'Unlock Event Email') ? (
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            {lead.unlockValue}
+                          </span>
+                        ) : outreachChannel === 'linkedin' && lead.unlockType === 'Unlock Contact Email' && 
+                           (lead.infoUrl || lead.detailedInfo?.infoUrl) ? (
+                          <span className="flex items-center gap-1">
+                            <Linkedin className="w-4 h-4 text-gray-400" />
+                            {lead.infoUrl || lead.detailedInfo?.infoUrl}
+                          </span>
+                        ) : outreachChannel === 'proposal' && lead.unlockType === 'Unlock Event URL' && lead.unlockValue ? (
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-4 h-4 text-gray-400" />
+                            {lead.unlockValue}
+                          </span>
+                        ) : null}
+                      </p>
+                    )}
                   </div>
 
                   {/* Message Content with Advanced Options */}
@@ -425,7 +478,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       {/* Advanced Options Panel */}
                       {showAdvanced && (
                         <div className="bg-white rounded-lg">
-                          <p className="text-sm text-gray-500 mb-2 pl-1">
+                          <p className="text-sm font-medium text-gray-700 mb-3">
                             Outreach Settings
                           </p>
                           <div className="space-y-6 px-3">
