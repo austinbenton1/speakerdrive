@@ -276,9 +276,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       {/* Topic Column */}
       <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative`}>
         {topic && (
-          <div className="flex items-start relative w-full">
+          <div className="flex items-start relative">
             <span className={`
-              inline-flex items-start gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium w-full
+              inline-flex items-start gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium
               bg-white border border-gray-200 shadow-sm
               group-hover:border-gray-300 transition-colors
             `}>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mail, Link } from 'lucide-react';
 import LeadDetailHeaderActions from './LeadDetailHeaderActions';
 import type { SpeakerLead } from '../../types';
 
@@ -112,13 +112,13 @@ export default function LeadDetailHeader({
           <div className="mt-4 grid grid-cols-[minmax(0,1fr)_320px] gap-8">
             {/* Lead Info */}
             <div className="min-w-0">
-              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[152px]">
-                <div className="flex items-start gap-4">
+              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[200px] flex items-center">
+                <div className="flex items-start gap-6">
                   <div className="flex-shrink-0">
                     <img
                       src={lead.image}
                       alt={lead.eventName || lead.name}
-                      className={`h-16 w-16 rounded-xl object-cover shadow-sm ${
+                      className={`h-32 w-32 rounded-xl object-cover shadow-sm ${
                         lead.leadType === 'Contact'
                           ? 'ring-2 ring-blue-100'
                           : 'ring-2 ring-emerald-100'
@@ -126,15 +126,29 @@ export default function LeadDetailHeader({
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl font-semibold text-gray-900 leading-tight break-words">
+                    <h1 className="text-[28px] font-semibold text-gray-900 leading-tight break-words">
                       {lead.leadType === 'Contact' 
                         ? `${lead.name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
                         : lead.eventName
                       }
                     </h1>
-                    <div className="mt-2">
-                      <span className="text-lg text-gray-600 leading-normal line-clamp-2">
-                        {lead.focus || 'No focus specified'}
+                    <div className="mt-3">
+                      <span className="text-xl text-gray-600 leading-normal line-clamp-2">
+                        {lead.focus || 'No focus specified'}{' '}
+                        <span className={`
+                          inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium align-middle ml-2
+                          ${lead.leadType === 'Contact'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                            : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          }
+                        `}>
+                          {lead.leadType === 'Contact' ? (
+                            <Mail className="w-3 h-3 mr-1" />
+                          ) : (
+                            <Link className="w-3 h-3 mr-1" />
+                          )}
+                          {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -144,7 +158,7 @@ export default function LeadDetailHeader({
 
             {/* Actions */}
             <div>
-              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[152px] space-y-3">
+              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[200px] space-y-3">
                 <LeadDetailHeaderActions
                   onCreateColdIntro={() => {}}
                   onUnlock={onUnlock}
