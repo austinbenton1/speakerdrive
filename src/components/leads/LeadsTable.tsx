@@ -62,7 +62,6 @@ export default function LeadsTable({
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // Only handle horizontal scroll events
       if (e.deltaX !== 0 || e.shiftKey) {
         e.preventDefault();
         const delta = e.shiftKey ? e.deltaY : e.deltaX;
@@ -147,22 +146,21 @@ export default function LeadsTable({
             {/* Header */}
             <div className="contents">
               <div className="bg-white px-3 py-3">
-                <div className="flex items-center gap-2 text-[13.5px] font-medium text-gray-800 ml-2">
-                  <Layers className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-[12px] text-gray-500 ml-2">
+                  <Layers className="w-3.5 h-3.5 text-gray-500" />
                   <div>
-                    Showing <span className="font-medium">{
-                      selectedLeadType === 'contacts' || filters?.unlockType === 'Unlock Contact Email'
-                        ? leads.length // Always show total for contact leads
-                        : showAllEvents 
-                          ? leads.length 
-                          : uniqueCount
-                    }</span>
-                    {selectedLeadType === 'contacts' 
-                      ? ' contacts'
-                      : selectedLeadType === 'all'
-                        ? (showAllEvents ? ' total contacts & events' : ' unique contacts & events')
-                        : ' events'}
-                    {!showAll && ' from USA'}
+                    {showAllEvents ? (
+                      <>Showing <span className="text-gray-500">{leads.length}</span> Total Unlocks</>
+                    ) : (
+                      <>
+                        Showing <span className="text-gray-500">{uniqueCount}</span>{' '}
+                        {selectedLeadType === 'contacts' 
+                          ? 'Contacts'
+                          : selectedLeadType === 'events'
+                            ? 'Events'
+                            : 'Contacts & Events'}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -2,16 +2,20 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
+import { Users, Calendar, Filter } from 'lucide-react';
 import { getUniqueLeads } from '../utils/deduplication';
 import SmartFiltersBar from '../components/filters/SmartFiltersBar';
 import { supabase } from '../lib/supabase';
 import { useRandomSort } from '../hooks/useRandomSort';
 import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
-import QuickLeadTypeFilter from '../components/filters/lead-type/QuickLeadTypeFilter';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
+import LocationToggle from '../components/common/LocationToggle';
 import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTypeConfig';
 import type { Lead } from '../types';
+
+// Local storage key for location preference
+const LOCATION_PREFERENCE_KEY = 'speakerdrive_location_preference';
 
 export default function FindLeads() {
   const navigate = useNavigate();
@@ -27,13 +31,29 @@ export default function FindLeads() {
       setOpportunityTags(state.preservedFilters.opportunityTags || []);
       setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
       setShowAllEvents(state.preservedFilters.showAllEvents || false);
-      setShowAll(state.preservedFilters.showAll || false);
+      
+      // Don't override showAll if it's already set from localStorage
+      if (typeof state.preservedFilters.showAll === 'boolean' && !localStorage.getItem(LOCATION_PREFERENCE_KEY)) {
+        setShowAll(state.preservedFilters.showAll);
+      }
     }
   }, [location.state]);
+
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
   const [showAllEvents, setShowAllEvents] = useState(false);
-  const [showAll, setShowAll] = useState(false);
+  
+  // Initialize showAll from localStorage, defaulting to true (worldwide)
+  const [showAll, setShowAll] = useState(() => {
+    const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
+    return savedPreference ? JSON.parse(savedPreference) : true;
+  });
+
+  // Persist showAll value to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(LOCATION_PREFERENCE_KEY, JSON.stringify(showAll));
+  }, [showAll]);
+
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
@@ -48,7 +68,7 @@ export default function FindLeads() {
     toggleSection,
   } = useLeadFilters();
 
-  const { sortConfig } = useRandomSort(); // This handles all sort logic
+  const { sortConfig } = useRandomSort();
 
   // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
@@ -203,9 +223,30 @@ export default function FindLeads() {
   useEffect(() => {
     // First apply deduplication to preserve groups
     const uniqueLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
-    
+
     // Then apply filters to the deduplicated results
     let results = uniqueLeads;
+
+    // If region is set to something other than United States or Virtual Only,
+    // ensure worldwide view is enabled
+    if (filters.region && filters.region !== 'United States' && filters.region !== 'Virtual Only') {
+      setShowAll(true);
+    } else if (filters.region === 'United States') {
+      // If region is set to United States, ensure USA-only view is enabled
+      setShowAll(false);
+    }
+
+    // Handle lead type filtering
+    if (selectedLeadType === 'events') {
+      results = results.filter(lead => 
+        lead.unlock_type === 'Unlock Event Email' || 
+        lead.unlock_type === 'Unlock Event URL'
+      );
+    } else if (selectedLeadType === 'contacts') {
+      results = results.filter(lead => 
+        lead.unlock_type === 'Unlock Contact Email'
+      );
+    }
 
     // Apply USA location filter immediately after deduplication
     if (!showAll) {
@@ -309,9 +350,9 @@ export default function FindLeads() {
       }
 
       // Filter by unlock type
-      if (filters.unlockType) {
+      if (filters.unlockType && Array.isArray(filters.unlockType) && filters.unlockType.length > 0) {
         results = results.filter(lead => 
-          lead.unlock_type === filters.unlockType
+          filters.unlockType.includes(lead.unlock_type)
         );
       }
 
@@ -390,12 +431,30 @@ export default function FindLeads() {
 
   const handleLeadTypeChange = (type: LeadType) => {
     setSelectedLeadType(type);
-    const selectedType = leadTypes.find(t => t.id === type);
+    
+    // Reset unlock type filter when changing lead type
+    if (type === 'events') {
+      setFilters(prev => ({
+        ...prev,
+        unlockType: ['Unlock Event Email', 'Unlock Event URL'],
+        jobTitle: []
+      }));
+      return;
+    }
+
+    if (type === 'contacts') {
+      setFilters(prev => ({
+        ...prev,
+        unlockType: ['Unlock Contact Email'],
+        jobTitle: prev.jobTitle
+      }));
+      return;
+    }
     
     setFilters(prev => ({
       ...prev,
-      unlockType: selectedType?.unlockValue,
-      jobTitle: selectedType?.unlockValue === 'Unlock Contact Email' ? prev.jobTitle : []
+      unlockType: [],
+      jobTitle: []
     }));
   };
 
@@ -448,6 +507,33 @@ export default function FindLeads() {
     return baseLeads.filter(lead => lead.region === 'United States').length;
   }, [availableLeads, showAllEvents]);
 
+  const handleUnlockTypeChange = (type: string | undefined) => {
+    // If type is undefined, clear the filter
+    if (!type) {
+      setFilters(prev => ({
+        ...prev,
+        unlockType: []
+      }));
+      setSelectedLeadType('all');
+      return;
+    }
+
+    // Handle unlock type selection
+    setFilters(prev => ({
+      ...prev,
+      unlockType: [type]
+    }));
+
+    // Update master toggle based on unlock type
+    if (type === 'Unlock Contact Email') {
+      setSelectedLeadType('contacts');
+    } else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+      setSelectedLeadType('events');
+    } else {
+      setSelectedLeadType('all');
+    }
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       <LeftSidebarFilters
@@ -456,24 +542,7 @@ export default function FindLeads() {
         setFilters={setFilters}
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
-        handleUnlockTypeChange={(type) => {
-          const selectedType = leadTypes.find(t => t.unlockValue === type);
-          if (selectedType) {
-            setSelectedLeadType(selectedType.id);
-            setFilters(prev => ({
-              ...prev,
-              unlockType: type,
-              jobTitle: type === 'Unlock Contact Email' ? prev.jobTitle : []
-            }));
-          } else {
-            setSelectedLeadType('all');
-            setFilters(prev => ({
-              ...prev,
-              unlockType: undefined,
-              jobTitle: []
-            }));
-          }
-        }}
+        handleUnlockTypeChange={handleUnlockTypeChange}
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
@@ -482,28 +551,79 @@ export default function FindLeads() {
         totalCount={displayedLeads.length}
         uniqueCount={uniqueLeadsCount}
         usaCount={usaLeadsCount}
+        selectedLeadType={selectedLeadType as 'all' | 'contacts' | 'events'}
       />
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
-          <div className="mb-6">
-            {error ? (
-              <div className="text-red-600 mb-4">
-                Error loading leads. Please try refreshing the page.
+          {/* Lead Type Toggle */}
+          <div className="w-[700px] mb-6">
+            <div className="flex items-center gap-4">
+              <div className="inline-flex bg-white rounded-lg shadow-sm border border-gray-200/75 p-0.5">
+                {[
+                  { id: 'all', label: 'All', icon: Filter, baseColor: 'gray' },
+                  { id: 'contacts', label: 'Contacts', icon: Users, baseColor: 'blue' },
+                  { id: 'events', label: 'Events', icon: Calendar, baseColor: 'emerald' }
+                ].map((type) => {
+                  const isSelected = selectedLeadType === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => handleLeadTypeChange(type.id)}
+                      className={`
+                        relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md
+                        transition-all duration-200
+                        ${isSelected
+                          ? type.id === 'events' 
+                            ? 'text-emerald-900 bg-emerald-100 shadow-sm border border-emerald-200'
+                            : type.id === 'contacts'
+                              ? 'text-blue-900 bg-blue-100 shadow-sm border border-blue-200'
+                              : 'text-gray-900 bg-gray-100 shadow-sm border border-gray-200'
+                          : `text-${type.baseColor}-700 hover:text-${type.baseColor}-800 hover:bg-${type.baseColor}-50/50 border border-transparent`
+                        }
+                      `}
+                    >
+                      <type.icon className={`w-3.5 h-3.5 ${
+                        isSelected 
+                          ? type.id === 'events'
+                            ? 'text-emerald-600'
+                            : type.id === 'contacts'
+                              ? 'text-blue-600'
+                              : 'text-gray-600'
+                          : `text-${type.baseColor}-500`
+                      }`} />
+                      {type.label}
+                      {isSelected && (
+                        <span className={`absolute -bottom-[1px] left-2 right-2 h-0.5 rounded-full ${
+                          type.id === 'events'
+                            ? 'bg-emerald-500'
+                            : type.id === 'contacts'
+                              ? 'bg-blue-500'
+                              : 'bg-gray-500'
+                        }`} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            ) : null}
-            <div className="space-y-6">
-              <div className="w-[700px]">
-                <OpportunitiesFilter
-                  value={eventsFilter}
-                  onChange={setEventsFilter}
-                  onReset={handleCompleteReset}
-                  hasActiveFilters={hasActiveFilters}
-                  tags={opportunityTags}
-                  onAddTag={(tag) => setOpportunityTags([...opportunityTags, tag])}
-                  onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
-                />
-              </div>
+
+              {/* Location Toggle */}
+              <LocationToggle
+                isUSAOnly={!showAll}
+                onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
+              />
+            </div>
+
+            <div className="mt-4">
+              <OpportunitiesFilter
+                value={eventsFilter}
+                onChange={setEventsFilter}
+                onReset={handleCompleteReset}
+                hasActiveFilters={hasActiveFilters}
+                tags={opportunityTags}
+                onAddTag={(tag) => setOpportunityTags([...opportunityTags, tag])}
+                onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
+              />
             </div>
           </div>
           
@@ -511,7 +631,6 @@ export default function FindLeads() {
             <SmartFiltersBar
               filters={filters}
               onRemoveFilter={(key, value) => {
-                // Handle string vs array values
                 setFilters(prev => ({
                   ...prev,
                   [key]: Array.isArray(prev[key])

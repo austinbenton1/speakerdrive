@@ -35,7 +35,7 @@ export default function MultiSelect({ options, selected, onChange }: MultiSelect
         <label
           key={option}
           className={`
-            flex items-center justify-between w-full px-3 py-2 rounded-md cursor-pointer
+            block w-full px-3 py-2 rounded-md cursor-pointer
             transition-all duration-200 group
             ${selected.includes(option)
               ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
@@ -43,22 +43,30 @@ export default function MultiSelect({ options, selected, onChange }: MultiSelect
             }
           `}
         >
-          <div className="flex items-center min-w-0">
-            <input
-              type="checkbox"
-              checked={selected.includes(option)}
-              onChange={() => onChange(option)}
-              className="h-4 w-4 text-blue-600 rounded border-gray-300 
-                focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
-                transition-colors"
-            />
-            <span className="ml-3 text-sm font-medium truncate">
-              {option}
-            </span>
+          <div className="flex items-start gap-2 w-full">
+            <div className="flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={selected.includes(option)}
+                onChange={() => onChange(option)}
+                className="h-4 w-4 text-blue-600 rounded border-gray-300 
+                  focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
+                  transition-colors"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-sm font-medium break-words leading-5 line-clamp-2">
+                  {option}
+                </span>
+                {selected.includes(option) && (
+                  <div className="flex-shrink-0 mt-0.5">
+                    <Check className="w-4 h-4 text-blue-600" />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          {selected.includes(option) && (
-            <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
-          )}
         </label>
       ))}
     </div>

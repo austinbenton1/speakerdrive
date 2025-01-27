@@ -5,11 +5,12 @@ interface SectionProps {
   icon: LucideIcon;
   title: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }
 
-export function Section({ icon: Icon, title, children }: SectionProps) {
+export function Section({ icon: Icon, title, children, className = '' }: SectionProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200/75 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div className={`bg-white rounded-lg border border-gray-200/75 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 h-full ${className}`}>
       <div className="border-b border-gray-200">
         <div className="px-6 py-4 bg-gradient-to-r from-gray-100 via-gray-50 to-white">
           <div className="flex items-center">

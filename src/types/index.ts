@@ -36,7 +36,7 @@ export interface FilterOptions {
   region: string;
   state: string[];
   city: string[];
-  unlockType?: string;
+  unlockType: string[]; // Changed to string[] to always be an array
 }
 
 export interface OpenSections {

@@ -276,23 +276,23 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       {/* Topic Column */}
       <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative`}>
         {topic && (
-          <div className="inline-flex items-center max-w-full relative">
+          <div className="flex items-start relative w-full">
             <span className={`
-              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium
+              inline-flex items-start gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium w-full
               bg-white border border-gray-200 shadow-sm
-              group-hover:border-gray-300 transition-colors truncate
+              group-hover:border-gray-300 transition-colors
             `}>
               <Tag className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-              <span className="truncate">{topic}</span>
+              <span className="whitespace-normal">{topic}</span>
             </span>
           </div>
         )}
         {lead.focus && (
-          <div className="flex items-start gap-1.5 text-gray-500 ml-6 relative max-w-full">
+          <div className="flex items-start gap-1.5 text-gray-500 ml-6 relative w-full">
             <div className="absolute -left-3 top-[calc(50%-12px)] h-3 w-[1.5px] bg-gray-300/75 rounded-full"></div>
             <div className="absolute -left-3 top-[calc(50%-1px)] w-2 h-[1.5px] bg-gray-300/75 rounded-full"></div>
             <Calendar className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-            <span className="text-xs line-clamp-2">{lead.subtext}</span>
+            <span className="text-xs whitespace-normal">{lead.subtext}</span>
           </div>
         )}
       </div>
@@ -309,7 +309,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
           >
             <div className="flex items-start gap-1.5">
               <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors mt-1" />
-              <span className="text-[14.5px] text-gray-600 group-hover:text-blue-600 transition-colors break-all">
+              <span className="text-[14.5px] text-gray-600 group-hover:text-blue-600 transition-colors whitespace-normal">
                 {urlData.hostname}
               </span>
             </div>
@@ -326,9 +326,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       {/* Location Column */}
       <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative`}>
         {lead.region && (
-          <div className="flex items-center text-[14.5px] text-gray-700">
+          <div className="flex items-start text-[14.5px] text-gray-700">
             <MapPin className="w-4 h-4 mr-1.5 text-[#DD4B3E] flex-shrink-0" />
-            <span>
+            <span className="whitespace-normal">
               {[lead.city, lead.state, lead.region]
                 .filter(value => value && value.trim() !== '' && value.trim().toLowerCase() !== 'blank')
                 .join(', ')}

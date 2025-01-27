@@ -151,7 +151,7 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                 <div className="flex-shrink-0 w-[400px] pr-16">
                   <div className="flex items-center gap-1.5">
                     <Unlock className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 truncate max-w-[40ch]">
                       {lead.unlock_value || 'N/A'}
                     </span>
                   </div>

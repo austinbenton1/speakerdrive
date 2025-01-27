@@ -19,11 +19,11 @@ interface LeftSidebarFiltersProps {
   selectedUnlockType?: string | null;
   showAllEvents?: boolean;
   onViewToggle?: () => void;
-  showAll?: boolean;
-  onLocationToggle?: () => void;
   totalCount?: number;
   uniqueCount?: number;
-  usaCount?: number;
+  isUSAOnly?: boolean;
+  selectedLeadType: 'all' | 'contacts' | 'events';
+  onLocationToggle?: () => void;
 }
 
 export default function LeftSidebarFilters({
@@ -36,11 +36,11 @@ export default function LeftSidebarFilters({
   selectedUnlockType,
   showAllEvents = true,
   onViewToggle,
-  showAll = false,
-  onLocationToggle,
   totalCount = 0,
   uniqueCount = 0,
-  usaCount = 0
+  isUSAOnly = false,
+  selectedLeadType,
+  onLocationToggle
 }: LeftSidebarFiltersProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -105,6 +105,34 @@ export default function LeftSidebarFilters({
     });
   };
 
+  // Update region filter based on isUSAOnly prop
+  useEffect(() => {
+    if (isUSAOnly && filters.region !== 'United States') {
+      setFilters({
+        ...filters,
+        region: 'United States'
+      });
+    } else if (!isUSAOnly && filters.region === 'United States') {
+      setFilters({
+        ...filters,
+        region: ''
+      });
+    }
+  }, [isUSAOnly, setFilters]);
+
+  const handleRegionChange = (region: string) => {
+    // If selecting a non-USA region, ensure worldwide view is enabled
+    if (region && region !== 'United States' && region !== 'Virtual Only') {
+      onLocationToggle?.();
+    } else if (region === 'United States') {
+      // If selecting USA, ensure USA-only view is enabled
+      if (!isUSAOnly && onLocationToggle) {
+        onLocationToggle();
+      }
+    }
+    onRegionChange(region);
+  };
+
   return (
     <div
       className={`
@@ -125,7 +153,7 @@ export default function LeftSidebarFilters({
             </h2>
             <div>
               <UnlockTypeFilter
-                selectedTypes={filters.unlockType ? [filters.unlockType] : []}
+                selectedTypes={filters.unlockType}
                 onTypeSelect={handleUnlockTypeChange}
                 isOpen={openSections.unlockType}
                 onToggle={() => toggleSection('unlockType')}
@@ -143,7 +171,6 @@ export default function LeftSidebarFilters({
             </h2>
 
             <div className="space-y-1">
-
               <FilterSection
                 title="Event Format"
                 icon={Calendar}
@@ -242,6 +269,7 @@ export default function LeftSidebarFilters({
                 onCityChange={(city) => setFilters({ ...filters, city })}
                 isOpen={openSections.location}
                 onToggle={() => toggleSection('location')}
+                isUSAOnly={isUSAOnly}
               />
             </div>
           </div>
@@ -322,11 +350,9 @@ export default function LeftSidebarFilters({
         <ViewsSection
           showAllEvents={showAllEvents}
           onToggle={onViewToggle}
-          showAll={showAll}
-          onLocationToggle={onLocationToggle}
           totalCount={totalCount}
           uniqueCount={uniqueCount}
-          usaCount={usaCount}
+          selectedLeadType={selectedLeadType}
         />
       </div>
     </div>

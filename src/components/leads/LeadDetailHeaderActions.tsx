@@ -113,19 +113,25 @@ export default function LeadDetailHeaderActions({
   };
 
   return (
-    <>
-      <div className="flex flex-col gap-3">
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide px-0.5">
+          Lead Actions
+        </p>
         <button
           onClick={handleUnlockClick}
           disabled={isUnlocking}
-          className={`h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 ${
-            copied
+          className={`
+            w-full h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium
+            transition-all duration-200 shadow-sm
+            ${copied
               ? 'bg-green-50 text-green-600 border border-green-200'
               : copyError
-              ? 'bg-red-50 text-red-600 border border-red-200'
-              : isUnlocked
-              ? 'bg-blue-50 text-blue-600 border border-blue-200'
-              : 'bg-[#0066FF] text-white border border-[#0066FF] hover:bg-[#0052CC]'
+                ? 'bg-red-50 text-red-600 border border-red-200'
+                : isUnlocked
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                  : 'bg-[#0066FF] text-white border border-[#0066FF] hover:bg-[#0052CC] hover:shadow'
+            }
           } disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
           title={unlockValue || undefined}
         >
@@ -144,7 +150,11 @@ export default function LeadDetailHeaderActions({
           onClick={() => setShowEmailComposer(true)}
           disabled={!isUnlocked}
           title={!isUnlocked ? "Unlock Lead To Generate Outreach" : undefined}
-          className="h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 hover:bg-[#00B341]/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          className="w-full h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium 
+            transition-all duration-200 shadow-sm
+            bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 
+            hover:bg-[#00B341]/20 hover:shadow 
+            disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
           {isUnlocked && lead.pitch ? 'View Saved Outreach' : 'Generate Outreach'}
@@ -164,6 +174,6 @@ export default function LeadDetailHeaderActions({
         isOpen={showEmailComposer}
         onClose={() => setShowEmailComposer(false)}
       />
-    </>
+    </div>
   );
 }

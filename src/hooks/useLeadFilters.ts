@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { FilterOptions, OpenSections } from '../types';
 
 export function useLeadFilters() {
@@ -11,7 +11,7 @@ export function useLeadFilters() {
     organizationType: [],
     pastSpeakers: [],
     searchAll: '',
-    unlockType: undefined,
+    unlockType: [], // Initialize as empty array
     region: '',
     state: [],
     city: []
@@ -23,45 +23,48 @@ export function useLeadFilters() {
     organization: false,
     organizationType: false,
     location: false,
-    unlockType: false,
+    unlockType: true,
     region: false
   });
 
-  useEffect(() => {
-    if (filters.region !== 'United States') {
-      setFilters(prev => ({
-        ...prev,
-        state: []
-      }));
-    }
-  }, [filters.region]);
-
   const toggleLeadType = (type: string) => {
+    console.log('[useLeadFilters] toggleLeadType:', type);
     setSelectedLeadTypes(prev => {
       const newTypes = prev.includes(type)
         ? prev.filter(t => t !== type)
         : [...prev, type];
       
-      // If only Contacts is selected, set unlock type to Contact Email
-      if (newTypes.length === 1 && newTypes[0] === 'Contacts') {
-        setFilters(prev => ({ 
-          ...prev, 
-          unlockType: 'Unlock Contact Email',
-          jobTitle: prev.jobTitle // Preserve job title filter
-        }));
-        setOpenSections(prev => ({ ...prev, jobTitle: true }));
-      } 
-      // If only Events is selected, clear job title
-      else if (newTypes.length === 1 && newTypes[0] === 'Events') {
-        setFilters(prev => ({ 
-          ...prev, 
-          jobTitle: [], // Reset job title filter for events
-          unlockType: undefined 
-        }));
-        setOpenSections(prev => ({ ...prev, jobTitle: false }));
-      }
+      console.log('[useLeadFilters] New lead types:', newTypes);
+      
+      // Update filters based on new lead types
+      setFilters(prev => {
+        let newUnlockTypes: string[] = [];
+        
+        // If only Contacts is selected
+        if (newTypes.length === 1 && newTypes[0] === 'Contacts') {
+          newUnlockTypes = ['Unlock Contact Email'];
+        }
+        // If only Events is selected
+        else if (newTypes.length === 1 && newTypes[0] === 'Events') {
+          newUnlockTypes = ['Unlock Event Email', 'Unlock Event URL'];
+        }
+        // If both or none are selected, clear unlock types
+        else {
+          newUnlockTypes = [];
+        }
+
+        const newFilters = {
+          ...prev,
+          unlockType: newUnlockTypes,
+          jobTitle: newUnlockTypes.includes('Unlock Contact Email') ? prev.jobTitle : []
+        };
+        
+        console.log('[useLeadFilters] Updated filters:', newFilters);
+        return newFilters;
+      });
+
       // If no types are selected, add both back
-      else if (newTypes.length === 0) {
+      if (newTypes.length === 0) {
         return ['Events', 'Contacts'];
       }
       
@@ -69,44 +72,49 @@ export function useLeadFilters() {
     });
   };
 
-  const handleUnlockTypeChange = (type: string | undefined) => {
+  const handleUnlockTypeChange = (type: string) => {
+    console.log('[useLeadFilters] handleUnlockTypeChange:', type);
+    
     setFilters(prev => {
-      // Get current unlock types
-      const currentTypes = prev.unlockType ? [prev.unlockType] : [];
+      const currentTypes = prev.unlockType;
+      const isSelected = currentTypes.includes(type);
+      
+      console.log('[useLeadFilters] Current unlock types:', currentTypes);
+      console.log('[useLeadFilters] Is type selected:', isSelected);
       
       // If type is already selected, remove it
-      if (currentTypes.includes(type)) {
+      if (isSelected) {
+        const newTypes: string[] = [];  // Clear all types when deselecting
+        console.log('[useLeadFilters] Removing type, new types:', newTypes);
         return {
           ...prev,
-          unlockType: undefined,
-          jobTitle: []
+          unlockType: newTypes,
+          jobTitle: []  // Clear job title when clearing unlock type
         };
       }
       
-      // Add the new type
-      return {
+      // If selecting a new type
+      const newFilters = {
         ...prev,
-        unlockType: type,
+        unlockType: [type], // Single selection - replace array with new type
         jobTitle: type === 'Unlock Contact Email' ? prev.jobTitle : []
       };
+      console.log('[useLeadFilters] Adding type, new filters:', newFilters);
+      return newFilters;
     });
 
-    // Update lead types based on current selection
-    const currentTypes = filters.unlockType ? [filters.unlockType] : [];
-    const newTypes = currentTypes.includes(type)
-      ? currentTypes.filter(t => t !== type)
-      : [...currentTypes, type];
-    
-    setSelectedLeadTypes(
-      newTypes.length === 0
-        ? ['Events', 'Contacts']
-        : newTypes.some(t => t === 'Unlock Contact Email')
-          ? ['Contacts']
-          : ['Events']
-    );
+    // Update lead types based on selection
+    if (type === 'Unlock Contact Email') {
+      setSelectedLeadTypes(['Contacts']);
+    } else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+      setSelectedLeadTypes(['Events']);
+    } else {
+      setSelectedLeadTypes(['Events', 'Contacts']);
+    }
   };
 
   const toggleEventUnlockType = (type: string) => {
+    console.log('[useLeadFilters] toggleEventUnlockType:', type);
     setSelectedEventUnlockTypes(prev => {
       if (prev.includes(type)) {
         return prev.filter(t => t !== type);
@@ -116,6 +124,7 @@ export function useLeadFilters() {
   };
 
   const toggleSection = (section: keyof OpenSections) => {
+    console.log('[useLeadFilters] toggleSection:', section);
     setOpenSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -132,6 +141,6 @@ export function useLeadFilters() {
     toggleLeadType,
     toggleEventUnlockType,
     toggleSection,
-    handleUnlockTypeChange // Export the handler
+    handleUnlockTypeChange
   };
 }

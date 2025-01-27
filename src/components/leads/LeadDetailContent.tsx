@@ -82,7 +82,7 @@ export default function LeadDetailContent({ lead }: { lead: SpeakerLead }) {
   const keywords = lead.keywords?.split(',').map(k => k.trim()).filter(Boolean) || [];
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-6 h-full">
       <Section icon={FileText} title={`Event Snapshot: ${eventName}`}>
         <div className="space-y-6">
           {lead.detailedInfo ? (

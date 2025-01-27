@@ -26,6 +26,7 @@ interface LocationFilterProps {
   onCityChange: (cities: string[]) => void;
   isOpen: boolean;
   onToggle: () => void;
+  isUSAOnly?: boolean;
 }
 
 export default function LocationFilter({
@@ -36,12 +37,20 @@ export default function LocationFilter({
   onStateChange,
   onCityChange,
   isOpen,
-  onToggle
+  onToggle,
+  isUSAOnly = false
 }: LocationFilterProps) {
   const [stateSearch, setStateSearch] = useState('');
   const [cityInput, setCityInput] = useState('');
-  const isUsRegion = region === 'United States';
+  const isUsRegion = region === 'United States' || isUSAOnly;
   const isVirtualOrGlobal = region === 'Virtual Only' || region === 'Global / Unspecified';
+
+  // Effect to sync region with isUSAOnly
+  React.useEffect(() => {
+    if (isUSAOnly && region !== 'United States') {
+      onRegionChange('United States');
+    }
+  }, [isUSAOnly, region, onRegionChange]);
 
   // Filter states based on search
   const getFilteredStates = () => {
@@ -87,6 +96,7 @@ export default function LocationFilter({
                 <button
                   key={r}
                   onClick={() => onRegionChange(r === region ? '' : r)}
+                  disabled={r === 'United States' && isUSAOnly}
                   className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm
                     transition-colors
@@ -94,6 +104,7 @@ export default function LocationFilter({
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
                     }
+                    ${r === 'United States' && isUSAOnly ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
                   <span>{r}</span>
@@ -117,7 +128,7 @@ export default function LocationFilter({
             )}
 
             {/* Secondary Regions - Only show if US is not selected */}
-            {!isUsRegion && (
+            {!isUsRegion && !isUSAOnly && (
               <div className="space-y-1.5">
                 {secondaryRegions.map((r) => (
                   <button

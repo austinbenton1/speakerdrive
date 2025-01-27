@@ -7,9 +7,7 @@ interface ViewsSectionProps {
   onToggle: () => void;
   totalCount: number;
   uniqueCount: number;
-  showAll: boolean;
-  onLocationToggle: () => void;
-  usaCount: number;
+  selectedLeadType: 'all' | 'contacts' | 'events';
 }
 
 export default function ViewsSection({ 
@@ -17,9 +15,7 @@ export default function ViewsSection({
   onToggle,
   totalCount,
   uniqueCount,
-  showAll,
-  onLocationToggle,
-  usaCount
+  selectedLeadType
 }: ViewsSectionProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -43,70 +39,43 @@ export default function ViewsSection({
       <div
         className={`
           overflow-hidden transition-all duration-300 ease-in-out
-          ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}
+          ${isExpanded ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}
         `}
       >
-        <div className="px-2.5 pt-1.5 pb-1 space-y-4">
-          {/* Event Display Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Event Display</span>
-              <a 
-                href="https://google.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
-              >
-                Learn more
-              </a>
-            </div>
-
-            <OutlinedToggle
-              checked={showAllEvents}
-              onChange={onToggle}
-              leftLabel="Unique"
-              rightLabel="All"
-            />
-            
-            <div className="space-y-1">
-              <p className="text-xs text-gray-500">
-                {!showAllEvents 
-                  ? 'Showing unique events'
-                  : 'Showing all event unlocks'
-                }
-              </p>
-            </div>
+        <div className="px-2.5 pt-1.5 pb-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Leads Display</span>
+            <a 
+              href="https://google.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
+            >
+              Learn more
+            </a>
           </div>
 
-          {/* Location Filter Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Location Filter</span>
-              <a 
-                href="https://google.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
-              >
-                Learn more
-              </a>
-            </div>
-
-            <OutlinedToggle
-              checked={showAll}
-              onChange={onLocationToggle}
-              leftLabel="USA"
-              rightLabel="All"
-            />
-            
-            <div className="space-y-1">
-              <p className="text-xs text-gray-500">
-                {showAll 
-                  ? 'Showing all locations'
-                  : 'Showing USA locations only'
-                }
-              </p>
-            </div>
+          <OutlinedToggle
+            checked={showAllEvents}
+            onChange={onToggle}
+            leftLabel="Unique"
+            rightLabel="All"
+          />
+          
+          <div className="space-y-1">
+            <p className="text-xs text-gray-500">
+              {showAllEvents ? (
+                `Showing ${totalCount} Total Unlocks`
+              ) : (
+                `Showing ${uniqueCount} ${
+                  selectedLeadType === 'contacts' 
+                    ? 'Contacts'
+                    : selectedLeadType === 'events'
+                      ? 'Events'
+                      : 'Contacts & Events'
+                }`
+              )}
+            </p>
           </div>
         </div>
       </div>

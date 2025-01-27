@@ -22,8 +22,12 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   // Group all leads by event name and organization
   const groups = new Map<string, Lead[]>();
   
-  // Group the leads
-  for (const lead of leads) {
+  // First pass: Separate contacts and events
+  const contactLeads = leads.filter(isContactEmailType);
+  const eventLeads = leads.filter(lead => !isContactEmailType(lead));
+  
+  // Group only the event leads
+  for (const lead of eventLeads) {
     const eventName = (lead.event_name || '').toLowerCase().trim();
     const organization = (lead.organization || '').toLowerCase().trim();
     const key = `${eventName}|${organization}`;
@@ -35,13 +39,17 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   }
 
   console.log('Total number of groups:', groups.size);
+  console.log('Total number of contacts:', contactLeads.length);
   
-  // Process each group according to the rules
+  // Process each event group according to the rules
   const resultLeads: Lead[] = [];
   
-  // Process each group
+  // First add all contacts (they are never deduplicated)
+  resultLeads.push(...contactLeads);
+  
+  // Then process event groups
   for (const [key, groupLeads] of groups.entries()) {
-    console.log('\nProcessing group:', key);
+    console.log('\nProcessing event group:', key);
     console.log('Group leads:', groupLeads.map(l => ({ 
       event: l.event_name, 
       org: l.organization, 
@@ -57,49 +65,48 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
       continue; // Skip to next group
     }
 
-    // Rule 2: If group has no Event URL but has Contact Email leads, show all Contact Email leads
-    const contactEmailLeads = groupLeads.filter(isContactEmailType);
+    // Rule 2: For Event Email leads, show just one
+    const eventEmailLeads = groupLeads.filter(isEventEmailType);
     
-    if (contactEmailLeads.length > 0) {
-      console.log('No Event URL lead found, adding all Contact Email leads:', contactEmailLeads.length);
-      resultLeads.push(...contactEmailLeads);
+    if (eventEmailLeads.length > 0) {
+      console.log('Found Event Email lead, taking only the first one');
+      resultLeads.push(eventEmailLeads[0]);
       continue; // Skip to next group
     }
 
-    // Rule 3: For all other cases (including Event Email), show just one lead from the group
-    console.log('No Event URL or Contact Email leads, taking first lead');
+    // Rule 3: For any remaining cases, show just one lead from the group
+    console.log('Taking first lead from remaining group');
     resultLeads.push(groupLeads[0]);
   }
 
   console.log('\nFinal result count:', resultLeads.length);
-  console.log('Groups with potential issues:');
-  // Check for any remaining duplicates in results
-  const resultGroups = new Map<string, Lead[]>();
-  for (const lead of resultLeads) {
-    const key = `${lead.event_name?.toLowerCase().trim()}|${lead.organization?.toLowerCase().trim()}`;
-    if (!resultGroups.has(key)) {
-      resultGroups.set(key, []);
-    }
-    resultGroups.get(key)!.push(lead);
-  }
-  
-  for (const [key, group] of resultGroups.entries()) {
-    if (group.length > 1) {
-      console.log('Duplicate found in results:', key);
-      console.log('Types:', group.map(l => l.unlock_type));
-    }
-  }
+  console.log('Contacts:', contactLeads.length);
+  console.log('Deduplicated events:', resultLeads.length - contactLeads.length);
 
-  // Sort final results by event name and then organization
+  // Sort final results:
+  // 1. Contacts first, sorted by name
+  // 2. Then events, sorted by name and organization
   return resultLeads.sort((a, b) => {
-    // Compare event names first
+    const aIsContact = isContactEmailType(a);
+    const bIsContact = isContactEmailType(b);
+    
+    // If one is a contact and one isn't, contacts come first
+    if (aIsContact !== bIsContact) {
+      return aIsContact ? -1 : 1;
+    }
+
+    // If both are contacts, sort by name
+    if (aIsContact && bIsContact) {
+      return (a.lead_name || '').localeCompare(b.lead_name || '');
+    }
+
+    // If both are events, sort by event name then organization
     const eventNameA = (a.event_name || '').toLowerCase().trim();
     const eventNameB = (b.event_name || '').toLowerCase().trim();
     if (eventNameA !== eventNameB) {
       return eventNameA.localeCompare(eventNameB);
     }
 
-    // If event names are same, compare organizations
     const orgA = (a.organization || '').toLowerCase().trim();
     const orgB = (b.organization || '').toLowerCase().trim();
     return orgA.localeCompare(orgB);

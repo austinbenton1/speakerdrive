@@ -60,7 +60,7 @@ export default function LeadDetailHeader({
         : 'from-white via-emerald-50/20 to-emerald-100/10'
     } border-b border-gray-100`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-6">
+        <div className="py-4">
           {/* Navigation Controls Container - Same width as Event Snapshot */}
           <div className="max-w-3xl">
             <div className="flex justify-between items-center">
@@ -109,46 +109,52 @@ export default function LeadDetailHeader({
           </div>
 
           {/* Main Content */}
-          <div className="mt-6 flex justify-between items-start gap-8">
+          <div className="mt-4 grid grid-cols-[minmax(0,1fr)_320px] gap-8">
             {/* Lead Info */}
-            <div className="flex items-start space-x-6 flex-1 min-w-0">
-              <div className="flex-shrink-0">
-                <img
-                  src={lead.image}
-                  alt={lead.eventName || lead.name}
-                  className={`h-20 w-20 rounded-xl object-cover shadow-lg ${
-                    lead.leadType === 'Contact'
-                      ? 'ring-4 ring-blue-100/50'
-                      : 'ring-4 ring-emerald-100/50'
-                  }`}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-semibold text-gray-900 leading-tight break-words">
-                  {lead.leadType === 'Contact' 
-                    ? `${lead.name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
-                    : lead.eventName
-                  }
-                </h1>
-                <div className="mt-2">
-                  <span className="text-lg text-gray-600 leading-normal">
-                    {lead.focus || 'No focus specified'}
-                  </span>
+            <div className="min-w-0">
+              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[152px]">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={lead.image}
+                      alt={lead.eventName || lead.name}
+                      className={`h-16 w-16 rounded-xl object-cover shadow-sm ${
+                        lead.leadType === 'Contact'
+                          ? 'ring-2 ring-blue-100'
+                          : 'ring-2 ring-emerald-100'
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl font-semibold text-gray-900 leading-tight break-words">
+                      {lead.leadType === 'Contact' 
+                        ? `${lead.name}${lead.jobTitle ? `, ${lead.jobTitle}` : ''}`
+                        : lead.eventName
+                      }
+                    </h1>
+                    <div className="mt-2">
+                      <span className="text-lg text-gray-600 leading-normal line-clamp-2">
+                        {lead.focus || 'No focus specified'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex-shrink-0">
-              <LeadDetailHeaderActions
-                onCreateColdIntro={() => {}}
-                onUnlock={onUnlock}
-                isUnlocking={isUnlocking}
-                isUnlocked={isUnlocked}
-                unlockType={lead.unlockType}
-                unlockValue={unlockValue}
-                lead={lead}
-              />
+            <div>
+              <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm p-6 h-[152px] space-y-3">
+                <LeadDetailHeaderActions
+                  onCreateColdIntro={() => {}}
+                  onUnlock={onUnlock}
+                  isUnlocking={isUnlocking}
+                  isUnlocked={isUnlocked}
+                  unlockType={lead.unlockType}
+                  unlockValue={unlockValue}
+                  lead={lead}
+                />
+              </div>
             </div>
           </div>
         </div>

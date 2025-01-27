@@ -811,7 +811,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       ) : (
                         <>
                           <Wand2 className="w-4 h-4" />
-                          <span className="font-medium">Write {messageFormat === 'concise' ? 'Email' : 'Proposal'} Message</span>
+                          <span className="font-medium">Generate Outreach</span>
                         </>
                       )}
                     </button>
