@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAvailableLeads } from '../lib/api/leadFinder';
 import { useAuth } from './useAuth';
@@ -9,33 +9,6 @@ import { checkSupabaseConnection } from '../lib/supabase';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
-// Cache duration in milliseconds (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
-
-interface CacheEntry {
-  data: Lead[];
-  timestamp: number;
-}
-
-// Helper functions for localStorage cache
-const getLocalCache = (key: string): CacheEntry | null => {
-  const cached = localStorage.getItem(key);
-  if (!cached) return null;
-  try {
-    return JSON.parse(cached);
-  } catch {
-    return null;
-  }
-};
-
-const setLocalCache = (key: string, entry: CacheEntry) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch (error) {
-    console.error('Error setting cache:', error);
-  }
-};
-
 export function useAvailableLeads() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -43,6 +16,8 @@ export function useAvailableLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isInitialMount = useRef(true);
+  const hasLoadedData = useRef(false);
 
   useEffect(() => {
     const loadLeads = async (retryCount = 0) => {
@@ -52,14 +27,8 @@ export function useAvailableLeads() {
           return;
         }
 
-        // Check localStorage cache first
-        const cacheKey = `available_leads_${user.id}`;
-        const cachedData = getLocalCache(cacheKey);
-        const now = Date.now();
-
-        if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
-          setLeads(cachedData.data);
-          setLoading(false);
+        // Skip loading if we already have data
+        if (hasLoadedData.current && leads.length > 0) {
           return;
         }
 
@@ -73,14 +42,8 @@ export function useAvailableLeads() {
         setError(null);
         
         const availableLeads = await fetchAvailableLeads(user.id, unlockedLeadIds);
-        
-        // Update cache with new data
-        setLocalCache(cacheKey, {
-          data: availableLeads,
-          timestamp: now
-        });
-
         setLeads(availableLeads);
+        hasLoadedData.current = true;
       } catch (err) {
         console.error('Error loading available leads:', err);
         
@@ -99,8 +62,21 @@ export function useAvailableLeads() {
       }
     };
 
-    loadLeads();
-  }, [isAuthenticated, navigate, user, unlockedLeadIds]);
+    // Only load on initial mount or when dependencies actually change
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      loadLeads();
+    } else if (!hasLoadedData.current || !leads.length) {
+      loadLeads();
+    }
 
-  return { leads, loading, error };
+  }, [isAuthenticated, navigate, user, unlockedLeadIds, leads.length]);
+
+  // Function to force refresh data when needed
+  const refreshLeads = () => {
+    hasLoadedData.current = false;
+    loadLeads();
+  };
+
+  return { leads, loading, error, refreshLeads };
 }

@@ -22,26 +22,22 @@ async function retryableRequest<T>(
 
 // Valid sort fields that exist in the leads table
 const VALID_SORT_FIELDS = [
-  'event_name',
-  'organization',
-  'lead_name',
-  'event_format',
-  'industry'
+  'id',
+  'image_url',
+  'focus',
+  'keywords',
+  'unlock_value',
+  'subtext'
 ] as const;
-
-// Default sort if none is provided
-const DEFAULT_SORT = {
-  field: 'event_name' as const,
-  ascending: true
-};
 
 // Sorting fields and their weights
 const SORT_FIELDS = [
-  'event_name',
-  'organization',
-  'past_speakers_events',
   'id',
-  'image_url'
+  'image_url',
+  'focus',
+  'keywords',
+  'unlock_value',
+  'subtext'
 ] as const;
 
 function getRandomSort() {
@@ -62,18 +58,18 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
       .eq('id', userId)
       .single();
 
-    // Parse sort config
+    // Parse sort config or get a new random sort
     let sortConfig = profileData?.random_lead_sort;
     if (typeof sortConfig === 'string') {
       try {
         sortConfig = JSON.parse(sortConfig);
-      } catch (e) {
-        sortConfig = DEFAULT_SORT;
+      } catch {
+        sortConfig = getRandomSort();
       }
     }
 
-    // Use the sort config or fall back to default
-    const finalSortConfig = sortConfig || DEFAULT_SORT;
+    // Use the sort config or get a new random sort
+    const finalSortConfig = sortConfig || getRandomSort();
 
     // Build query for available leads
     const selectQuery = `
@@ -104,8 +100,11 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
       .from('leads')
       .select(selectQuery);
 
-    // Apply sort configuration
-    query = query.order(finalSortConfig.field, { ascending: finalSortConfig.ascending });
+    // Apply multiple sort orders: event_name, organization, then random sort
+    query = query
+      .order('event_name', { ascending: true })
+      .order('organization', { ascending: true })
+      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending });
 
     // Add filter for unlocked leads if any exist
     if (unlockedLeadIds.length > 0) {
@@ -129,7 +128,7 @@ export async function fetchLeadNavigation(
     event?: string;
     tags?: string[];
     type?: string;
-    industry?: string[];
+    industry?: string[];t
     eventFormat?: string[];
     organization?: string[];
     organizationType?: string[];

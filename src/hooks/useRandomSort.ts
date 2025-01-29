@@ -4,26 +4,22 @@ import { supabase } from '../lib/supabase';
 
 // Valid sort fields that exist in the leads table
 const VALID_SORT_FIELDS = [
-  'event_name',
-  'organization',
-  'lead_name',
-  'event_format',
-  'industry'
+  'id',
+  'image_url',
+  'focus',
+  'keywords',
+  'unlock_value',
+  'subtext'
 ] as const;
-
-// Default sort if none exists
-const DEFAULT_SORT = {
-  field: 'event_name' as const,
-  ascending: true
-};
 
 // Weights for each field (higher = more likely to be selected)
 const FIELD_WEIGHTS = {
-  event_name: 1,
-  organization: 1,
-  industry: 1,
-  lead_name: 1,
-  event_format: 1
+  id: 1,
+  image_url: 1,
+  focus: 1,
+  keywords: 1,
+  unlock_value: 1,
+  subtext: 1
 } as const;
 
 type SortField = typeof VALID_SORT_FIELDS[number];
@@ -44,7 +40,15 @@ function getWeightedRandomField(): SortField {
     random -= weight;
   }
   
-  return DEFAULT_SORT.field;
+  return VALID_SORT_FIELDS[0];
+}
+
+// Generate a new random sort configuration
+function generateRandomSort(): SortConfig {
+  return {
+    field: getWeightedRandomField(),
+    ascending: Math.random() < 0.5
+  };
 }
 
 function parseSortConfig(sortConfig: any): sortConfig is SortConfig {
@@ -88,16 +92,11 @@ export function useRandomSort() {
         return;
       }
 
-      const newSort: SortConfig = {
-        field: getWeightedRandomField(),
-        ascending: Math.random() < 0.5
-      };
-
       // Update directly with supabase to avoid any potential race conditions
       const { error } = await supabase
         .from('profiles')
         .update({
-          random_lead_sort: newSort,
+          random_lead_sort: generateRandomSort(),
           random_lead_sort_date: now.toISOString().replace('Z', '+00:00')
         })
         .eq('id', profile.id);
@@ -110,13 +109,13 @@ export function useRandomSort() {
     checkAndUpdateSort();
   }, [profile]);
 
-  // Return the sort config, defaulting to DEFAULT_SORT if invalid
+  // Return the current sort config or generate a new one
   const currentSort = profile?.random_lead_sort;
   const isValidSort = parseSortConfig(currentSort);
 
   return { 
     sortConfig: isValidSort ? 
       (typeof currentSort === 'string' ? JSON.parse(currentSort) : currentSort) 
-      : DEFAULT_SORT
+      : generateRandomSort()
   };
 }
