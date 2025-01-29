@@ -39,41 +39,30 @@ export default function ServiceSelector({
 }: ServiceSelectorProps) {
   const { profile, loading } = useProfile();
 
-  // Local state for selection
-  const [localService, setLocalService] = React.useState(
-    selectedService || 
-    profile?.services || 
-    ''
-  );
+  // Parse service value from array or string
+  const parseServiceValue = (value: any): string => {
+    if (!value) return '';
+    if (Array.isArray(value)) return value[0] || '';
+    return value;
+  };
+
+  // Local state for selection with proper parsing
+  const [localService, setLocalService] = React.useState<string>(() => {
+    const initialService = parseServiceValue(selectedService || profile?.services);
+    return initialService;
+  });
 
   // Update local state when profile or props change
   React.useEffect(() => {
-    // Priority: prop > profile > empty
-    const newService = selectedService || profile?.services || '';
+    const newService = parseServiceValue(selectedService || profile?.services);
     setLocalService(newService);
   }, [selectedService, profile?.services]);
 
   const handleServiceClick = (serviceId: string) => {
     if (!disabled) {
-      // Update local state first
       setLocalService(serviceId);
-      // Then notify parent
       onServiceChange(serviceId);
     }
-  };
-
-  // Helper function to get service label
-  const getServiceLabel = (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    return service?.label || serviceId;
-  };
-
-  // Helper function to get service icon
-  const getServiceIcon = (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    if (!service) return null;
-    const Icon = iconMap[service.icon as keyof typeof iconMap];
-    return Icon;
   };
 
   return (

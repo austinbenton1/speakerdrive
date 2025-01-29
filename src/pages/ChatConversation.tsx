@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
+import { supabase } from '../lib/supabase';
+import { Loader2 } from 'lucide-react';
 
 interface Message {
   content: string;
@@ -9,15 +11,100 @@ interface Message {
   status?: 'sending' | 'sent' | 'error';
 }
 
+const WELCOME_MESSAGE_KEY = 'welcome_message_shown';
+
 export default function ChatConversation() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const location = useLocation();
+
+  // Handle onboarding welcome message
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeChat = async () => {
+      try {
+        // Check if welcome message was already shown
+        const welcomeShown = sessionStorage.getItem(WELCOME_MESSAGE_KEY);
+        if (welcomeShown) {
+          setIsInitializing(false);
+          return;
+        }
+
+        // Check URL parameters
+        const searchParams = new URLSearchParams(location.search);
+        const isOnboarding = searchParams.get('source') === 'onboarding';
+        const shouldAutoTrigger = searchParams.get('trigger') === 'auto';
+
+        if (!isOnboarding || !shouldAutoTrigger) {
+          setIsInitializing(false);
+          return;
+        }
+
+        // Check user creation time
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.error('Error getting user:', userError);
+          setIsInitializing(false);
+          return;
+        }
+
+        const createdAt = new Date(user.created_at);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+        // Only proceed if user was created in the last 5 minutes
+        if (createdAt < fiveMinutesAgo) {
+          setIsInitializing(false);
+          return;
+        }
+
+        // Send welcome message
+        console.log('Sending welcome message...');
+        const response = await sendChatMessage('onboarding_init');
+        console.log('Welcome message response:', response);
+        
+        if (mounted) {
+          if (response && response.response) {
+            setMessages([{
+              content: response.response,
+              isBot: true,
+              timestamp: new Date(),
+              status: 'sent'
+            }]);
+
+            // Mark welcome message as shown
+            sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
+          } else {
+            throw new Error('Invalid response from chatbot');
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+        if (mounted) {
+          // Don't set error message in messages array - just skip initialization
+          console.log('Skipping initialization due to error');
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    initializeChat();
+
+    return () => {
+      mounted = false;
+    };
+  }, [location.search]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
 
-    const userMessage: Message = {
+    const userMessage = {
       content: message.trim(),
       isBot: false,
       timestamp: new Date(),
@@ -40,9 +127,11 @@ export default function ChatConversation() {
       setMessages(prev => [...prev, {
         content: response.response,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: 'sent'
       }]);
     } catch (error) {
+      console.error('Error sending message:', error);
       // Update user message status to error
       setMessages(prev => prev.map(msg => 
         msg === userMessage ? { ...msg, status: 'error' } : msg
@@ -52,42 +141,47 @@ export default function ChatConversation() {
     }
   };
 
-  // Character count animation setup
-  const getCharCountColor = (length: number) => {
-    if (length === 0) return '#64748B';
-    if (length < 800) return '#00B341';
-    if (length < 900) return '#FF9800';
-    return '#FF5252';
-  };
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm text-gray-600">Initializing chat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: '#EDEEF0' }} className="min-h-screen p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-2xl">
-        {/* Header section */}
-        <div className="mb-8">
-          <h1 
-            style={{
-              background: 'linear-gradient(90deg, #0066FF, #00B341, #0066FF)',
-              backgroundSize: '200% 100%',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              marginBottom: '1.5rem',
-              animation: 'gradient 8s ease infinite'
-            }}
-            className="text-4xl font-bold"
-          >
-            Ask SpeakerDrive
-          </h1>
-          <p className="text-[#4B5563] text-lg mb-6 leading-relaxed">
-            I'm here to help you add value to your clients and win more engagements.
-          </p>
-          <h2 className="text-xl font-bold text-black">
-            What would you like to know?
-          </h2>
+        <div className="space-y-6 max-w-2xl">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold">
+              <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
+                Ask SpeakerDrive
+              </span>
+            </h1>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Welcome to SpeakerDrive AI
+            </h2>
+          </div>
+
+          <div className="space-y-4 text-gray-600">
+            <p>
+              My goal is to help you win more engagements. My responses are tailored to add value and align with your goals.
+            </p>
+
+            <p>
+              I'm your dedicated partner, trained with expertise in the unique needs of speakers, coaches, trainers, facilitators, and any expert looking to gain an edge.
+            </p>
+
+            <p className="text-lg font-medium text-gray-900">
+              What can we tackle together today?
+            </p>
+          </div>
         </div>
 
-        {/* Messages Container */}
         {messages.length > 0 && (
           <div className="mb-6 space-y-4">
             {messages.map((msg, index) => (
@@ -118,19 +212,13 @@ export default function ChatConversation() {
           </div>
         )}
 
-        {/* Input Container */}
-        <div 
-          className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden transform-gpu"
-          style={{
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        >
+        <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-6 pb-8">
             <textarea
-              className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-              placeholder="Try asking: 'What strategies can help me win more client projects?'"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              placeholder="Try asking: 'What strategies can help me win more client projects?'"
+              className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
               disabled={isLoading}
             />
           </div>
@@ -162,7 +250,9 @@ export default function ChatConversation() {
                 <span 
                   className="transition-colors duration-300"
                   style={{ 
-                    color: getCharCountColor(message.length)
+                    color: message.length === 0 ? '#64748B' :
+                           message.length < 800 ? '#00B341' :
+                           message.length < 900 ? '#FF9800' : '#FF5252'
                   }}
                 >
                   {message.length}/1000
@@ -170,13 +260,14 @@ export default function ChatConversation() {
                 <button 
                   onClick={handleSend}
                   disabled={!message.trim() || isLoading}
-                  style={{
-                    background: '#0066FF',
-                    opacity: (!message.trim() || isLoading) ? 0.5 : 1,
-                    transform: isLoading ? 'scale(0.95)' : 'scale(1)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }}
-                  className="text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00B341]"
+                  className={`
+                    text-white w-8 h-8 rounded-lg flex items-center justify-center
+                    transition-all duration-200
+                    ${isLoading || !message.trim()
+                      ? 'bg-blue-400 cursor-not-allowed scale-95'
+                      : 'bg-[#0066FF] hover:bg-[#00B341] scale-100'
+                    }
+                  `}
                 >
                   <svg className="w-4 h-4 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14m-5-5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>

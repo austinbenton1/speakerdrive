@@ -43,7 +43,7 @@ export default function ProfileForm({
     website: initialData?.website || '',
     avatarUrl: initialData?.avatarUrl || null
   });
-  
+
   // Reset form data when initialData changes
   React.useEffect(() => {
     if (initialData) {
@@ -61,21 +61,12 @@ export default function ProfileForm({
   const handleServiceChange = (serviceId: string) => {
     setFormData(prev => ({
       ...prev,
-      services: [serviceId] 
+      services: [serviceId] // Store as single-item array
     }));
   };
 
   const handleCancel = () => {
     setActiveSection(null);
-    setFormData({
-      fullName: initialData?.fullName || '',
-      services: initialData?.services || [],
-      industries: initialData?.industries || [],
-      offering: initialData?.offering || '',
-      website: initialData?.website || '',
-      avatarUrl: initialData?.avatarUrl || null
-    });
-    
     setFormData({
       fullName: initialData?.fullName || '',
       services: initialData?.services || [],
@@ -112,20 +103,23 @@ export default function ProfileForm({
     }
   };
 
-  const getServiceIcon = (service: string) => {
-    const serviceConfig = services.find(s => s.id === service);
-    const IconComponent = serviceConfig?.icon === 'Presentation' ? Presentation
-      : serviceConfig?.icon === 'School' ? School
-      : serviceConfig?.icon === 'Target' ? Target
-      : serviceConfig?.icon === 'Briefcase' ? Briefcase
-      : serviceConfig?.icon === 'Users' ? Users
+  // Helper function to get service label
+  const getServiceLabel = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    return service?.label || '';
+  };
+
+  // Helper function to get service icon
+  const getServiceIcon = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    const IconComponent = service?.icon === 'Presentation' ? Presentation
+      : service?.icon === 'School' ? School
+      : service?.icon === 'Target' ? Target
+      : service?.icon === 'Briefcase' ? Briefcase
+      : service?.icon === 'Users' ? Users
       : Plus;
     
     return <IconComponent className="w-4 h-4 text-blue-500" />;
-  };
-
-  const formatServiceName = (service: string) => {
-    return services.find(s => s.id === service)?.label || service;
   };
 
   if (!activeSection) {
@@ -225,7 +219,7 @@ export default function ProfileForm({
                 {formData.services[0] ? (
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium bg-white border border-blue-200 text-blue-700">
                     {getServiceIcon(formData.services[0])}
-                    {services.find(s => s.id === formData.services[0])?.label || formatServiceName(formData.services[0])}
+                    {getServiceLabel(formData.services[0])}
                   </div>
                 ) : (
                   <p className="text-base text-gray-400">Not set</p>

@@ -27,9 +27,16 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
       updateData.display_name = updates.display_name;
     }
 
-    // Handle services array
+    // Handle services - ensure it's stored as an array with single value
     if (updates.services !== undefined) {
-      updateData.services = Array.isArray(updates.services) ? updates.services : [];
+      updateData.services = Array.isArray(updates.services) 
+        ? [updates.services[0]] // Take first value if array
+        : [updates.services]; // Wrap single value in array
+    }
+
+    // Handle website - can be null
+    if ('website' in updates) {
+      updateData.website = updates.website || null;
     }
 
     // Update profile data

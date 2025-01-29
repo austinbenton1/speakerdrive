@@ -17,5 +17,12 @@ export const signupSchema = z.object({
   password: passwordSchema,
 });
 
+export const onboardingSchema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  services: z.string().min(1, 'Please select a service'),
+  website: z.string().optional(), // Make website optional
+});
+
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
+export type OnboardingFormData = z.infer<typeof onboardingSchema>;

@@ -5,26 +5,43 @@ interface ChatbotResponse {
 
 export async function sendChatMessage(message: string): Promise<ChatbotResponse> {
   try {
-    const url = 'https://n8n.speakerdrive.com/webhook-test/ai-data';
     const params = new URLSearchParams({ message });
+    const url = `https://n8n.speakerdrive.com/webhook/ai-data?${params}`;
 
-    const response = await fetch(`${url}?${params}`, {
+    console.log('[Chatbot] Sending message to:', url);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Username': 'webhooktest123',
-        'Password': 'qwe123',
-        'Content-Type': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       }
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get chatbot response');
+      console.error('[Chatbot] Error response:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+
+      // Try to get error details from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.message || errorData.error || '';
+      } catch {
+        // Ignore JSON parse error
+      }
+
+      throw new Error(`Failed to get chatbot response: ${response.status}${errorDetails ? ` - ${errorDetails}` : ''}`);
     }
 
     const data = await response.json();
+    console.log('[Chatbot] Response received:', data);
+    
     return data;
   } catch (error) {
-    console.error('Error sending chat message:', error);
+    console.error('[Chatbot] Error sending message:', error);
     throw error;
   }
 }

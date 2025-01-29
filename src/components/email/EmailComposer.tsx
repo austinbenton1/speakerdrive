@@ -623,9 +623,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                               {showMyContext && (
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm text-gray-600 flex-1 min-w-0">
-                                    <span className={`line-clamp-1 inline ${profile?.offering ? '' : 'italic'}`}>
-                                      {profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation"}
-                                      <span className="mx-1">...</span>
+                                    <span className={`inline ${profile?.offering ? '' : 'italic'}`}>
+                                      {truncateText(profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation", 130)}
                                     </span>
                                     <a 
                                       href="/settings"

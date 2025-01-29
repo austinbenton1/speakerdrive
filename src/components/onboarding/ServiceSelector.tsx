@@ -1,44 +1,66 @@
 import React from 'react';
-import { Mic2, BookOpen, GraduationCap, Brain, Users2, HelpCircle, Check } from 'lucide-react';
-
-export const services = [
-  { id: 'keynote', label: 'Keynote Speaking', icon: Mic2 },
-  { id: 'workshops', label: 'Workshops', icon: BookOpen },
-  { id: 'coaching', label: 'Coaching', icon: GraduationCap },
-  { id: 'consulting', label: 'Consulting', icon: Brain },
-  { id: 'facilitation', label: 'Facilitation', icon: Users2 },
-  { id: 'other', label: 'Other', icon: HelpCircle },
-];
+import { 
+  Presentation, School, Target, Briefcase, 
+  Users, Plus 
+} from 'lucide-react';
+import { services } from '../../utils/constants';
 
 interface ServiceSelectorProps {
-  selectedServices: string;
+  selectedService: string;
   onChange: (value: string) => void;
   error?: string;
   disabled?: boolean;
   hideLabel?: boolean;
 }
 
-export default function ServiceSelector({ selectedServices, onChange, error, disabled, hideLabel }: ServiceSelectorProps) {
+// Map of icon components
+const iconComponents = {
+  Presentation,
+  School,
+  Target,
+  Briefcase,
+  Users,
+  Plus
+};
+
+export default function ServiceSelector({ 
+  selectedService, 
+  onChange, 
+  error, 
+  disabled = false,
+  hideLabel = false
+}: ServiceSelectorProps) {
+  const handleServiceClick = (serviceId: string) => {
+    if (!disabled) {
+      onChange(serviceId);
+    }
+  };
+
   return (
     <div>
       {!hideLabel && (
-        <label className="text-sm font-medium text-gray-700 mb-1 block">
-          Services You Provide
-          <span className="ml-2 text-sm font-normal text-gray-500">
-            (Select one)
-          </span>
-        </label>
+        <div className="space-y-1 mb-3">
+          <label className="text-[15px] font-medium text-gray-900">
+            Primary Service
+          </label>
+          <p className="text-[13px] text-gray-500">
+            Choose your main focus
+          </p>
+        </div>
       )}
       <div className="space-y-2">
         {services.map((service) => {
-          const isSelected = selectedServices === service.id;
+          const isSelected = selectedService === service.id;
+          const Icon = iconComponents[service.icon as keyof typeof iconComponents];
+          
           return (
             <button
               key={service.id}
-              onClick={() => !disabled && onChange(service.id)}
+              type="button"
+              onClick={() => handleServiceClick(service.id)}
               disabled={disabled}
               className={`
-                w-full flex items-center justify-between px-4 py-3 border rounded-full
+                w-full flex items-center justify-between px-4 py-3 border rounded-lg
                 transition-colors
                 ${disabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
                 ${isSelected
@@ -48,14 +70,18 @@ export default function ServiceSelector({ selectedServices, onChange, error, dis
               `}
             >
               <div className="flex items-center">
-                {React.createElement(service.icon, {
-                  className: `w-5 h-5 mr-3 ${
+                {Icon && (
+                  <Icon className={`w-5 h-5 mr-3 ${
                     isSelected ? 'text-blue-500' : 'text-gray-400'
-                  }`,
-                })}
+                  }`} />
+                )}
                 <span className="text-sm font-medium">{service.label}</span>
               </div>
-              {isSelected && <Check className="w-4 h-4 text-blue-500" />}
+              {isSelected && (
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+              )}
             </button>
           );
         })}
