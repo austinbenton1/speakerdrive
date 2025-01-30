@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
-import { Loader2, AlertCircle, PaperclipIcon, Image, Send, Mail, Zap, User } from 'lucide-react';
+import { Loader2, AlertCircle, User } from 'lucide-react';
+import { throttle } from 'lodash';
 
 interface Message {
   content: string;
@@ -25,6 +26,8 @@ export default function ChatConversation() {
   const [userServices, setUserServices] = useState<string[]>([]);
   const [userWebsite, setUserWebsite] = useState<string | null>(null);
   const location = useLocation();
+  const lastMessageTimestamp = useRef<number>(0);
+  const THROTTLE_DELAY = 2000; // 2 seconds between messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,8 +47,7 @@ export default function ChatConversation() {
   }, [message]);
 
   // Fetch user avatar
-  useEffect(() => {
-    const fetchUserAvatar = async () => {
+  const fetchUserAvatar = useCallback(async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -73,9 +75,12 @@ export default function ChatConversation() {
       } catch (error) {
         console.error('Error fetching user avatar:', error);
       }
-    };
+  }, []);
 
+  useEffect(() => {
     fetchUserAvatar();
+    // Cleanup function to prevent memory leaks
+    return () => {};
   }, []);
 
   // Handle onboarding welcome message
@@ -165,9 +170,83 @@ export default function ChatConversation() {
     };
   }, [location.search, userDisplayName]);
 
-  const handleSend = async () => {
+  // Throttled message sender
+  const throttledSendMessage = useCallback(
+    throttle(async (messageContent: string) => {
+      if (!userEmail) return;
+
+      // Check cooldown period
+      const now = Date.now();
+      if (now - lastMessageTimestamp.current < THROTTLE_DELAY) {
+        console.log('Message throttled - too soon after last message');
+        return;
+      }
+      lastMessageTimestamp.current = now;
+
+      try {
+        const response = await sendChatMessage(
+          messageContent,
+          userEmail,
+          userDisplayName,
+          userServices,
+          userWebsite
+        );
+
+        setMessages(prev => {
+          const updatedMessages = [...prev];
+          const userMessageIndex = updatedMessages.findIndex(
+            msg => !msg.isBot && msg.status === 'sending'
+          );
+          if (userMessageIndex !== -1) {
+            updatedMessages[userMessageIndex] = {
+              ...updatedMessages[userMessageIndex],
+              status: 'sent'
+            };
+          }
+          return [
+            ...updatedMessages,
+            {
+              content: response.response,
+              isBot: true,
+              timestamp: new Date(),
+              status: 'sent'
+            }
+          ];
+        });
+      } catch (error) {
+        console.error('Error sending message:', error);
+        setMessages(prev => {
+          const updatedMessages = [...prev];
+          const userMessageIndex = updatedMessages.findIndex(
+            msg => !msg.isBot && msg.status === 'sending'
+          );
+          if (userMessageIndex !== -1) {
+            updatedMessages[userMessageIndex] = {
+              ...updatedMessages[userMessageIndex],
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Failed to send message'
+            };
+          }
+          return updatedMessages;
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500),
+    [userEmail, userDisplayName, userServices, userWebsite]
+  );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      throttledSendMessage.cancel();
+    };
+  }, [throttledSendMessage]);
+
+  const handleSend = () => {
     if (!message.trim() || isLoading || !userEmail) return;
 
+    // Add user message immediately
     const userMessage = {
       content: message.trim(),
       isBot: false,
@@ -179,40 +258,8 @@ export default function ChatConversation() {
     setMessage('');
     setIsLoading(true);
 
-    try {
-      const response = await sendChatMessage(
-        message.trim(), 
-        userEmail, 
-        userDisplayName,
-        userServices,
-        userWebsite
-      );
-      
-      // Update user message status
-      setMessages(prev => prev.map(msg => 
-        msg === userMessage ? { ...msg, status: 'sent' } : msg
-      ));
-
-      // Add bot response
-      setMessages(prev => [...prev, {
-        content: response.response,
-        isBot: true,
-        timestamp: new Date(),
-        status: 'sent'
-      }]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Update user message status to error
-      setMessages(prev => prev.map(msg => 
-        msg === userMessage ? { 
-          ...msg, 
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Failed to send message'
-        } : msg
-      ));
-    } finally {
-      setIsLoading(false);
-    }
+    // Send message with throttle
+    throttledSendMessage(message.trim());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -221,6 +268,14 @@ export default function ChatConversation() {
       handleSend();
     }
   };
+
+  // Cleanup function for component unmount
+  useEffect(() => {
+    return () => {
+      lastMessageTimestamp.current = 0;
+      setIsLoading(false);
+    };
+  }, []);
 
   if (isInitializing) {
     return (

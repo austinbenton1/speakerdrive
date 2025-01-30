@@ -19,7 +19,6 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.7",
     "@types/lodash": "^4.17.14",
-    "lodash": "^4.17.21",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "date-fns": "^3.3.1",
