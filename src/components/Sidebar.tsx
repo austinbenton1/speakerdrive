@@ -53,23 +53,23 @@ export default function Sidebar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={`p-4 ${isCollapsed ? 'flex justify-center items-center px-2' : 'flex justify-center'}`}>
+      <div className={`py-5 ${isCollapsed ? 'px-3' : 'px-4'}`}>
         {isCollapsed ? (
           <img 
             src="/speakerdrive-mini.png"
             alt="SD" 
-            className="h-5 w-auto transition-all duration-300"
+            className="h-5 w-auto transition-all duration-300 ml-2"
           />
         ) : (
           <img 
             src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
             alt="SpeakerDrive" 
-            className="h-6 w-auto transition-all duration-300 mt-4"
+            className="h-6 w-auto transition-all duration-300 ml-2"
           />
         )}
       </div>
       
-      <nav className="flex-1 px-2.5 space-y-0.5 mt-[20px]">
+      <nav className="flex-1 px-2.5 space-y-1 mt-7">
         {/* Main Nav Items */}
         {mainNavItems.map((item) => (
           <button
@@ -90,7 +90,7 @@ export default function Sidebar() {
 
         {/* Find New Leads Section */}
         {!isCollapsed && (
-          <div className="px-1.5 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-5">
+          <div className="px-1.5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-8">
             Find New Leads
           </div>
         )}
@@ -112,7 +112,7 @@ export default function Sidebar() {
 
         {/* Tools Section Header */}
         {!isCollapsed && (
-          <div className="px-1.5 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-5">
+          <div className="px-1.5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mt-8">
             Tools
           </div>
         )}
