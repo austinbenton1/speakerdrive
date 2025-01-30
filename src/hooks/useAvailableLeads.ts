@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAvailableLeads } from '../lib/api/leadFinder';
 import { useAuth } from './useAuth';
-import { useUnlockedLeadsData } from './useUnlockedLeadsData';
+import { useUnlockedLeadIds } from './useUnlockedLeadIds';
 import type { Lead } from '../types';
 import { checkSupabaseConnection } from '../lib/supabase';
 
@@ -12,7 +12,7 @@ const RETRY_DELAY = 1000; // 1 second
 export function useAvailableLeads() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { unlockedLeadIds } = useUnlockedLeadsData();
+  const { leadIds: unlockedLeadIds, loading: idsLoading } = useUnlockedLeadIds();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +29,11 @@ export function useAvailableLeads() {
 
         // Skip loading if we already have data
         if (hasLoadedData.current && leads.length > 0) {
+          return;
+        }
+
+        // Wait for unlocked lead IDs to load
+        if (idsLoading) {
           return;
         }
 
@@ -49,34 +54,17 @@ export function useAvailableLeads() {
         
         // Retry logic
         if (retryCount < MAX_RETRIES) {
-          setTimeout(() => {
-            loadLeads(retryCount + 1);
-          }, RETRY_DELAY * Math.pow(2, retryCount)); // Exponential backoff
-          return;
+          setTimeout(() => loadLeads(retryCount + 1), RETRY_DELAY * Math.pow(2, retryCount));
+        } else {
+          setError('Failed to load leads. Please try again later.');
         }
-
-        setError('Failed to load available leads. Please check your connection and try refreshing the page.');
-        setLeads([]); // Reset leads on error
       } finally {
         setLoading(false);
       }
     };
 
-    // Only load on initial mount or when dependencies actually change
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      loadLeads();
-    } else if (!hasLoadedData.current || !leads.length) {
-      loadLeads();
-    }
-
-  }, [isAuthenticated, navigate, user, unlockedLeadIds, leads.length]);
-
-  // Function to force refresh data when needed
-  const refreshLeads = () => {
-    hasLoadedData.current = false;
     loadLeads();
-  };
+  }, [isAuthenticated, user, unlockedLeadIds, idsLoading, navigate]);
 
-  return { leads, loading, error, refreshLeads };
+  return { leads, loading: loading || idsLoading, error };
 }

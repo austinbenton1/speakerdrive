@@ -38,9 +38,6 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
     groups.get(key)!.push(lead);
   }
 
-  console.log('Total number of groups:', groups.size);
-  console.log('Total number of contacts:', contactLeads.length);
-  
   // Process each event group according to the rules
   const resultLeads: Lead[] = [];
   
@@ -49,18 +46,10 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   
   // Then process event groups
   for (const [key, groupLeads] of groups.entries()) {
-    console.log('\nProcessing event group:', key);
-    console.log('Group leads:', groupLeads.map(l => ({ 
-      event: l.event_name, 
-      org: l.organization, 
-      type: l.unlock_type 
-    })));
-
     // Rule 1: If group has any Event URL lead, show only one such lead
     const eventUrlLeads = groupLeads.filter(isEventUrlType);
     
     if (eventUrlLeads.length > 0) {
-      console.log('Found Event URL lead, taking only the first one');
       resultLeads.push(eventUrlLeads[0]);
       continue; // Skip to next group
     }
@@ -69,19 +58,13 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
     const eventEmailLeads = groupLeads.filter(isEventEmailType);
     
     if (eventEmailLeads.length > 0) {
-      console.log('Found Event Email lead, taking only the first one');
       resultLeads.push(eventEmailLeads[0]);
       continue; // Skip to next group
     }
 
     // Rule 3: For any remaining cases, show just one lead from the group
-    console.log('Taking first lead from remaining group');
     resultLeads.push(groupLeads[0]);
   }
-
-  console.log('\nFinal result count:', resultLeads.length);
-  console.log('Contacts:', contactLeads.length);
-  console.log('Deduplicated events:', resultLeads.length - contactLeads.length);
 
   // Return the results without additional sorting
   return resultLeads;

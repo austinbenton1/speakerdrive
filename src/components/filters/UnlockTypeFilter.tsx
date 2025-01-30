@@ -17,13 +17,6 @@ export default function UnlockTypeFilter({
   onToggle,
   isCollapsed = false
 }: UnlockTypeFilterProps) {
-  // Add debug log for props
-  console.log('[UnlockTypeFilter] Props:', {
-    selectedTypes,
-    isOpen,
-    isCollapsed
-  });
-
   const unlockTypes = [
     {
       id: 'Unlock Contact Email',

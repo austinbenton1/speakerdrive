@@ -11,7 +11,6 @@ interface LeadTableRowProps {
 }
 
 export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
-  const { recordedLeads } = useUnlockedLeadsData();
   const [isLoading, setIsLoading] = useState(false);
 
   // Get topic from keywords (first keyword)

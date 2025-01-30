@@ -108,7 +108,7 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
 
     // Add filter for unlocked leads if any exist
     if (unlockedLeadIds.length > 0) {
-      query = query.not('id', 'in', `(${unlockedLeadIds.join(',')})`);
+      query = query.not('id', 'in', `(${unlockedLeadIds.map(id => `'${id}'`).join(',')})`);
     }
 
     // Get available leads with retry
@@ -183,7 +183,7 @@ export async function fetchLeadNavigation(
 
     // Add filter for unlocked leads if any exist
     if (unlockedLeads && unlockedLeads.length > 0) {
-      query = query.not('id', 'in', `(${unlockedLeads.map(ul => ul.lead_id).join(',')})`);
+      query = query.not('id', 'in', `(${unlockedLeads.map(ul => `'${ul.lead_id}'`).join(',')})`);
     }
 
     // Apply filters if provided
