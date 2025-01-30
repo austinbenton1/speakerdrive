@@ -203,8 +203,8 @@ export default function Onboarding() {
 
       setProgress(100);
 
-      // Navigate to chat - no URL parameters needed
-      navigate('/chat/conversation');
+      // Navigate to chat with onboarding parameters
+      navigate('/chat/conversation?source=onboarding&trigger=auto');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to complete onboarding');
     } finally {
