@@ -1,6 +1,9 @@
 interface ChatbotRequest {
   message: string;
   email: string;
+  display_name?: string;
+  services?: string[];
+  website?: string;
 }
 
 interface ChatbotResponse {
@@ -8,11 +11,24 @@ interface ChatbotResponse {
   status: number;
 }
 
-export async function sendChatMessage(message: string, email: string): Promise<ChatbotResponse> {
+export async function sendChatMessage(
+  message: string, 
+  email: string, 
+  display_name?: string,
+  services?: string[],
+  website?: string
+): Promise<ChatbotResponse> {
   try {
     const url = 'https://n8n.speakerdrive.com/webhook/ai-data';
 
     console.log('[Chatbot] Sending message to:', url);
+    console.log(JSON.stringify({
+      message,
+      email,
+      display_name,
+      services,
+      website
+    }));
     
     const response = await fetch(url, {
       method: 'POST',
@@ -22,7 +38,10 @@ export async function sendChatMessage(message: string, email: string): Promise<C
       },
       body: JSON.stringify({
         message,
-        email
+        email,
+        display_name,
+        services,
+        website
       })
     });
 

@@ -21,6 +21,9 @@ export default function ChatConversation() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
+  const [userServices, setUserServices] = useState<string[]>([]);
+  const [userWebsite, setUserWebsite] = useState<string | null>(null);
   const location = useLocation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -51,12 +54,21 @@ export default function ChatConversation() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('avatar_url')
+          .select('avatar_url, display_name, services, website')
           .eq('id', user.id)
           .single();
 
         if (profile?.avatar_url) {
           setUserAvatar(profile.avatar_url);
+        }
+        if (profile?.display_name) {
+          setUserDisplayName(profile.display_name);
+        }
+        if (profile?.services) {
+          setUserServices(profile.services);
+        }
+        if (profile?.website) {
+          setUserWebsite(profile.website);
         }
       } catch (error) {
         console.error('Error fetching user avatar:', error);
@@ -108,7 +120,13 @@ export default function ChatConversation() {
 
         // Send welcome message
         console.log('Sending welcome message...');
-        const response = await sendChatMessage('onboarding_init');
+        const response = await sendChatMessage(
+          'onboarding_init', 
+          user.email, 
+          userDisplayName,
+          userServices,
+          userWebsite
+        );
         console.log('Welcome message response:', response);
         
         if (mounted) {
@@ -145,7 +163,7 @@ export default function ChatConversation() {
     return () => {
       mounted = false;
     };
-  }, [location.search]);
+  }, [location.search, userDisplayName]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading || !userEmail) return;
@@ -162,7 +180,13 @@ export default function ChatConversation() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(message.trim(), userEmail);
+      const response = await sendChatMessage(
+        message.trim(), 
+        userEmail, 
+        userDisplayName,
+        userServices,
+        userWebsite
+      );
       
       // Update user message status
       setMessages(prev => prev.map(msg => 
