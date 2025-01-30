@@ -87,10 +87,90 @@ export default function Onboarding() {
   const onSubmit = async (data: OnboardingFormData) => {
     if (!user) return;
 
+    let webhookSuccess = false;
     try {
       setError(null);
       setIsSubmitting(true);
       setProgress(20);
+
+      // Function to send both webhooks
+      const sendWebhooks = async (retries = 3): Promise<boolean> => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            // Send both webhooks in parallel
+            const [aiResponse, onboardingResponse] = await Promise.all([
+              fetch('https://n8n.speakerdrive.com/webhook/ai-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  message: 'onboarding_init',
+                  email: user.email,
+                  display_name: data.fullName,
+                  services: data.services,
+                  website: data.website || null
+                })
+              }),
+              fetch('https://n8n.speakerdrive.com/webhook/onboarding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: user.email,
+                  display_name: data.fullName,
+                  services: data.services,
+                  website: data.website || null
+                })
+              })
+            ]);
+
+            if (aiResponse.ok && onboardingResponse.ok) {
+              return true;
+            }
+
+            // Wait before retrying
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            }
+          } catch (error) {
+            console.error('Webhook attempt failed:', error);
+            if (i === retries - 1) throw error;
+          }
+        }
+        return false;
+      };
+
+      // Function to retry webhook
+      const sendWebhook = async (retries = 3): Promise<boolean> => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const response = await fetch('https://n8n.speakerdrive.com/webhook/ai-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: 'onboarding_init',
+                email: user.email,
+                display_name: data.fullName,
+                services: data.services,
+                website: data.website || null
+              })
+            });
+
+            if (response.ok) {
+              return true;
+            }
+
+            // Wait before retrying
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            }
+          } catch (error) {
+            console.error('Webhook attempt failed:', error);
+            if (i === retries - 1) throw error;
+          }
+        }
+        return false;
+      };
 
       // First update auth user metadata
       const { error: updateUserError } = await supabase.auth.updateUser({
@@ -115,59 +195,16 @@ export default function Onboarding() {
       if (profileError) throw profileError;
       setProgress(60);
 
-      // Prepare webhook payload
-      const webhookPayload = {
-        id: user.id,
-        email: user.email,
-        display_name: data.fullName,
-        services: data.services,
-        website: data.website || null
-      };
-
-      // Send onboarding webhook with retry
-      await retryRequest(async () => {
-        const response = await fetch('https://n8n.speakerdrive.com/webhook/onboarding', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookPayload)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Onboarding webhook failed: ${response.status}`);
-        }
-        return response;
-      });
-
-      setProgress(80);
-
-      // Send profile webhook with retry
-      // await retryRequest(async () => {
-      //   const response = await fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //     body: JSON.stringify({
-      //       user: {
-      //         id: user.id,
-      //         display_name: data.fullName
-      //       },
-      //       changes: webhookPayload
-      //     })
-      //   });
-
-      //   if (!response.ok) {
-      //     throw new Error(`Profile webhook failed: ${response.status}`);
-      //   }
-      //   return response;
-      // });
+      // Try to send webhook with retries
+      webhookSuccess = await sendWebhooks();
+      if (!webhookSuccess) {
+        throw new Error('Failed to send onboarding webhooks after multiple attempts');
+      }
 
       setProgress(100);
 
-      // Only navigate after both webhooks complete successfully
-      navigate('/chat/conversation?source=onboarding&trigger=auto');
+      // Navigate to chat - no URL parameters needed
+      navigate('/chat/conversation');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to complete onboarding');
     } finally {

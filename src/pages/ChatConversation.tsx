@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
@@ -13,18 +13,17 @@ interface Message {
   error?: string;
 }
 
-const WELCOME_MESSAGE_KEY = 'welcome_message_shown';
-
 export default function ChatConversation() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
   const [userServices, setUserServices] = useState<string[]>([]);
   const [userWebsite, setUserWebsite] = useState<string | null>(null);
+  const [isUserDataLoading, setIsUserDataLoading] = useState(true);
+  const [isThinking, setIsThinking] = useState(false);
   const location = useLocation();
   const lastMessageTimestamp = useRef<number>(0);
   const THROTTLE_DELAY = 2000; // 2 seconds between messages
@@ -46,9 +45,25 @@ export default function ChatConversation() {
     }
   }, [message]);
 
+  // Check for onboarding parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isOnboarding = params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
+    
+    if (isOnboarding) {
+      setMessages([{
+        content: '__onboarding_init__',
+        isBot: false,
+        timestamp: new Date(),
+        status: 'sending'
+      }]);
+    }
+  }, [location.search]);
+
   // Fetch user avatar
   const fetchUserAvatar = useCallback(async () => {
       try {
+        setIsUserDataLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         
@@ -74,6 +89,8 @@ export default function ChatConversation() {
         }
       } catch (error) {
         console.error('Error fetching user avatar:', error);
+      } finally {
+        setIsUserDataLoading(false);
       }
   }, []);
 
@@ -83,92 +100,6 @@ export default function ChatConversation() {
     return () => {};
   }, []);
 
-  // Handle onboarding welcome message
-  useEffect(() => {
-    let mounted = true;
-
-    const initializeChat = async () => {
-      try {
-        // Check if welcome message was already shown
-        const welcomeShown = sessionStorage.getItem(WELCOME_MESSAGE_KEY);
-        if (welcomeShown) {
-          setIsInitializing(false);
-          return;
-        }
-
-        // Check URL parameters
-        const searchParams = new URLSearchParams(location.search);
-        const isOnboarding = searchParams.get('source') === 'onboarding';
-        const shouldAutoTrigger = searchParams.get('trigger') === 'auto';
-
-        if (!isOnboarding || !shouldAutoTrigger) {
-          setIsInitializing(false);
-          return;
-        }
-
-        // Check user creation time
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          console.error('Error getting user:', userError);
-          setIsInitializing(false);
-          return;
-        }
-
-        const createdAt = new Date(user.created_at);
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-
-        // Only proceed if user was created in the last 5 minutes
-        if (createdAt < fiveMinutesAgo) {
-          setIsInitializing(false);
-          return;
-        }
-
-        // Send welcome message
-        console.log('Sending welcome message...');
-        const response = await sendChatMessage(
-          'onboarding_init', 
-          user.email, 
-          userDisplayName,
-          userServices,
-          userWebsite
-        );
-        console.log('Welcome message response:', response);
-        
-        if (mounted) {
-          if (response && response.response) {
-            setMessages([{
-              content: response.response,
-              isBot: true,
-              timestamp: new Date(),
-              status: 'sent'
-            }]);
-
-            // Mark welcome message as shown
-            sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
-          } else {
-            throw new Error('Invalid response from chatbot');
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing chat:', error);
-        if (mounted) {
-          // Don't set error message in messages array - just skip initialization
-          console.log('Skipping initialization due to error');
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitializing(false);
-        }
-      }
-    };
-
-    initializeChat();
-
-    return () => {
-      mounted = false;
-    };
-  }, [location.search, userDisplayName]);
 
   // Throttled message sender
   const throttledSendMessage = useCallback(
@@ -184,6 +115,7 @@ export default function ChatConversation() {
       lastMessageTimestamp.current = now;
 
       try {
+        setIsThinking(true);
         const response = await sendChatMessage(
           messageContent,
           userEmail,
@@ -231,6 +163,7 @@ export default function ChatConversation() {
         });
       } finally {
         setIsLoading(false);
+        setIsThinking(false);
       }
     }, 500),
     [userEmail, userDisplayName, userServices, userWebsite]
@@ -277,7 +210,7 @@ export default function ChatConversation() {
     };
   }, []);
 
-  if (isInitializing) {
+  if (isUserDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
         <div className="flex flex-col items-center gap-3">
@@ -351,6 +284,26 @@ export default function ChatConversation() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Thinking Indicator */}
+        {isThinking && (
+          <div className="flex items-start gap-4 w-fit max-w-full mb-6">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                <img 
+                  src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                  alt="AI"
+                  className="w-7 h-7"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-lg">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+
         {/* Input Section */}
         <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-6 pb-8">
@@ -361,7 +314,7 @@ export default function ChatConversation() {
               onKeyDown={handleKeyDown}
               placeholder="Try asking: 'What strategies can help me win more client projects?'"
               className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-              disabled={isLoading}
+              disabled={isLoading || isUserDataLoading}
             />
           </div>
           
@@ -401,11 +354,11 @@ export default function ChatConversation() {
                 </span>
                 <button 
                   onClick={handleSend}
-                  disabled={!message.trim() || isLoading}
+                  disabled={!message.trim() || isLoading || isUserDataLoading}
                   className={`
                     text-white w-8 h-8 rounded-lg flex items-center justify-center
                     transition-all duration-200
-                    ${isLoading || !message.trim()
+                    ${isLoading || isUserDataLoading || !message.trim()
                       ? 'bg-blue-400 cursor-not-allowed scale-95'
                       : 'bg-[#0066FF] hover:bg-[#00B341] scale-100'
                     }

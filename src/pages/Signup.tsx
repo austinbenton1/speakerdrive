@@ -52,8 +52,10 @@ export default function Signup() {
         return;
       }
 
-      // Redirect to onboarding
-      navigate('/onboarding');
+      // Redirect to onboarding with state
+      navigate('/onboarding', {
+        state: { fromSignup: true }
+      });
     } catch (error) {
       console.error('Signup error:', error);
       setError('root', { 
