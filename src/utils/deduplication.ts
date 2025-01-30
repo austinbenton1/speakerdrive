@@ -83,32 +83,6 @@ export function getUniqueLeads(leads: Lead[]): Lead[] {
   console.log('Contacts:', contactLeads.length);
   console.log('Deduplicated events:', resultLeads.length - contactLeads.length);
 
-  // Sort final results:
-  // 1. Contacts first, sorted by name
-  // 2. Then events, sorted by name and organization
-  return resultLeads.sort((a, b) => {
-    const aIsContact = isContactEmailType(a);
-    const bIsContact = isContactEmailType(b);
-    
-    // If one is a contact and one isn't, contacts come first
-    if (aIsContact !== bIsContact) {
-      return aIsContact ? -1 : 1;
-    }
-
-    // If both are contacts, sort by name
-    if (aIsContact && bIsContact) {
-      return (a.lead_name || '').localeCompare(b.lead_name || '');
-    }
-
-    // If both are events, sort by event name then organization
-    const eventNameA = (a.event_name || '').toLowerCase().trim();
-    const eventNameB = (b.event_name || '').toLowerCase().trim();
-    if (eventNameA !== eventNameB) {
-      return eventNameA.localeCompare(eventNameB);
-    }
-
-    const orgA = (a.organization || '').toLowerCase().trim();
-    const orgB = (b.organization || '').toLowerCase().trim();
-    return orgA.localeCompare(orgB);
-  });
+  // Return the results without additional sorting
+  return resultLeads;
 }

@@ -1,12 +1,16 @@
+interface ChatbotRequest {
+  message: string;
+  email: string;
+}
+
 interface ChatbotResponse {
   response: string;
   status: number;
 }
 
-export async function sendChatMessage(message: string): Promise<ChatbotResponse> {
+export async function sendChatMessage(message: string, email: string): Promise<ChatbotResponse> {
   try {
-    const params = new URLSearchParams({ message });
-    const url = `https://n8n.speakerdrive.com/webhook/ai-data?${params}`;
+    const url = 'https://n8n.speakerdrive.com/webhook/ai-data';
 
     console.log('[Chatbot] Sending message to:', url);
     
@@ -15,7 +19,11 @@ export async function sendChatMessage(message: string): Promise<ChatbotResponse>
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      }
+      },
+      body: JSON.stringify({
+        message,
+        email
+      })
     });
 
     if (!response.ok) {
@@ -39,7 +47,15 @@ export async function sendChatMessage(message: string): Promise<ChatbotResponse>
     const data = await response.json();
     console.log('[Chatbot] Response received:', data);
     
-    return data;
+    // Handle empty or invalid responses
+    if (!data || typeof data.response !== 'string') {
+      throw new Error('Invalid response format from chatbot');
+    }
+
+    return {
+      response: data.response,
+      status: response.status
+    };
   } catch (error) {
     console.error('[Chatbot] Error sending message:', error);
     throw error;

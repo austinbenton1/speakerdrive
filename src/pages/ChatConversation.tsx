@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, PaperclipIcon, Image, Send, Mail, Zap, User } from 'lucide-react';
 
 interface Message {
   content: string;
   isBot: boolean;
   timestamp: Date;
   status?: 'sending' | 'sent' | 'error';
+  error?: string;
 }
 
 const WELCOME_MESSAGE_KEY = 'welcome_message_shown';
@@ -18,7 +19,52 @@ export default function ChatConversation() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const location = useLocation();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [message]);
+
+  // Fetch user avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        setUserEmail(user.email);
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.avatar_url) {
+          setUserAvatar(profile.avatar_url);
+        }
+      } catch (error) {
+        console.error('Error fetching user avatar:', error);
+      }
+    };
+
+    fetchUserAvatar();
+  }, []);
 
   // Handle onboarding welcome message
   useEffect(() => {
@@ -102,7 +148,7 @@ export default function ChatConversation() {
   }, [location.search]);
 
   const handleSend = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || !userEmail) return;
 
     const userMessage = {
       content: message.trim(),
@@ -116,7 +162,7 @@ export default function ChatConversation() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(message.trim());
+      const response = await sendChatMessage(message.trim(), userEmail);
       
       // Update user message status
       setMessages(prev => prev.map(msg => 
@@ -134,10 +180,21 @@ export default function ChatConversation() {
       console.error('Error sending message:', error);
       // Update user message status to error
       setMessages(prev => prev.map(msg => 
-        msg === userMessage ? { ...msg, status: 'error' } : msg
+        msg === userMessage ? { 
+          ...msg, 
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Failed to send message'
+        } : msg
       ));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
@@ -153,70 +210,76 @@ export default function ChatConversation() {
   }
 
   return (
-    <div style={{ background: '#EDEEF0' }} className="min-h-screen p-4 sm:p-6 flex justify-center">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-2xl">
-        <div className="space-y-6 max-w-2xl">
+        {/* Welcome Section */}
+        {messages.length === 0 && (
           <div className="space-y-2">
             <h1 className="text-4xl font-bold">
               <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
                 Ask SpeakerDrive
               </span>
             </h1>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Welcome to SpeakerDrive AI
-            </h2>
-          </div>
-
-          <div className="space-y-4 text-gray-600">
-            <p>
-              My goal is to help you win more engagements. My responses are tailored to add value and align with your goals.
-            </p>
-
-            <p>
-              I'm your dedicated partner, trained with expertise in the unique needs of speakers, coaches, trainers, facilitators, and any expert looking to gain an edge.
-            </p>
-
-            <p className="text-lg font-medium text-gray-900">
-              What can we tackle together today?
-            </p>
-          </div>
-        </div>
-
-        {messages.length > 0 && (
-          <div className="mb-6 space-y-4">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg ${
-                  msg.isBot 
-                    ? 'bg-white border border-gray-200'
-                    : 'bg-blue-50 border border-blue-100'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-medium text-gray-900">
-                    {msg.isBot ? 'SpeakerDrive AI' : 'You'}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {msg.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
-                <p className="text-gray-700">{msg.content}</p>
-                {msg.status === 'error' && (
-                  <p className="text-sm text-red-600 mt-2">
-                    Failed to send message. Please try again.
-                  </p>
-                )}
-              </div>
-            ))}
           </div>
         )}
 
+        {/* Messages Section */}
+        <div className="mt-6 mb-6 flex flex-col gap-6">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-4 w-fit max-w-full"
+            >
+              <div className="flex-shrink-0">
+                {msg.isBot ? (
+                  <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                    <img 
+                      src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                      alt="AI"
+                      className="w-7 h-7"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
+                    {userAvatar ? (
+                      <img 
+                        src={userAvatar}
+                        alt="User"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                        }}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em]">{msg.content}</div>
+                {msg.status === 'error' && msg.error && (
+                  <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
+                    <AlertCircle className="w-4 h-4" />
+                    <p>{msg.error}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Section */}
         <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-6 pb-8">
             <textarea
+              ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Try asking: 'What strategies can help me win more client projects?'"
               className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
               disabled={isLoading}

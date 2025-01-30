@@ -100,11 +100,11 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
       .from('leads')
       .select(selectQuery);
 
-    // Apply multiple sort orders: event_name, organization, then random sort
+    // Apply sorts in order: random sort first, then event_name, then organization
     query = query
+      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending })
       .order('event_name', { ascending: true })
-      .order('organization', { ascending: true })
-      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending });
+      .order('organization', { ascending: true });
 
     // Add filter for unlocked leads if any exist
     if (unlockedLeadIds.length > 0) {
