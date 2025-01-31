@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { formatTime } from '../../utils/date';
+import { formatChatMessage } from '../../utils/chat';
 
 interface ChatMessageProps {
   content: string;
@@ -48,8 +49,8 @@ export default function ChatMessage({ content, isBot, timestamp, status }: ChatM
             {formatTime(timestamp)}
           </span>
         </div>
-        <div className="text-gray-700 prose prose-sm max-w-none">
-          {content}
+        <div className="text-gray-700 prose prose-sm max-w-none whitespace-pre-wrap break-words">
+          {formatChatMessage(content)}
         </div>
       </div>
     </div>

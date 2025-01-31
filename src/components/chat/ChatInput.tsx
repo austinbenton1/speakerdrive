@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { PaperclipIcon, Image, Send } from 'lucide-react';
 
-const MAX_CHARS = 1000;
+const MAX_CHARS = 4000; // Increased to handle longer messages
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -75,6 +75,11 @@ export default function ChatInput({ onSendMessage, isLoading, className = '' }: 
           <div className="flex items-center justify-between mt-2 px-2 text-xs">
             <span className={input.length > MAX_CHARS ? 'text-red-500' : 'text-gray-400'}>
               {input.length}/{MAX_CHARS}
+              {input.length > MAX_CHARS && (
+                <span className="ml-2">
+                  Message too long by {input.length - MAX_CHARS} characters
+                </span>
+              )}
             </span>
             <span className="text-gray-400">All Web</span>
           </div>

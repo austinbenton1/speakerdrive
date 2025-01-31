@@ -19,6 +19,11 @@ export async function sendChatMessage(
   website?: string
 ): Promise<ChatbotResponse> {
   try {
+    // Validate message length before sending
+    if (message.length > 8000) {
+      throw new Error('Message exceeds maximum length of 8000 characters');
+    }
+
     const url = 'https://n8n.speakerdrive.com/webhook/ai-data';
 
     console.log('[Chatbot] Sending message to:', url);
@@ -66,13 +71,23 @@ export async function sendChatMessage(
     const data = await response.json();
     console.log('[Chatbot] Response received:', data);
     
-    // Handle empty or invalid responses
-    if (!data || typeof data.response !== 'string') {
-      throw new Error('Invalid response format from chatbot');
+    // Validate response format and content
+    if (!data) {
+      throw new Error('Empty response from chatbot');
+    }
+    
+    if (typeof data.response !== 'string') {
+      throw new Error('Invalid response format: expected string response');
     }
 
+    // Truncate extremely long responses to prevent UI issues
+    const maxResponseLength = 10000;
+    const responseText = data.response.length > maxResponseLength
+      ? data.response.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
+      : data.response;
+
     return {
-      response: data.response,
+      response: responseText,
       status: response.status
     };
   } catch (error) {
