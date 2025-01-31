@@ -23,7 +23,6 @@ export default function ChatConversation() {
   const [userServices, setUserServices] = useState<string[]>([]);
   const [userWebsite, setUserWebsite] = useState<string | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const location = useLocation();
   const lastMessageTimestamp = useRef<number>(0);
@@ -49,42 +48,17 @@ export default function ChatConversation() {
   // Check for onboarding parameters
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const isOnboarding = params.get('source') === 'onboarding' && 
-                        params.get('trigger') === 'auto' && 
-                        userEmail;
-
-    const initializeChat = async () => {
-      if (isOnboarding && !isInitializing) {
-        setIsInitializing(true);
-        setIsThinking(true);
-        try {
-          const response = await sendChatMessage(
-            'onboarding_init',
-            userEmail!,
-            userDisplayName,
-            userServices,
-            userWebsite
-          );
-
-          setMessages([{
-            content: response.response,
-            isBot: true,
-            timestamp: new Date(),
-            status: 'sent'
-          }]);
-        } catch (error) {
-          console.error('Failed to initialize chat:', error);
-        } finally {
-          setIsInitializing(false);
-          setIsThinking(false);
-        }
-      }
-    };
-
-    if (isOnboarding && !isUserDataLoading) {
-      initializeChat();
+    const isOnboarding = params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
+    
+    if (isOnboarding) {
+      setMessages([{
+        content: '__onboarding_init__',
+        isBot: false,
+        timestamp: new Date(),
+        status: 'sending'
+      }]);
     }
-  }, [location.search, userEmail, userDisplayName, userServices, userWebsite, isUserDataLoading]);
+  }, [location.search]);
 
   // Fetch user avatar
   const fetchUserAvatar = useCallback(async () => {
