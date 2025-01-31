@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
+import { useBatchLeads } from '../hooks/useBatchLeads';
 import { Users, Calendar, Filter } from 'lucide-react';
 import { getUniqueLeads } from '../utils/deduplication';
 import SmartFiltersBar from '../components/filters/SmartFiltersBar';
@@ -21,6 +22,28 @@ export default function FindLeads() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Initialize batch fetching
+  const { batchLeads, loading: batchLoading, error: batchError, stats } = useBatchLeads();
+
+  // Log batch fetching progress
+  useEffect(() => {
+    if (stats.totalLeads > 0) {
+      console.log('Batch Loading Status:', {
+        totalLeads: stats.totalLeads,
+        fetchedSoFar: stats.totalLeads - stats.remainingLeads,
+        remainingLeads: stats.remainingLeads,
+        batchesFetched: stats.batchesFetched
+      });
+    }
+  }, [stats]);
+
+  // Log any batch fetching errors
+  useEffect(() => {
+    if (batchError) {
+      console.error('Batch fetching error:', batchError);
+    }
+  }, [batchError]);
 
   // Initialize filters from location state if available
   useEffect(() => {
@@ -55,7 +78,6 @@ export default function FindLeads() {
   }, [showAll]);
 
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
-  const { leads: availableLeads, loading, error } = useAvailableLeads();
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
@@ -69,6 +91,183 @@ export default function FindLeads() {
   } = useLeadFilters();
 
   const { sortConfig } = useRandomSort();
+
+  // Process leads whenever filters change or when batch fetching completes
+  useEffect(() => {
+    if (!batchLeads.length) return;
+    
+    setIsFiltering(true);
+    try {
+      console.log('Applying filters to leads...');
+      
+      // Apply filters to batch leads
+      const filteredLeads = applyFilters(batchLeads);
+      
+      // Apply deduplication
+      const uniqueLeads = getUniqueLeads(filteredLeads);
+      
+      console.log('Lead processing complete:', {
+        originalCount: batchLeads.length,
+        afterFiltering: filteredLeads.length,
+        afterDeduplication: uniqueLeads.length
+      });
+
+      // Update displayed leads
+      setDisplayedLeads(uniqueLeads);
+      setCurrentLeadIds(uniqueLeads.map(lead => lead.id));
+    } catch (error) {
+      console.error('Error processing leads:', error);
+    } finally {
+      setIsFiltering(false);
+    }
+  }, [
+    batchLeads,
+    filters,
+    opportunityTags,
+    selectedLeadType,
+    showAll,
+    eventsFilter
+  ]);
+
+  // Function to apply all filters to leads
+  const applyFilters = (leads: Lead[]) => {
+    let filtered = [...leads];
+
+    // Apply opportunity tags filter
+    if (opportunityTags.length > 0) {
+      filtered = filtered.filter(lead => {
+        if (!lead.opportunity_tags) return false;
+        return opportunityTags.some(tag => lead.opportunity_tags.includes(tag));
+      });
+    }
+
+    // Apply lead type filter
+    if (selectedLeadType !== 'all') {
+      filtered = filtered.filter(lead => 
+        lead.unlock_type === 'Unlock Event Email' || 
+        lead.unlock_type === 'Unlock Event URL'
+      );
+    }
+
+    // Apply USA location filter
+    if (!showAll) {
+      filtered = filtered.filter(lead => lead.region === 'United States');
+    }
+
+    // Filter by opportunities search term
+    if (eventsFilter || opportunityTags.length > 0) {
+      filtered = filtered.filter(lead => {
+        // Combine all searchable fields
+        const searchableText = [
+          lead.lead_name,
+          lead.event_name,
+          lead.keywords,
+          lead.subtext,
+          lead.job_title,
+          lead.organization
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        // Check text search
+        if (eventsFilter && searchableText.includes(eventsFilter.toLowerCase())) {
+          return true;
+        }
+        
+        // Check tags
+        if (opportunityTags.length > 0) {
+          return opportunityTags.some(tag => searchableText.includes(tag.toLowerCase()));
+        }
+        
+        return false;
+      });
+    }
+
+    // Apply all other filters from the filters object
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value || (Array.isArray(value) && value.length === 0)) return;
+
+      switch (key) {
+        case 'industry':
+          filtered = filtered.filter(lead => 
+            filters.industry?.some(industry => 
+              lead.industry?.toLowerCase().includes(industry.toLowerCase())
+            )
+          );
+          break;
+
+        case 'eventFormat':
+          filtered = filtered.filter(lead => 
+            filters.eventFormat?.some(format => 
+              lead.event_format?.toLowerCase().includes(format.toLowerCase())
+            )
+          );
+          break;
+
+        case 'organization':
+          filtered = filtered.filter(lead => 
+            filters.organization?.some(org => 
+              lead.organization?.toLowerCase().includes(org.toLowerCase())
+            )
+          );
+          break;
+
+        case 'organizationType':
+          filtered = filtered.filter(lead => 
+            filters.organizationType?.includes(lead.organization_type || '')
+          );
+          break;
+
+        case 'jobTitle':
+          filtered = filtered.filter(lead => 
+            filters.jobTitle?.some(job => 
+              lead.job_title?.toLowerCase().includes(job.toLowerCase())
+            )
+          );
+          break;
+
+        case 'region':
+          if (filters.region) {
+            filtered = filtered.filter(lead => 
+              lead.region?.toLowerCase() === filters.region.toLowerCase()
+            );
+          }
+          break;
+
+        case 'state':
+          filtered = filtered.filter(lead => 
+            filters.state?.some(state => 
+              lead.state?.toLowerCase() === state.toLowerCase()
+            )
+          );
+          break;
+
+        case 'city':
+          filtered = filtered.filter(lead => 
+            filters.city?.some(city => 
+              lead.city?.toLowerCase().includes(city.toLowerCase())
+            )
+          );
+          break;
+
+        case 'unlockType':
+          if (Array.isArray(filters.unlockType) && filters.unlockType.length > 0) {
+            filtered = filtered.filter(lead => 
+              filters.unlockType?.includes(lead.unlock_type)
+            );
+          }
+          break;
+
+        case 'pastSpeakers':
+          filtered = filtered.filter(lead => 
+            filters.pastSpeakers?.some(speaker => 
+              lead.past_speakers_events?.toLowerCase().includes(speaker.toLowerCase())
+            )
+          );
+          break;
+      }
+    });
+
+    return filtered;
+  };
 
   // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
@@ -222,7 +421,7 @@ export default function FindLeads() {
   // Update displayed leads and IDs when necessary
   useEffect(() => {
     // First apply deduplication to preserve groups
-    const uniqueLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
+    const uniqueLeads = showAllEvents ? batchLeads : getUniqueLeads(batchLeads);
 
     // Then apply filters to the deduplicated results
     let results = uniqueLeads;
@@ -369,7 +568,7 @@ export default function FindLeads() {
     // Update both states with the filtered results
     setDisplayedLeads(results);
     setCurrentLeadIds(results.map(lead => lead.id));
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll]);
+  }, [batchLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params
@@ -503,9 +702,9 @@ export default function FindLeads() {
 
   // Calculate USA leads count
   const usaLeadsCount = useMemo(() => {
-    const baseLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
+    const baseLeads = showAllEvents ? batchLeads : getUniqueLeads(batchLeads);
     return baseLeads.filter(lead => lead.region === 'United States').length;
-  }, [availableLeads, showAllEvents]);
+  }, [batchLeads, showAllEvents]);
 
   const handleUnlockTypeChange = (type: string | undefined) => {
     // If type is undefined, clear the filter
@@ -647,16 +846,10 @@ export default function FindLeads() {
           <div className="bg-white border border-gray-200 rounded-lg mt-6">
             <LeadsTable 
               leads={displayedLeads}
-              loading={loading}
+              loading={batchLoading}
               onResetFilters={handleResetFilters}
               onLeadClick={handleLeadClick}
               showAllEvents={showAllEvents}
-              uniqueCount={uniqueLeadsCount}
-              selectedLeadType={selectedLeadType}
-              filters={filters}
-              eventsFilter={filters.searchAll}
-              opportunityTags={filters.opportunities || []}
-              showAll={showAll}
             />
           </div>
         </div>

@@ -98,7 +98,8 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
 
     let query = supabase
       .from('leads')
-      .select(selectQuery);
+      .select(selectQuery)
+      .limit(500);  // Add limit of 500 records
 
     // Apply sorts in order: random sort first, then event_name, then organization
     query = query
@@ -284,5 +285,152 @@ export async function fetchLeadNavigation(
     };
   } catch (error) {
     return {};
+  }
+}
+
+/**
+ * Gets the count of locked leads for the current user
+ * @param id_array Array of lead IDs from unlocked_leads table
+ * @returns The count of locked leads
+ */
+export async function getLockedLeadsCount(id_array: string[]): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .rpc('count_leads', {
+        id_array
+      });
+
+    if (error) throw error;
+    return data || 0;
+  } catch (err) {
+    console.error('Error getting locked leads count:', err);
+    return 0;
+  }
+}
+
+/**
+ * Fetches leads in batches of 500 with progress logging
+ * @param userId Current user's ID
+ * @param unlockedLeadIds Array of already unlocked lead IDs
+ * @returns Array of leads and batch information
+ */
+export async function fetchLeadsByBatch(userId: string, unlockedLeadIds: string[] = []): Promise<{
+  leads: Lead[];
+  totalLeads: number;
+  batchesFetched: number;
+  remainingLeads: number;
+}> {
+  const BATCH_SIZE = 500;
+  let allLeads: Lead[] = [];
+  let currentOffset = 0;
+  let totalLeads = 0;
+  let batchesFetched = 0;
+
+  try {
+    // First get the total count of available leads
+    const { data: countData, error: countError } = await supabase
+      .rpc('count_leads', {
+        id_array: unlockedLeadIds
+      });
+
+    if (countError) throw countError;
+    totalLeads = countData || 0;
+
+    // Get user's profile sort configuration for consistent sorting across batches
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('random_lead_sort')
+      .eq('id', userId)
+      .single();
+
+    let sortConfig = profileData?.random_lead_sort;
+    if (typeof sortConfig === 'string') {
+      try {
+        sortConfig = JSON.parse(sortConfig);
+      } catch {
+        sortConfig = getRandomSort();
+      }
+    }
+    const finalSortConfig = sortConfig || getRandomSort();
+
+    // Fetch leads in batches
+    while (currentOffset < totalLeads) {
+      const selectQuery = `
+        id,
+        image_url,
+        lead_name,
+        focus,
+        lead_type,
+        unlock_type,
+        industry,
+        organization,
+        organization_type,
+        event_info,
+        detailed_info,
+        event_name,
+        event_url,
+        event_format,
+        job_title,
+        subtext,
+        past_speakers_events,
+        region,
+        state,
+        city,
+        keywords
+      `;
+
+      let query = supabase
+        .from('leads')
+        .select(selectQuery)
+        .range(currentOffset, currentOffset + BATCH_SIZE - 1);
+
+      // Apply sorts for consistency
+      query = query
+        .order(finalSortConfig.field, { ascending: finalSortConfig.ascending })
+        .order('event_name', { ascending: true })
+        .order('organization', { ascending: true });
+
+      // Filter out unlocked leads
+      if (unlockedLeadIds.length > 0) {
+        query = query.not('id', 'in', `(${unlockedLeadIds.map(id => `'${id}'`).join(',')})`);
+      }
+
+      const { data: batchLeads, error: batchError } = await retryableRequest(() => query);
+
+      if (batchError) throw batchError;
+
+      if (batchLeads && batchLeads.length > 0) {
+        allLeads = [...allLeads, ...batchLeads];
+        batchesFetched++;
+        
+        // Log progress
+        const remainingLeads = totalLeads - allLeads.length;
+        console.log({
+          totalLeads,
+          fetchedInThisBatch: batchLeads.length,
+          totalFetchedSoFar: allLeads.length,
+          remainingLeads,
+          currentBatch: batchesFetched
+        });
+      }
+
+      currentOffset += BATCH_SIZE;
+    }
+
+    return {
+      leads: allLeads,
+      totalLeads,
+      batchesFetched,
+      remainingLeads: totalLeads - allLeads.length
+    };
+
+  } catch (err) {
+    console.error('Error fetching leads by batch:', err);
+    return {
+      leads: [],
+      totalLeads: 0,
+      batchesFetched: 0,
+      remainingLeads: 0
+    };
   }
 }
