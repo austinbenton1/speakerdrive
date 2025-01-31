@@ -26,25 +26,6 @@ export default function FindLeads() {
   // Initialize batch fetching
   const { batchLeads, loading: batchLoading, error: batchError, stats } = useBatchLeads();
 
-  // Log batch fetching progress
-  useEffect(() => {
-    if (stats.totalLeads > 0) {
-      console.log('Batch Loading Status:', {
-        totalLeads: stats.totalLeads,
-        fetchedSoFar: stats.totalLeads - stats.remainingLeads,
-        remainingLeads: stats.remainingLeads,
-        batchesFetched: stats.batchesFetched
-      });
-    }
-  }, [stats]);
-
-  // Log any batch fetching errors
-  useEffect(() => {
-    if (batchError) {
-      console.error('Batch fetching error:', batchError);
-    }
-  }, [batchError]);
-
   // Initialize filters from location state if available
   useEffect(() => {
     const state = location.state as { preservedFilters?: any };
@@ -91,43 +72,6 @@ export default function FindLeads() {
   } = useLeadFilters();
 
   const { sortConfig } = useRandomSort();
-
-  // Process leads whenever filters change or when batch fetching completes
-  useEffect(() => {
-    if (!batchLeads.length) return;
-    
-    setIsFiltering(true);
-    try {
-      console.log('Applying filters to leads...');
-      
-      // Apply filters to batch leads
-      const filteredLeads = applyFilters(batchLeads);
-      
-      // Apply deduplication
-      const uniqueLeads = getUniqueLeads(filteredLeads);
-      
-      console.log('Lead processing complete:', {
-        originalCount: batchLeads.length,
-        afterFiltering: filteredLeads.length,
-        afterDeduplication: uniqueLeads.length
-      });
-
-      // Update displayed leads
-      setDisplayedLeads(uniqueLeads);
-      setCurrentLeadIds(uniqueLeads.map(lead => lead.id));
-    } catch (error) {
-      console.error('Error processing leads:', error);
-    } finally {
-      setIsFiltering(false);
-    }
-  }, [
-    batchLeads,
-    filters,
-    opportunityTags,
-    selectedLeadType,
-    showAll,
-    eventsFilter
-  ]);
 
   // Function to apply all filters to leads
   const applyFilters = (leads: Lead[]) => {
@@ -268,6 +212,37 @@ export default function FindLeads() {
 
     return filtered;
   };
+
+  // Memoize filtered leads to prevent unnecessary recalculations
+  const filteredLeads = useMemo(() => {
+    if (!batchLeads.length) return [];
+    
+    try {
+      // Apply filters to batch leads
+      const filtered = applyFilters(batchLeads);
+      
+      // Apply deduplication
+      return getUniqueLeads(filtered);
+    } catch (error) {
+      console.error('Error processing leads:', error);
+      return [];
+    }
+  }, [
+    batchLeads,
+    filters,
+    opportunityTags,
+    selectedLeadType,
+    showAll,
+    eventsFilter
+  ]);
+
+  // Update displayed leads when filtered leads change
+  useEffect(() => {
+    setIsFiltering(true);
+    setDisplayedLeads(filteredLeads);
+    setCurrentLeadIds(filteredLeads.map(lead => lead.id));
+    setIsFiltering(false);
+  }, [filteredLeads]);
 
   // Initialize filters and handle URL parameters once on mount
   useEffect(() => {
