@@ -26,6 +26,7 @@ import ChatConversation from './pages/ChatConversation';
 import SalesCoach from './pages/SalesCoach';
 import StoreImagePage from './pages/StoreImagePage';
 import Settings from './pages/Settings';
+import DeduplicateLeads from './pages/DeduplicateLeads';
 
 function App() {
   const { loading } = useAuth();
@@ -99,6 +100,13 @@ function App() {
             <ProtectedRoute>
               <AdminRoute>
                 <StoreImagePage />
+              </AdminRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/deduplicate-leads" element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <DeduplicateLeads />
               </AdminRoute>
             </ProtectedRoute>
           } />

@@ -14,16 +14,37 @@ export interface RecordedLead {
 
 export interface Lead {
   id: string;
-  event_name: string;
-  lead_name: string;
-  focus: string;
-  industry: string;
-  image_url: string;
-  unlock_type: string;
-  event_format?: string;
-  organization_type?: string;
-  location: string;
-  keywords: string;
+  lead_name: string | null;
+  focus: string | null;
+  image_url: string | null;
+  lead_type: string | null;
+  unlock_type: string | null;
+  unlock_value: string | null;
+  industry: string | null;
+  organization: string | null;
+  event_name: string | null;
+  event_info: string | null;
+  detailed_info: string | null;
+  region: string | null;
+  past_speakers_events: string | null;
+  created_at: string;
+  event_url: string | null;
+  event_format: string | null;
+  info_url: string | null;
+  organization_type: string | null;
+  tooltip_event_format: string | null;
+  tooltip_organization_type: string | null;
+  tooltip_location: string | null;
+  tooltip_organization: string | null;
+  tooltip_industry_category: string | null;
+  image_persistence: boolean | null;
+  value_profile: string | null;
+  outreach_pathways: string | null;
+  job_title: string | null;
+  subtext: string | null;
+  state: string | null;
+  city: string | null;
+  keywords: string | null;
 }
 
 export interface QuickInfoItem {

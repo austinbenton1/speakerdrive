@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, CreditCard, Shield, Users, Image } from 'lucide-react';
+import { User, CreditCard, Shield, Users, Image, Copy } from 'lucide-react';
 import { useAdminRole } from '../hooks/useAdminRole';
 
 const settingsNavItems = [
@@ -12,6 +12,7 @@ const settingsNavItems = [
 const adminNavItems = [
   { icon: Users, label: 'Users Management', path: '/users' },
   { icon: Image, label: 'Store Images', path: '/store-image' },
+  { icon: Copy, label: 'Deduplicate Leads', path: '/deduplicate-leads', description: 'Manage and process lead deduplication' },
 ];
 
 export default function Settings() {
@@ -122,7 +123,9 @@ export default function Settings() {
                         <p className="mt-1 text-sm text-gray-500">
                           {item.label === 'Users Management'
                             ? 'Manage user accounts and permissions'
-                            : 'Manage stored images and assets'}
+                            : item.label === 'Store Images'
+                            ? 'Manage stored images and assets'
+                            : item.description}
                         </p>
                       </div>
                     </div>
