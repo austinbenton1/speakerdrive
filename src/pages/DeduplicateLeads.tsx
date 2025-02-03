@@ -34,15 +34,6 @@ export default function DeduplicateLeads() {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      // First, call the deduplicate_leads function
-      const { data: dedupeResult, error: dedupeError } = await supabase
-        .rpc('deduplicate_leads');
-
-      if (dedupeError) {
-        throw dedupeError;
-      }
-
-      // Then fetch the updated list
       const { data: leads, error: fetchError } = await supabase
         .from('unique_leads')
         .select('*')
@@ -51,8 +42,25 @@ export default function DeduplicateLeads() {
       if (fetchError) throw fetchError;
       setLeads(leads || []);
     } catch (error) {
-      console.error('Error processing leads:', error);
+      console.error('Error fetching leads:', error);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      // Call deduplicate_leads to refresh the unique_leads table
+      const { error: dedupeError } = await supabase
+        .rpc('deduplicate_leads');
+
+      if (dedupeError) throw dedupeError;
+
+      // Then fetch the updated list
+      await fetchLeads();
+    } catch (error) {
+      console.error('Error processing leads:', error);
       setLoading(false);
     }
   };
@@ -104,7 +112,7 @@ export default function DeduplicateLeads() {
           </div>
           <div className="mt-4 sm:mt-0">
             <button
-              onClick={fetchLeads}
+              onClick={handleRefresh}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
