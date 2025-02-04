@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
 import { Users, Calendar, Filter } from 'lucide-react';
-import { getUniqueLeads } from '../utils/deduplication';
 import SmartFiltersBar from '../components/filters/SmartFiltersBar';
 import { supabase } from '../lib/supabase';
 import { useRandomSort } from '../hooks/useRandomSort';
@@ -219,13 +218,44 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
+  // Calculate total and filtered leads for display
+  const { displayedLeads: leads, hasActiveFilters: hasFilters } = useMemo(() => {
+    // Start with base leads filtered by dedup_value
+    let results = showAllEvents 
+      ? availableLeads 
+      : availableLeads.filter(lead => lead.dedup_value === 2);
+
+    let hasFilters = false;
+
+    // Handle lead type filtering
+    if (selectedLeadType === 'events') {
+      results = results.filter(lead => 
+        lead.unlock_type === 'Unlock Event Email' || 
+        lead.unlock_type === 'Unlock Event URL'
+      );
+      hasFilters = true;
+    } else if (selectedLeadType === 'contacts') {
+      results = results.filter(lead => 
+        lead.unlock_type === 'Unlock Contact Email'
+      );
+      hasFilters = true;
+    }
+
+    // Apply other filters if active
+    if (filters.region || filters.state?.length || filters.city?.length) {
+      hasFilters = true;
+    }
+
+    return {
+      displayedLeads: results,
+      hasActiveFilters: hasFilters || filters.searchAll !== ''
+    };
+  }, [availableLeads, showAllEvents, selectedLeadType, filters]);
+
   // Update displayed leads and IDs when necessary
   useEffect(() => {
-    // First apply deduplication to preserve groups
-    const uniqueLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
-
-    // Then apply filters to the deduplicated results
-    let results = uniqueLeads;
+    // Filter leads based on dedup_value
+    let results = leads;
 
     // If region is set to something other than United States or Virtual Only,
     // ensure worldwide view is enabled
@@ -236,24 +266,12 @@ export default function FindLeads() {
       setShowAll(false);
     }
 
-    // Handle lead type filtering
-    if (selectedLeadType === 'events') {
-      results = results.filter(lead => 
-        lead.unlock_type === 'Unlock Event Email' || 
-        lead.unlock_type === 'Unlock Event URL'
-      );
-    } else if (selectedLeadType === 'contacts') {
-      results = results.filter(lead => 
-        lead.unlock_type === 'Unlock Contact Email'
-      );
-    }
-
-    // Apply USA location filter immediately after deduplication
+    // Apply USA location filter
     if (!showAll) {
       results = results.filter(lead => lead.region === 'United States');
     }
     
-    if (hasActiveFilters) {
+    if (hasFilters) {
       // Filter by opportunities search term
       if (eventsFilter || opportunityTags.length > 0) {
         results = results.filter(lead => {
@@ -366,10 +384,30 @@ export default function FindLeads() {
       }
     }
 
-    // Update both states with the filtered results
-    setDisplayedLeads(results);
-    setCurrentLeadIds(results.map(lead => lead.id));
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll]);
+    // Apply randomization before setting the final results
+    const randomizedResults = [...results].sort((a, b) => {
+      const aVal = a[sortConfig.field];
+      const bVal = b[sortConfig.field];
+      
+      if (!aVal && !bVal) return 0;
+      if (!aVal) return sortConfig.ascending ? 1 : -1;
+      if (!bVal) return sortConfig.ascending ? -1 : 1;
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortConfig.ascending ? 
+          aVal.localeCompare(bVal) : 
+          bVal.localeCompare(aVal);
+      }
+      
+      return sortConfig.ascending ? 
+        (aVal < bVal ? -1 : 1) : 
+        (bVal < aVal ? -1 : 1);
+    });
+
+    // Update both states with the filtered and randomized results
+    setDisplayedLeads(randomizedResults);
+    setCurrentLeadIds(randomizedResults.map(lead => lead.id));
+  }, [availableLeads, eventsFilter, filters, opportunityTags, hasFilters, showAllEvents, showAll, leads, sortConfig]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params
@@ -497,13 +535,22 @@ export default function FindLeads() {
   };
 
   // Memoize unique count calculation
-  const uniqueLeadsCount = useMemo(() => 
-    getUniqueLeads(displayedLeads).length,
-  [displayedLeads]);
+  const { totalCount, uniqueCount } = useMemo(() => {
+    const baseLeads = showAllEvents 
+      ? availableLeads 
+      : availableLeads.filter(lead => lead.dedup_value === 2);
+
+    return {
+      totalCount: availableLeads.length,
+      uniqueCount: baseLeads.length
+    };
+  }, [availableLeads, showAllEvents]);
 
   // Calculate USA leads count
   const usaLeadsCount = useMemo(() => {
-    const baseLeads = showAllEvents ? availableLeads : getUniqueLeads(availableLeads);
+    const baseLeads = showAllEvents 
+      ? availableLeads 
+      : availableLeads.filter(lead => lead.dedup_value === 2);
     return baseLeads.filter(lead => lead.region === 'United States').length;
   }, [availableLeads, showAllEvents]);
 
@@ -549,7 +596,7 @@ export default function FindLeads() {
         showAll={showAll}
         onLocationToggle={() => setShowAll(!showAll)}
         totalCount={displayedLeads.length}
-        uniqueCount={uniqueLeadsCount}
+        uniqueCount={uniqueCount}
         usaCount={usaLeadsCount}
         selectedLeadType={selectedLeadType as 'all' | 'contacts' | 'events'}
       />
@@ -651,7 +698,7 @@ export default function FindLeads() {
               onResetFilters={handleResetFilters}
               onLeadClick={handleLeadClick}
               showAllEvents={showAllEvents}
-              uniqueCount={uniqueLeadsCount}
+              uniqueCount={uniqueCount}
               selectedLeadType={selectedLeadType}
               filters={filters}
               eventsFilter={filters.searchAll}

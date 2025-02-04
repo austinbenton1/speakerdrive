@@ -14,37 +14,45 @@ export interface RecordedLead {
 
 export interface Lead {
   id: string;
-  lead_name: string | null;
-  focus: string | null;
-  image_url: string | null;
-  lead_type: string | null;
-  unlock_type: string | null;
-  unlock_value: string | null;
-  industry: string | null;
-  organization: string | null;
-  event_name: string | null;
-  event_info: string | null;
-  detailed_info: string | null;
-  region: string | null;
-  past_speakers_events: string | null;
+  image_url?: string;
+  lead_name?: string;
+  focus?: string;
+  lead_type?: string;
+  unlock_type?: string;
+  industry?: string;
+  organization?: string;
+  organization_type?: string;
+  event_info?: string;
+  detailed_info?: string;
+  event_name?: string;
+  event_url?: string;
+  event_format?: string;
+  job_title?: string;
+  subtext?: string;
+  past_speakers_events?: string;
+  region?: string;
+  state?: string;
+  city?: string;
+  keywords?: string;
+  group_counts?: {
+    total: number;
+    eventUrl: number;
+    eventEmail: number;
+    contactEmail: number;
+  };
+  unlock_value?: string;
   created_at: string;
-  event_url: string | null;
-  event_format: string | null;
-  info_url: string | null;
-  organization_type: string | null;
-  tooltip_event_format: string | null;
-  tooltip_organization_type: string | null;
-  tooltip_location: string | null;
-  tooltip_organization: string | null;
-  tooltip_industry_category: string | null;
-  image_persistence: boolean | null;
-  value_profile: string | null;
-  outreach_pathways: string | null;
-  job_title: string | null;
-  subtext: string | null;
-  state: string | null;
-  city: string | null;
-  keywords: string | null;
+  info_url?: string;
+  tooltip_event_format?: string;
+  tooltip_organization_type?: string;
+  tooltip_location?: string;
+  tooltip_organization?: string;
+  tooltip_industry_category?: string;
+  image_persistence?: boolean;
+  value_profile?: string;
+  outreach_pathways?: string;
+  dedup_value: number | null;
+  related_leads: number | null;
 }
 
 export interface QuickInfoItem {

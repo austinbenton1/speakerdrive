@@ -93,23 +93,16 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
         region,
         state,
         city,
-        keywords
+        keywords,
+        dedup_value,
+        related_leads
       `;
 
     let query = supabase
       .from('leads')
-      .select(selectQuery);
-
-    // Apply sorts in order: random sort first, then event_name, then organization
-    query = query
-      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending })
-      .order('event_name', { ascending: true })
-      .order('organization', { ascending: true });
-
-    // Add filter for unlocked leads if any exist
-    if (unlockedLeadIds.length > 0) {
-      query = query.not('id', 'in', `(${unlockedLeadIds.map(id => `'${id}'`).join(',')})`);
-    }
+      .select(selectQuery)
+      .order('dedup_value', { ascending: false }) // Order by dedup_value desc first
+      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending }); // Then apply random sort
 
     // Get available leads with retry
     const { data: availableLeads, error: leadsError } = await retryableRequest(() => query);

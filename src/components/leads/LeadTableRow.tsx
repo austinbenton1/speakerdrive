@@ -183,7 +183,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
   const urlData = getFormattedUrl(lead.event_url);
 
   return (
-    <div className="contents">
+    <div className="contents group">
       {/* Main Content */}
       <div 
         onClick={async () => {
@@ -340,18 +340,28 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative`}>
         <button
           onClick={handleViewMore}
-          className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200"
+          className="group inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200 w-[175px]"
           title="View all leads from this event"
         >
-          <div className="relative">
+          <div className="flex items-center gap-2">
             <div className="relative">
-              <Layers className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-600 transition-colors" />
-              <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${styles.dot}`}></div>
+              <div className="relative">
+                <Layers className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-600 transition-colors" />
+                <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${styles.dot}`}></div>
+              </div>
             </div>
+            <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
+              View All Leads
+              {lead.related_leads && Number(lead.related_leads) > 1 && (
+                <>
+                  <span className="mx-1.5 text-gray-400">|</span>
+                  <span className="text-purple-700">
+                    {lead.related_leads}
+                  </span>
+                </>
+              )}
+            </span>
           </div>
-          <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
-            View All Leads
-          </span>
           <ArrowUpRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors -translate-y-px group-hover:translate-x-0.5 transform transition-all duration-200" />
         </button>
       </div>
