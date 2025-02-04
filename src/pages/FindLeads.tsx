@@ -40,7 +40,10 @@ export default function FindLeads() {
 
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
-  const [showAllEvents, setShowAllEvents] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(() => {
+    const savedPreference = localStorage.getItem('showAllEvents');
+    return savedPreference ? JSON.parse(savedPreference) : false;
+  });
   
   // Initialize showAll from localStorage, defaulting to true (worldwide)
   const [showAll, setShowAll] = useState(() => {
@@ -53,10 +56,13 @@ export default function FindLeads() {
     localStorage.setItem(LOCATION_PREFERENCE_KEY, JSON.stringify(showAll));
   }, [showAll]);
 
+  // Update local storage when showAllEvents changes
+  useEffect(() => {
+    localStorage.setItem('showAllEvents', showAllEvents.toString());
+  }, [showAllEvents]);
+
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error } = useAvailableLeads();
-  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
-  const [isFiltering, setIsFiltering] = useState(false);
   const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
   
   const {
@@ -69,125 +75,9 @@ export default function FindLeads() {
 
   const { sortConfig } = useRandomSort();
 
-  // Initialize filters and handle URL parameters once on mount
-  useEffect(() => {
-    // Parse URL parameters for all filters
-    const urlParams = {
-      // Opportunity filter
-      event: searchParams.get('event'),
-      tags: searchParams.get('tags')?.split(',').filter(Boolean) || [],
-      
-      // Lead type filter
-      type: searchParams.get('type'),
-      
-      // Main filters
-      industry: searchParams.get('industry')?.split(',').filter(Boolean) || [],
-      eventFormat: searchParams.get('format')?.split(',').filter(Boolean) || [],
-      organization: searchParams.get('organization')?.split(',').filter(Boolean) || [],
-      organizationType: searchParams.get('orgType')?.split(',').filter(Boolean) || [],
-      pastSpeakers: searchParams.get('speakers')?.split(',').filter(Boolean) || [],
-      searchAll: searchParams.get('search') || '',
-      jobTitle: searchParams.get('job')?.split(',').filter(Boolean) || [],
-      region: searchParams.get('region') || '',
-      state: searchParams.get('state')?.split(',').filter(Boolean) || [],
-      city: searchParams.get('city')?.split(',').filter(Boolean) || [],
-      unlockType: undefined
-    };
-
-    // Set event filter if present
-    if (urlParams.event) {
-      setEventsFilter(urlParams.event);
-    }
-
-    // Set opportunity tags if present
-    if (urlParams.tags.length > 0) {
-      setOpportunityTags(urlParams.tags);
-    }
-
-    // Set lead type if specified
-    if (urlParams.type && urlParams.type !== 'all') {
-      setSelectedLeadType(urlParams.type);
-      const selectedType = leadTypes.find(t => t.id === urlParams.type);
-      if (selectedType) {
-        urlParams.unlockType = selectedType.unlockValue;
-      }
-    }
-
-    // Set display mode if specified
-    const displayParam = searchParams.get('event_display');
-    if (displayParam === 'all') {
-      setShowAllEvents(true);
-    }
-
-    // Set main filters
-    setFilters(prev => ({
-      ...prev,
-      industry: urlParams.industry,
-      eventFormat: urlParams.eventFormat,
-      organization: urlParams.organization,
-      organizationType: urlParams.organizationType,
-      pastSpeakers: urlParams.pastSpeakers,
-      searchAll: urlParams.searchAll,
-      jobTitle: urlParams.jobTitle,
-      region: urlParams.region,
-      state: urlParams.state,
-      city: urlParams.city,
-      unlockType: urlParams.unlockType
-    }));
-
-    // Determine which sections should be open based on active filters
-    const sectionsToOpen = {
-      // Event Filters
-      jobTitle: urlParams.jobTitle.length > 0,
-      eventFormat: urlParams.eventFormat.length > 0,
-      industry: urlParams.industry.length > 0,
-      pastSpeakers: urlParams.pastSpeakers.length > 0,
-      
-      // Organization Filters
-      moreFilters: urlParams.organization.length > 0, // Organization filter
-      organizationType: urlParams.organizationType.length > 0,
-      
-      // Location Filters
-      location: Boolean(urlParams.region || urlParams.state.length || urlParams.city.length),
-      
-      // Target Audience (based on job title or past speakers)
-      targetAudience: urlParams.jobTitle.length > 0 || urlParams.pastSpeakers.length > 0,
-
-      // Lead Type Filter
-      unlockType: urlParams.type && urlParams.type !== 'all'
-    };
-
-    // Open sections that have active filters
-    setOpenSections(prev => ({
-      ...prev,
-      ...sectionsToOpen
-    }));
-
-    // Set filtering state if any filter is active
-    const hasActiveFilters = Boolean(
-      urlParams.event ||
-      urlParams.tags.length > 0 ||
-      (urlParams.type && urlParams.type !== 'all') ||
-      urlParams.industry.length > 0 ||
-      urlParams.eventFormat.length > 0 ||
-      urlParams.organization.length > 0 ||
-      urlParams.organizationType.length > 0 ||
-      urlParams.pastSpeakers.length > 0 ||
-      urlParams.searchAll ||
-      urlParams.jobTitle.length > 0 ||
-      urlParams.region ||
-      urlParams.state.length > 0 ||
-      urlParams.city.length > 0
-    );
-
-    if (hasActiveFilters) {
-      setIsFiltering(true);
-    }
-  }, []); // Empty dependency array for initialization
-
-  // Memoize active filters check
+  // Calculate if there are active filters
   const hasActiveFilters = useMemo(() => {
-    return Boolean(
+    return !!(
       eventsFilter ||
       filters.industry?.length ||
       filters.eventFormat?.length ||
@@ -218,60 +108,34 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
-  // Calculate total and filtered leads for display
-  const { displayedLeads: leads, hasActiveFilters: hasFilters } = useMemo(() => {
-    // Start with base leads filtered by dedup_value
-    let results = showAllEvents 
-      ? availableLeads 
-      : availableLeads.filter(lead => lead.dedup_value === 2);
+  // Calculate filtered leads for display
+  const displayedLeads = useMemo(() => {
+    let results = availableLeads;
 
-    let hasFilters = false;
-
-    // Handle lead type filtering
-    if (selectedLeadType === 'events') {
-      results = results.filter(lead => 
-        lead.unlock_type === 'Unlock Event Email' || 
-        lead.unlock_type === 'Unlock Event URL'
-      );
-      hasFilters = true;
-    } else if (selectedLeadType === 'contacts') {
-      results = results.filter(lead => 
-        lead.unlock_type === 'Unlock Contact Email'
-      );
-      hasFilters = true;
+    // Apply showAllEvents filter first (this affects dedup_value)
+    if (!showAllEvents) {
+      results = results.filter(lead => lead.dedup_value === 2);
     }
 
-    // Apply other filters if active
-    if (filters.region || filters.state?.length || filters.city?.length) {
-      hasFilters = true;
-    }
-
-    return {
-      displayedLeads: results,
-      hasActiveFilters: hasFilters || filters.searchAll !== ''
-    };
-  }, [availableLeads, showAllEvents, selectedLeadType, filters]);
-
-  // Update displayed leads and IDs when necessary
-  useEffect(() => {
-    // Filter leads based on dedup_value
-    let results = leads;
-
-    // If region is set to something other than United States or Virtual Only,
-    // ensure worldwide view is enabled
-    if (filters.region && filters.region !== 'United States' && filters.region !== 'Virtual Only') {
-      setShowAll(true);
-    } else if (filters.region === 'United States') {
-      // If region is set to United States, ensure USA-only view is enabled
-      setShowAll(false);
-    }
-
-    // Apply USA location filter
+    // Apply USA-only filter if enabled
     if (!showAll) {
       results = results.filter(lead => lead.region === 'United States');
     }
-    
-    if (hasFilters) {
+
+    // Apply other filters if active
+    if (hasActiveFilters) {
+      // Handle lead type filtering
+      if (selectedLeadType === 'events') {
+        results = results.filter(lead => 
+          lead.unlock_type === 'Unlock Event Email' || 
+          lead.unlock_type === 'Unlock Event URL'
+        );
+      } else if (selectedLeadType === 'contacts') {
+        results = results.filter(lead => 
+          lead.unlock_type === 'Unlock Contact Email'
+        );
+      }
+
       // Filter by opportunities search term
       if (eventsFilter || opportunityTags.length > 0) {
         results = results.filter(lead => {
@@ -384,30 +248,23 @@ export default function FindLeads() {
       }
     }
 
-    // Apply randomization before setting the final results
-    const randomizedResults = [...results].sort((a, b) => {
-      const aVal = a[sortConfig.field];
-      const bVal = b[sortConfig.field];
-      
-      if (!aVal && !bVal) return 0;
-      if (!aVal) return sortConfig.ascending ? 1 : -1;
-      if (!bVal) return sortConfig.ascending ? -1 : 1;
-      
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortConfig.ascending ? 
-          aVal.localeCompare(bVal) : 
-          bVal.localeCompare(aVal);
-      }
-      
-      return sortConfig.ascending ? 
-        (aVal < bVal ? -1 : 1) : 
-        (bVal < aVal ? -1 : 1);
-    });
+    // Update current lead IDs
+    setCurrentLeadIds(results.map(lead => lead.id));
+    
+    return results;
+  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType]);
 
-    // Update both states with the filtered and randomized results
-    setDisplayedLeads(randomizedResults);
-    setCurrentLeadIds(randomizedResults.map(lead => lead.id));
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasFilters, showAllEvents, showAll, leads, sortConfig]);
+  // Effect to handle region-based showAll state
+  useEffect(() => {
+    // If region is set to something other than United States or Virtual Only,
+    // ensure worldwide view is enabled
+    if (filters.region && filters.region !== 'United States' && filters.region !== 'Virtual Only') {
+      setShowAll(true);
+    } else if (filters.region === 'United States') {
+      // If region is set to United States, ensure USA-only view is enabled
+      setShowAll(false);
+    }
+  }, [filters.region]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params

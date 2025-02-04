@@ -170,8 +170,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
     try {
       const urlToFormat = url.startsWith('http') ? url : `https://${url}`;
       const urlObj = new URL(urlToFormat);
+      const hostname = urlObj.hostname.replace(/^www\./, '');
       return {
-        hostname: urlObj.hostname.replace(/^www\./, ''),
+        hostname: hostname.length > 20 ? hostname.substring(0, 20) + '...' : hostname,
         fullUrl: urlToFormat
       };
     } catch (error) {

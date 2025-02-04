@@ -101,15 +101,20 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
     let query = supabase
       .from('leads')
       .select(selectQuery)
-      .order('dedup_value', { ascending: false }) // Order by dedup_value desc first
-      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending }); // Then apply random sort
+      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending }); // Apply random sort first
 
     // Get available leads with retry
     const { data: availableLeads, error: leadsError } = await retryableRequest(() => query);
 
     if (leadsError) throw leadsError;
-    return availableLeads || [];
 
+    // Sort by dedup_value in memory after random sort
+    const sortedLeads = (availableLeads || []).sort((a, b) => {
+      // Higher dedup_value should come first
+      return (b.dedup_value || 0) - (a.dedup_value || 0);
+    });
+
+    return sortedLeads;
   } catch (err) {
     throw err;
   }
