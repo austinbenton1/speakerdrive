@@ -45,10 +45,16 @@ export default function FindLeads() {
     return savedPreference ? JSON.parse(savedPreference) : false;
   });
   
-  // Initialize showAll from localStorage, defaulting to true (worldwide)
+  // Initialize showAll from localStorage, defaulting to false (USA only)
   const [showAll, setShowAll] = useState(() => {
+    // First check if there's a saved preference
     const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
-    return savedPreference ? JSON.parse(savedPreference) : true;
+    if (savedPreference !== null) {
+      return JSON.parse(savedPreference);
+    }
+    // If no saved preference, set default to false (USA only) and save it
+    localStorage.setItem(LOCATION_PREFERENCE_KEY, 'false');
+    return false;
   });
 
   // Persist showAll value to localStorage whenever it changes
@@ -74,6 +80,8 @@ export default function FindLeads() {
   } = useLeadFilters();
 
   const { sortConfig } = useRandomSort();
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
   // Calculate if there are active filters
   const hasActiveFilters = useMemo(() => {
@@ -248,11 +256,30 @@ export default function FindLeads() {
       }
     }
 
+    // Apply client-side sorting if a sort field is selected
+    if (sortField && sortDirection) {
+      results = [...results].sort((a, b) => {
+        const aValue = a[sortField] || '';
+        const bValue = b[sortField] || '';
+        
+        // Handle numeric values
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortDirection === 'asc' 
+            ? aValue - bValue 
+            : bValue - aValue;
+        }
+        
+        // Handle string values
+        const comparison = String(aValue).localeCompare(String(bValue));
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
     // Update current lead IDs
     setCurrentLeadIds(results.map(lead => lead.id));
     
     return results;
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType]);
+  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType, sortField, sortDirection]);
 
   // Effect to handle region-based showAll state
   useEffect(() => {
@@ -393,23 +420,56 @@ export default function FindLeads() {
 
   // Memoize unique count calculation
   const { totalCount, uniqueCount } = useMemo(() => {
+    // First filter by dedup value if needed
     const baseLeads = showAllEvents 
       ? availableLeads 
       : availableLeads.filter(lead => lead.dedup_value === 2);
+
+    // Then filter by region if USA only
+    let filteredLeads = showAll
+      ? baseLeads
+      : baseLeads.filter(lead => lead.region === 'United States');
+
+    // Then filter by lead type
+    if (selectedLeadType === 'events') {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.unlock_type === 'Unlock Event Email' || 
+        lead.unlock_type === 'Unlock Event URL'
+      );
+    } else if (selectedLeadType === 'contacts') {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.unlock_type === 'Unlock Contact Email'
+      );
+    }
 
     return {
       totalCount: availableLeads.length,
-      uniqueCount: baseLeads.length
+      uniqueCount: filteredLeads.length
     };
-  }, [availableLeads, showAllEvents]);
+  }, [availableLeads, showAllEvents, showAll, selectedLeadType]);
 
   // Calculate USA leads count
   const usaLeadsCount = useMemo(() => {
+    // First filter by dedup value if needed
     const baseLeads = showAllEvents 
       ? availableLeads 
       : availableLeads.filter(lead => lead.dedup_value === 2);
-    return baseLeads.filter(lead => lead.region === 'United States').length;
-  }, [availableLeads, showAllEvents]);
+
+    // Then filter by lead type
+    let filteredLeads = baseLeads;
+    if (selectedLeadType === 'events') {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.unlock_type === 'Unlock Event Email' || 
+        lead.unlock_type === 'Unlock Event URL'
+      );
+    } else if (selectedLeadType === 'contacts') {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.unlock_type === 'Unlock Contact Email'
+      );
+    }
+
+    return filteredLeads.filter(lead => lead.region === 'United States').length;
+  }, [availableLeads, showAllEvents, selectedLeadType]);
 
   const handleUnlockTypeChange = (type: string | undefined) => {
     // If type is undefined, clear the filter
@@ -436,6 +496,11 @@ export default function FindLeads() {
     } else {
       setSelectedLeadType('all');
     }
+  };
+
+  const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
+    setSortField(field);
+    setSortDirection(direction);
   };
 
   return (
@@ -561,6 +626,9 @@ export default function FindLeads() {
               eventsFilter={filters.searchAll}
               opportunityTags={filters.opportunities || []}
               showAll={showAll}
+              onSortChange={handleSortChange}
+              sortField={sortField}
+              sortDirection={sortDirection}
             />
           </div>
         </div>

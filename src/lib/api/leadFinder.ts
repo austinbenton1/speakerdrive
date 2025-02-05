@@ -98,23 +98,56 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
         related_leads
       `;
 
-    let query = supabase
-      .from('leads')
-      .select(selectQuery)
-      .order(finalSortConfig.field, { ascending: finalSortConfig.ascending }); // Apply random sort first
+    // First get initial batch sorted by dedup_value
+    const { data: initialLeads, error: initialError } = await retryableRequest(() =>
+      supabase
+        .from('leads')
+        .select(selectQuery)
+        .order('dedup_value', { ascending: false })
+        .range(0, 199)  // First 200 records
+    );
 
-    // Get available leads with retry
-    const { data: availableLeads, error: leadsError } = await retryableRequest(() => query);
+    if (initialError) throw initialError;
 
-    if (leadsError) throw leadsError;
-
-    // Sort by dedup_value in memory after random sort
-    const sortedLeads = (availableLeads || []).sort((a, b) => {
-      // Higher dedup_value should come first
-      return (b.dedup_value || 0) - (a.dedup_value || 0);
+    // Apply random sort to initial batch
+    const randomizedInitial = (initialLeads || []).sort((a, b) => {
+      const aValue = a[finalSortConfig.field];
+      const bValue = b[finalSortConfig.field];
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return finalSortConfig.ascending ? aValue - bValue : bValue - aValue;
+      }
+      
+      const comparison = String(aValue || '').localeCompare(String(bValue || ''));
+      return finalSortConfig.ascending ? comparison : -comparison;
     });
 
-    return sortedLeads;
+    // Start loading the rest in background
+    const { data: remainingLeads, error: remainingError } = await retryableRequest(() =>
+      supabase
+        .from('leads')
+        .select(selectQuery)
+        .order('dedup_value', { ascending: false })
+        .range(200, 999999)  // Rest of the records
+    );
+
+    if (remainingError) throw remainingError;
+
+    // Combine and apply random sort to all leads
+    const allLeads = [...randomizedInitial, ...(remainingLeads || [])];
+    const randomizedAll = allLeads.sort((a, b) => {
+      const aValue = a[finalSortConfig.field];
+      const bValue = b[finalSortConfig.field];
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return finalSortConfig.ascending ? aValue - bValue : bValue - aValue;
+      }
+      
+      const comparison = String(aValue || '').localeCompare(String(bValue || ''));
+      return finalSortConfig.ascending ? comparison : -comparison;
+    });
+
+    return randomizedAll;
   } catch (err) {
     throw err;
   }
