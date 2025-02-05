@@ -4,6 +4,7 @@ import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
 import { Loader2, AlertCircle, User } from 'lucide-react';
 import { throttle } from 'lodash';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   content: string;
@@ -297,7 +298,9 @@ export default function ChatConversation() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em]">{msg.content}</div>
+                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em]">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
                 {msg.status === 'error' && msg.error && (
                   <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
                     <AlertCircle className="w-4 h-4" />

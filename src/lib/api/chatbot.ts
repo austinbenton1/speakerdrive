@@ -72,19 +72,23 @@ export async function sendChatMessage(
     console.log('[Chatbot] Response received:', data);
     
     // Validate response format and content
-    if (!data) {
-      throw new Error('Empty response from chatbot');
+    if (!data?.body) {
+      throw new Error('Invalid response format: missing body');
     }
     
-    if (typeof data.response !== 'string') {
-      throw new Error('Invalid response format: expected string response');
+    if (!data.body.response?.output) {
+      throw new Error('Invalid response format: missing output field');
+    }
+    
+    if (typeof data.body.response.output !== 'string') {
+      throw new Error('Invalid response format: expected string output');
     }
 
     // Truncate extremely long responses to prevent UI issues
     const maxResponseLength = 10000;
-    const responseText = data.response.length > maxResponseLength
-      ? data.response.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
-      : data.response;
+    const responseText = data.body.response.output.length > maxResponseLength
+      ? data.body.response.output.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
+      : data.body.response.output;
 
     return {
       response: responseText,
