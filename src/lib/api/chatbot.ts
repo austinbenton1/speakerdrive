@@ -86,9 +86,10 @@ export async function sendChatMessage(
 
     // Truncate extremely long responses to prevent UI issues
     const maxResponseLength = 10000;
-    const responseText = data.body.response.output.length > maxResponseLength
-      ? data.body.response.output.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
-      : data.body.response.output;
+    const unescapedOutput = data.body.response.output.replace(/\\n/g, '\n');
+    const responseText = unescapedOutput.length > maxResponseLength
+      ? unescapedOutput.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
+      : unescapedOutput;
 
     return {
       response: responseText,
