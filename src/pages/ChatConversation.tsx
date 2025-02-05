@@ -298,7 +298,7 @@ export default function ChatConversation() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em] whitespace-pre-wrap">
+                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em]">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
                 {msg.status === 'error' && msg.error && (
