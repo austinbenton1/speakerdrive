@@ -132,30 +132,23 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
   if (type === 'email') {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        {/* Email Header */}
         <div className="border-b border-gray-200 bg-gray-50 p-4">
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">To:</span>
               <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Subject:</span>
               <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
             </div>
           </div>
         </div>
-        {/* Email Body */}
         <div className="p-4">
           <div className="prose prose-sm max-w-none">
             {content ? renderContent(content) : (
               <span className="text-gray-400">Your email content will appear here...</span>
             )}
-          </div>
-          {/* Email Signature */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">Best regards,</div>
-            <div className="text-sm font-medium text-gray-900">Your Name</div>
           </div>
         </div>
       </div>
@@ -194,14 +187,6 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
               {content ? renderContent(content) : (
                 <span className="text-gray-400">Your proposal content will appear here...</span>
               )}
-            </div>
-          </section>
-          <section className="border-t border-gray-200 pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaker Details</h2>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">Name: Your Name</p>
-              <p className="text-sm text-gray-600">Topics: Leadership, Innovation, Technology</p>
-              <p className="text-sm text-gray-600">Experience: 10+ years</p>
             </div>
           </section>
         </div>
@@ -509,247 +494,256 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-y-auto">
               {/* Editor Panel - For configurations */}
-              {!isPreviewMode && !showMessage && (
-                <div className="flex-1 p-4">
+              {showInputs && !isPreviewMode && !showMessage && (
+                <div className="flex-1">
+                  {/* Outreach Channel Selector */}
+                  <div className="bg-white p-4 border-b border-gray-200">
+                    <p className="mb-3 text-sm font-medium text-gray-700">
+                      Outreach Channel
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {[
+                        { id: 'email', icon: Mail, label: 'Email' },
+                        { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
+                        { id: 'proposal', icon: FileText, label: 'Apply' }
+                      ].map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => setOutreachChannel(type.id as MessageType)}
+                          disabled={isButtonDisabled(type.id)}
+                          className={`
+                            inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
+                            ${isButtonDisabled(type.id) ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200' :
+                            outreachChannel === type.id
+                              ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
+                              : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                            }
+                          `}
+                        >
+                          <type.icon className="w-3.5 h-3.5" />
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Unlock Value Display */}
+                  {lead.unlockValue && (
+                    <div className="flex items-center bg-blue-50 px-4 py-2">
+                      <Lock className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-medium text-blue-700 ml-2">
+                        {lead.unlockValue} Credits
+                      </span>
+                    </div>
+                  )}
+
                   {/* Input Fields */}
-                  {showInputs && (
-                    <>
-                      {/* Outreach Channels */}
-                      <div className="bg-white p-4 border-b border-gray-200">
-                        <p className="mb-3 text-sm font-medium text-gray-700">
-                          Outreach Channel
+                  <div className="bg-white p-4">
+                    {/* Advanced Options Panel */}
+                    {showAdvanced && (
+                      <div className="bg-white rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-3">
+                          Outreach Settings
                         </p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {[
-                              { id: 'email', icon: Mail, label: 'Email' },
-                              { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
-                              { id: 'proposal', icon: FileText, label: 'Apply' }
-                            ].map((type) => (
+                        <div className="space-y-6 px-3">
+                          {/* Services */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <MinimalToggle
+                                className="scale-[0.35] -ml-1"
+                                checked={isPitching}
+                                onChange={(e) => setIsPitching(e.target.checked)}
+                              />
+                              <label className="text-sm font-medium text-gray-900">
+                                I'm Pitching
+                              </label>
+                            </div>
+                            {isPitching && (
+                              <div className="flex items-center gap-2">
+                                {services.slice(0, 3).map((service) => {
+                                  const Icon = {
+                                    'Presentation': Presentation,
+                                    'School': GraduationCap,
+                                    'Target': Target,
+                                    'Briefcase': Briefcase,
+                                    'Users': Users,
+                                    'Plus': Plus
+                                  }[service.icon];
+
+                                  // Check if this service is in user's profile services
+                                  const profileServices = parseProfileServices(profile?.services || '');
+                                  const isInProfile = profileServices.some(ps => ps === service.id);
+                                  // Use selectedService if set, otherwise fall back to profile selection
+                                  const isSelected = selectedService ? selectedService === service.id : isInProfile;
+
+                                  const buttonClasses = [
+                                    'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                                    'transition-colors duration-200',
+                                    'border',
+                                    isSelected
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                  ].join(' ');
+
+                                  return (
+                                    <button
+                                      key={service.id}
+                                      onClick={() => setSelectedService(service.id)}
+                                      className={buttonClasses}
+                                    >
+                                      {Icon && (
+                                        <Icon 
+                                          className={`w-3 h-3 ${
+                                            isSelected
+                                              ? 'text-white'
+                                              : 'text-gray-500'
+                                          }`}
+                                        />
+                                      )}
+                                      {service.label}
+                                      {isInProfile && (
+                                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                                <div
+                                  className="relative"
+                                  onClick={() => setShowAdditionalServices(!showAdditionalServices)}
+                                >
+                                  <button
+                                    className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                                  >
+                                    <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {isPitching && showAdditionalServices && (
+                              <div className="flex gap-2 mt-2">
+                                {services.slice(3).map((service) => {
+                                  const Icon = {
+                                    'Presentation': Presentation,
+                                    'School': GraduationCap,
+                                    'Target': Target,
+                                    'Briefcase': Briefcase,
+                                    'Users': Users,
+                                    'Plus': Plus
+                                  }[service.icon];
+
+                                  // Check if this service is in user's profile services
+                                  const profileServices = parseProfileServices(profile?.services || '');
+                                  const isInProfile = profileServices.some(ps => ps === service.id);
+                                  // Use selectedService if set, otherwise fall back to profile selection
+                                  const isSelected = selectedService ? selectedService === service.id : isInProfile;
+
+                                  const buttonClasses = [
+                                    'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                                    'transition-colors duration-200',
+                                    'border',
+                                    isSelected
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                  ].join(' ');
+
+                                  return (
+                                    <button
+                                      key={service.id}
+                                      onClick={() => setSelectedService(service.id)}
+                                      className={buttonClasses}
+                                    >
+                                      {Icon && (
+                                        <Icon 
+                                          className={`w-3 h-3 ${
+                                            isSelected
+                                              ? 'text-white'
+                                              : 'text-gray-500'
+                                          }`}
+                                        />
+                                      )}
+                                      {service.label}
+                                      {isInProfile && (
+                                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* My Context */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <MinimalToggle 
+                                className="scale-[0.35] mr-1" 
+                                checked={showMyContext}
+                                onChange={(e) => setShowMyContext(e.target.checked)}
+                              />
+                              <label className="text-sm font-medium text-gray-900">
+                                My Context
+                              </label>
+                            </div>
+                            {showMyContext && (
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-gray-600 flex-1 min-w-0">
+                                  <span className={`inline ${profile?.offering ? '' : 'italic'}`}>
+                                    {truncateText(profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation", 130)}
+                                  </span>
+                                  <a 
+                                    href="/settings"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
+                                  >
+                                    Edit
+                                  </a>
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Message Format */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <label className="text-sm font-medium text-gray-900">
+                                Message Format
+                              </label>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
                               <button
-                                key={type.id}
-                                onClick={() => setOutreachChannel(type.id as MessageType)}
+                                onClick={() => setMessageFormat('concise')}
                                 className={`
-                                  inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
-                                  ${outreachChannel === type.id
-                                    ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
-                                    : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                                  relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                  transition-colors duration-200
+                                  border
+                                  ${messageFormat === 'concise'
+                                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                                   }
+                                  flex items-center justify-center
                                 `}
                               >
-                                <type.icon className="w-3.5 h-3.5" />
-                                {type.label}
+                                Concise
+                                {messageFormat === 'concise' && (
+                                  <span className="text-yellow-500 ml-1.5 hover:scale-110 transition-transform">✨</span>
+                                )}
                               </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      {/* Advanced Options Panel */}
-                      {showAdvanced && (
-                        <div className="bg-white rounded-lg">
-                          <p className="text-sm font-medium text-gray-700 mb-3">
-                            Outreach Settings
-                          </p>
-                          <div className="space-y-6 px-3">
-                            {/* Services */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-3">
-                                <MinimalToggle
-                                  className="scale-[0.35] -ml-1"
-                                  checked={isPitching}
-                                  onChange={(e) => setIsPitching(e.target.checked)}
-                                />
-                                <label className="text-sm font-medium text-gray-900">
-                                  I'm Pitching
-                                </label>
-                              </div>
-                              {isPitching && (
-                                <div className="flex items-center gap-2">
-                                  {services.slice(0, 3).map((service) => {
-                                    const Icon = {
-                                      'Presentation': Presentation,
-                                      'School': GraduationCap,
-                                      'Target': Target,
-                                      'Briefcase': Briefcase,
-                                      'Users': Users,
-                                      'Plus': Plus
-                                    }[service.icon];
-
-                                    // Check if this service is in user's profile services
-                                    const profileServices = parseProfileServices(profile?.services || '');
-                                    const isInProfile = profileServices.some(ps => ps === service.id);
-                                    // Use selectedService if set, otherwise fall back to profile selection
-                                    const isSelected = selectedService ? selectedService === service.id : isInProfile;
-
-                                    const buttonClasses = [
-                                      'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
-                                      'transition-colors duration-200',
-                                      'border',
-                                      isSelected
-                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                    ].join(' ');
-
-                                    return (
-                                      <button
-                                        key={service.id}
-                                        onClick={() => setSelectedService(service.id)}
-                                        className={buttonClasses}
-                                      >
-                                        {Icon && (
-                                          <Icon 
-                                            className={`w-3 h-3 ${
-                                              isSelected
-                                                ? 'text-white'
-                                                : 'text-gray-500'
-                                            }`}
-                                          />
-                                        )}
-                                        {service.label}
-                                        {isInProfile && (
-                                          <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                  <div
-                                    className="relative"
-                                    onClick={() => setShowAdditionalServices(!showAdditionalServices)}
-                                  >
-                                    <button
-                                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                                    >
-                                      <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                              {isPitching && showAdditionalServices && (
-                                <div className="flex gap-2 mt-2">
-                                  {services.slice(3).map((service) => {
-                                    const Icon = {
-                                      'Presentation': Presentation,
-                                      'School': GraduationCap,
-                                      'Target': Target,
-                                      'Briefcase': Briefcase,
-                                      'Users': Users,
-                                      'Plus': Plus
-                                    }[service.icon];
-
-                                    // Check if this service is in user's profile services
-                                    const profileServices = parseProfileServices(profile?.services || '');
-                                    const isInProfile = profileServices.some(ps => ps === service.id);
-                                    // Use selectedService if set, otherwise fall back to profile selection
-                                    const isSelected = selectedService ? selectedService === service.id : isInProfile;
-
-                                    const buttonClasses = [
-                                      'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
-                                      'transition-colors duration-200',
-                                      'border',
-                                      isSelected
-                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                    ].join(' ');
-
-                                    return (
-                                      <button
-                                        key={service.id}
-                                        onClick={() => setSelectedService(service.id)}
-                                        className={buttonClasses}
-                                      >
-                                        {Icon && (
-                                          <Icon 
-                                            className={`w-3 h-3 ${
-                                              isSelected
-                                                ? 'text-white'
-                                                : 'text-gray-500'
-                                            }`}
-                                          />
-                                        )}
-                                        {service.label}
-                                        {isInProfile && (
-                                          <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* My Context */}
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <MinimalToggle 
-                                  className="scale-[0.35] mr-1" 
-                                  checked={showMyContext}
-                                  onChange={(e) => setShowMyContext(e.target.checked)}
-                                />
-                                <label className="text-sm font-medium text-gray-900">
-                                  My Context
-                                </label>
-                              </div>
-                              {showMyContext && (
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm text-gray-600 flex-1 min-w-0">
-                                    <span className={`inline ${profile?.offering ? '' : 'italic'}`}>
-                                      {truncateText(profile?.offering || "Award-winning keynote speaker specializing in leadership and innovation", 130)}
-                                    </span>
-                                    <a 
-                                      href="/settings"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
-                                    >
-                                      Edit
-                                    </a>
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Message Format */}
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <label className="text-sm font-medium text-gray-900">
-                                  Message Format
-                                </label>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                <button
-                                  onClick={() => setMessageFormat('concise')}
-                                  className={`
-                                    relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                    transition-colors duration-200
-                                    border
-                                    ${messageFormat === 'concise'
-                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                    }
-                                    flex items-center justify-center
-                                  `}
-                                >
-                                  Concise
-                                  {messageFormat === 'concise' && (
-                                    <span className="text-yellow-500 ml-1.5 hover:scale-110 transition-transform">✨</span>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => setMessageFormat('expanded')}
-                                  className={`
-                                    relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                                    transition-colors duration-200
-                                    border
-                                    ${messageFormat === 'expanded'
-                                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                                    }
-                                    flex items-center justify-center
-                                  `}
-                                >
-                                  Expanded
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => setMessageFormat('expanded')}
+                                className={`
+                                  relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                                  transition-colors duration-200
+                                  border
+                                  ${messageFormat === 'expanded'
+                                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                  }
+                                  flex items-center justify-center
+                                `}
+                              >
+                                Expanded
+                              </button>
                               <div className="flex gap-2 text-xs text-gray-500">
                                 {messageFormat === 'concise' && (
                                   <div className="flex items-center gap-1 ml-2">
@@ -769,46 +763,58 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                                 )}
                               </div>
                             </div>
+                          </div>
 
-                            {/* Message Customization */}
-                            <div className="pb-2">
-                              <div className="flex items-center gap-2 mb-2">
-                                <MinimalToggle 
-                                  className="scale-[0.35] mr-1"
-                                  checked={showCustomization}
-                                  onChange={(e) => setShowCustomization(e.target.checked)}
-                                />
-                                <label className="text-sm font-medium text-gray-900">
-                                  Message Customization
-                                </label>
-                              </div>
-                              <p className="text-sm text-gray-600">
-                                Add override or customization instructions for your outreach message
-                              </p>
-                              {showCustomization && (
-                              <textarea
-                                value={customizationText}
-                                onChange={(e) => setCustomizationText(e.target.value)}
-                                placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
-                                className={`
-                                  w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white rounded-lg resize-none mt-2
-                                  focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
-                                `}
+                          {/* Message Customization */}
+                          <div className="pb-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MinimalToggle 
+                                className="scale-[0.35] mr-1"
+                                checked={showCustomization}
+                                onChange={(e) => setShowCustomization(e.target.checked)}
                               />
-                              )}
+                              <label className="text-sm font-medium text-gray-900">
+                                Message Customization
+                              </label>
                             </div>
+                            <p className="text-sm text-gray-600">
+                              Add override or customization instructions for your outreach message
+                            </p>
+                            {showCustomization && (
+                            <textarea
+                              value={customizationText}
+                              onChange={(e) => setCustomizationText(e.target.value)}
+                              placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
+                              className={`
+                                w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white rounded-lg resize-none mt-2
+                                focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
+                              `}
+                            />
+                            )}
                           </div>
                         </div>
-                      )}
-                    </>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* Preview Panel - Email layout preview */}
+              {/* Preview Panel */}
               {isPreviewMode && !showMessage && (
                 <div className="flex-1 p-4">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="border-b border-gray-200 bg-gray-50 p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-600">To:</span>
+                          <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-600">Subject:</span>
+                          <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="p-4">
                       <MessagePreview content={input} type={outreachChannel} lead={lead} />
                     </div>
@@ -816,22 +822,38 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                 </div>
               )}
 
-              {/* Outreach Panel - Generated content */}
+              {/* Outreach Panel */}
               {showMessage && !isGenerating && !isPreviewMode && (
                 <div className="flex-1 p-4">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={`Your message to ${lead.leadName}...`}
-                    rows={3}
-                    className="w-full resize-none p-4 text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
-                      min-h-[450px] border border-gray-200 rounded-lg
-                      shadow-[0_1px_2px_rgba(0,0,0,0.05)]
-                      hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
-                      transition-all duration-200 bg-white"
-                  />
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="border-b border-gray-200 bg-gray-50 p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-600">To:</span>
+                          <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-600">Subject:</span>
+                          <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="relative">
+                        <textarea
+                          ref={textareaRef}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder={`Your message to ${lead.leadName}...`}
+                          className="w-full resize-none text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
+                            min-h-[450px] bg-transparent
+                            focus:ring-0 focus:border-0"
+                          style={{ minHeight: '450px' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="mt-3 flex items-center justify-between w-full gap-2">
                     <div>
