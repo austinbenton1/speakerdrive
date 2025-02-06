@@ -292,16 +292,27 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       
       // Check if result is an array and get the first item
       const responseData = Array.isArray(result) ? result[0] : result;
-      const message = responseData?.message;
       
-      if (!message) {
-        throw new Error('Invalid response format');
+      // Extract the 'response' field from the n8n response
+      const generatedResponse = responseData?.response;
+      
+      if (!generatedResponse) {
+        throw new Error('No response content in the n8n response');
       }
 
-      // Show message and update UI only after successful response
+      // Decode any HTML entities and preserve special characters
+      const decodedResponse = generatedResponse
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\\n/g, '\n');  // Preserve newlines
+
+      // Show message and update UI with the decoded response
       setShowMessage(true);
       setShowInputs(false);
-      setInput(message);
+      setInput(decodedResponse);
     } catch (error) {
       setInput("We encountered an error. Please contact the administrators.");
       setShowMessage(true);
@@ -747,7 +758,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                     placeholder={`Your message to ${lead.leadName}...`}
                     rows={3}
                     className="w-full resize-none p-4 text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
-                      min-h-[200px] border border-gray-200 rounded-lg
+                      min-h-[300px] border border-gray-200 rounded-lg
                       shadow-[0_1px_2px_rgba(0,0,0,0.05)]
                       hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
                       transition-all duration-200 bg-white"
