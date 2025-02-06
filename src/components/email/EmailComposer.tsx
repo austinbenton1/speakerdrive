@@ -3,9 +3,12 @@ import {
   PaperclipIcon, Image, Send, X, Wand2, ArrowUpDown, ArrowLeft,
   ShrinkIcon, MoreHorizontal, Lock, Trash2, Link, TextSelect,
   FileText, Mail, Linkedin, ChevronDown, Edit2, Eye, Copy,
-  Presentation, School, Target, Briefcase, Users, Plus
+  GraduationCap, Presentation, Target, Briefcase, Users, Plus
 } from 'lucide-react';
-import { MinimalToggle } from '../ui/toggle';
+import ReactMarkdown from 'react-markdown';
+import { 
+  MinimalToggle 
+} from '../ui/toggle';
 import { useProfile } from '../../hooks/useProfile';
 import { services } from '../../utils/constants';
 import { supabase } from '../../lib/supabase';
@@ -64,9 +67,72 @@ interface PreviewProps {
 }
 
 const MessagePreview = ({ content, type, lead }: PreviewProps) => {
+  // Helper function to format text with markdown
+  const renderContent = (text: string) => {
+    return (
+      <ReactMarkdown
+        components={{
+          // Override default element styling
+          p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
+          h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+          h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
+          h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2" {...props} />,
+          ul: ({node, ...props}) => (
+            <ul className="mb-4 last:mb-0 space-y-0" {...props} />
+          ),
+          ol: ({node, ...props}) => (
+            <ol className="mb-4 last:mb-0 space-y-0" {...props} />
+          ),
+          li: ({node, children, ...props}) => {
+            const content = React.Children.toArray(children).map(child => {
+              // If it's a paragraph, extract its children to remove the wrapping <p>
+              if (React.isValidElement(child) && child.type === 'p') {
+                return child.props.children;
+              }
+              return child;
+            });
+            
+            return (
+              <li className="relative pl-5" {...props}>
+                <span className="absolute left-0">•</span>
+                {content}
+              </li>
+            );
+          },
+          a: ({node, ...props}) => (
+            <a 
+              className="text-blue-600 hover:underline" 
+              target="_blank"
+              rel="noopener noreferrer"
+              {...props}
+            />
+          ),
+          blockquote: ({node, ...props}) => (
+            <blockquote 
+              className="border-l-4 border-gray-200 pl-4 italic my-4" 
+              {...props}
+            />
+          ),
+          code: ({node, inline, ...props}) => 
+            inline ? (
+              <code className="bg-gray-100 rounded px-1 py-0.5" {...props} />
+            ) : (
+              <code className="block bg-gray-100 rounded p-3 my-4 whitespace-pre-wrap" {...props} />
+            ),
+          hr: ({node, ...props}) => <hr className="my-4 border-gray-200" {...props} />,
+          strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+          em: ({node, ...props}) => <em className="italic" {...props} />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    );
+  };
+
   if (type === 'email') {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        {/* Email Header */}
         <div className="border-b border-gray-200 bg-gray-50 p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -79,10 +145,14 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
             </div>
           </div>
         </div>
+        {/* Email Body */}
         <div className="p-4">
           <div className="prose prose-sm max-w-none">
-            {content || <span className="text-gray-400">Your email content will appear here...</span>}
+            {content ? renderContent(content) : (
+              <span className="text-gray-400">Your email content will appear here...</span>
+            )}
           </div>
+          {/* Email Signature */}
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="text-sm text-gray-600">Best regards,</div>
             <div className="text-sm font-medium text-gray-900">Your Name</div>
@@ -104,7 +174,9 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
             </div>
           </div>
           <div className="text-[15px] text-gray-900">
-            {content || <span className="text-gray-400">Your LinkedIn message will appear here...</span>}
+            {content ? renderContent(content) : (
+              <span className="text-gray-400">Your LinkedIn message will appear here...</span>
+            )}
           </div>
         </div>
       </div>
@@ -119,7 +191,9 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaking Proposal</h2>
             <div className="prose prose-sm max-w-none">
-              {content || <span className="text-gray-400">Your proposal content will appear here...</span>}
+              {content ? renderContent(content) : (
+                <span className="text-gray-400">Your proposal content will appear here...</span>
+              )}
             </div>
           </section>
           <section className="border-t border-gray-200 pt-6">
@@ -340,13 +414,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
   const handleSavePitch = async () => {
     setIsSaving(true);
     
@@ -371,6 +438,13 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       setShowToast(true);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -434,76 +508,42 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-y-auto">
-              {/* Input Fields */}
-              {showInputs && (
-                <>
-                  {/* Outreach Channels */}
-                  <div className="bg-white p-4 border-b border-gray-200">
-                    <p className="mb-3 text-sm font-medium text-gray-700">
-                      Outreach Channel
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {[
-                          { id: 'email', icon: Mail, label: 'Email' },
-                          { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
-                          { id: 'proposal', icon: FileText, label: 'Apply' }
-                        ].map((type) => (
-                          <button
-                            key={type.id}
-                            onClick={() => {
-                              setOutreachChannel(type.id as MessageType);
-                            }}
-                            disabled={isButtonDisabled(type.id)}
-                            className={`
-                              flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                              transition-colors duration-200
-                              border shadow-sm
-                              ${outreachChannel === type.id
-                                ? 'bg-blue-500 border-blue-500 text-white'
-                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
-                              } ${isButtonDisabled(type.id)
-                                ? 'opacity-50 cursor-not-allowed' 
-                                : ''
-                              }
-                            `}
-                          >
-                            <type.icon className={`w-4 h-4 ${outreachChannel === type.id ? 'text-white' : 'text-gray-400'}`} />
-                            {type.label}
-                          </button>
-                        ))}
+              {/* Editor Panel - For configurations */}
+              {!isPreviewMode && !showMessage && (
+                <div className="flex-1 p-4">
+                  {/* Input Fields */}
+                  {showInputs && (
+                    <>
+                      {/* Outreach Channels */}
+                      <div className="bg-white p-4 border-b border-gray-200">
+                        <p className="mb-3 text-sm font-medium text-gray-700">
+                          Outreach Channel
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {[
+                              { id: 'email', icon: Mail, label: 'Email' },
+                              { id: 'linkedin', icon: Linkedin, label: 'LinkedIn' },
+                              { id: 'proposal', icon: FileText, label: 'Apply' }
+                            ].map((type) => (
+                              <button
+                                key={type.id}
+                                onClick={() => setOutreachChannel(type.id as MessageType)}
+                                className={`
+                                  inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
+                                  ${outreachChannel === type.id
+                                    ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
+                                    : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                                  }
+                                `}
+                              >
+                                <type.icon className="w-3.5 h-3.5" />
+                                {type.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    {(lead.unlockType === 'Unlock Contact Email' || 
-                      lead.unlockType === 'Unlock Event Email' || 
-                      lead.unlockType === 'Unlock Event URL') && (
-                      <p className="mt-2 text-sm text-gray-600">
-                        {outreachChannel === 'email' && lead.unlockValue && 
-                         (lead.unlockType === 'Unlock Contact Email' || lead.unlockType === 'Unlock Event Email') ? (
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-4 h-4 text-gray-400" />
-                            {lead.unlockValue}
-                          </span>
-                        ) : outreachChannel === 'linkedin' && lead.unlockType === 'Unlock Contact Email' && 
-                           (lead.infoUrl || lead.detailedInfo?.infoUrl) ? (
-                          <span className="flex items-center gap-1">
-                            <Linkedin className="w-4 h-4 text-gray-400" />
-                            {lead.infoUrl || lead.detailedInfo?.infoUrl}
-                          </span>
-                        ) : outreachChannel === 'proposal' && lead.unlockType === 'Unlock Event URL' && lead.unlockValue ? (
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-4 h-4 text-gray-400" />
-                            {lead.unlockValue}
-                          </span>
-                        ) : null}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Message Content with Advanced Options */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    <div className="space-y-4">
-                      {/* AI Tools Bar */}
                       {/* Advanced Options Panel */}
                       {showAdvanced && (
                         <div className="bg-white rounded-lg">
@@ -528,7 +568,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                                   {services.slice(0, 3).map((service) => {
                                     const Icon = {
                                       'Presentation': Presentation,
-                                      'School': School,
+                                      'School': GraduationCap,
                                       'Target': Target,
                                       'Briefcase': Briefcase,
                                       'Users': Users,
@@ -589,7 +629,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                                   {services.slice(3).map((service) => {
                                     const Icon = {
                                       'Presentation': Presentation,
-                                      'School': School,
+                                      'School': GraduationCap,
                                       'Target': Target,
                                       'Briefcase': Briefcase,
                                       'Users': Users,
@@ -760,13 +800,24 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                           </div>
                         </div>
                       )}
-                    </div>
-                  </div>
-                </>
+                    </>
+                  )}
+                </div>
               )}
 
-              {/* Response Textarea */}
-              {showMessage && !isGenerating && (
+              {/* Preview Panel - Email layout preview */}
+              {isPreviewMode && !showMessage && (
+                <div className="flex-1 p-4">
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="p-4">
+                      <MessagePreview content={input} type={outreachChannel} lead={lead} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Outreach Panel - Generated content */}
+              {showMessage && !isGenerating && !isPreviewMode && (
                 <div className="flex-1 p-4">
                   <textarea
                     ref={textareaRef}
@@ -781,6 +832,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
                       transition-all duration-200 bg-white"
                   />
+
                   <div className="mt-3 flex items-center justify-between w-full gap-2">
                     <div>
                       <button
@@ -799,9 +851,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                           </>
                         ) : (
                           <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                            </svg>
+                            <Copy className="w-4 h-4" />
                             <span>Copy Outreach</span>
                           </>
                         )}
