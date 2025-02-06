@@ -159,6 +159,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [isCopying, setIsCopying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper function to truncate text
@@ -319,6 +320,23 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       setShowInputs(false);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCopyOutreach = async () => {
+    setIsCopying(true);
+    try {
+      await navigator.clipboard.writeText(input);
+      setToastMessage('Outreach message copied to clipboard');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      setToastMessage('Failed to copy message');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -758,37 +776,64 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                     placeholder={`Your message to ${lead.leadName}...`}
                     rows={3}
                     className="w-full resize-none p-4 text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed
-                      min-h-[300px] border border-gray-200 rounded-lg
+                      min-h-[450px] border border-gray-200 rounded-lg
                       shadow-[0_1px_2px_rgba(0,0,0,0.05)]
                       hover:border-gray-300 focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20
                       transition-all duration-200 bg-white"
                   />
-                  <div className="mt-3 flex justify-end">
-                    {input !== lead.pitch && (
+                  <div className="mt-3 flex items-center justify-between w-full gap-2">
+                    <div>
                       <button
-                        onClick={handleSavePitch}
-                        disabled={isSaving}
+                        onClick={handleCopyOutreach}
+                        disabled={isCopying}
                         className={`
                           inline-flex items-center gap-2 px-4 py-2 
-                          ${isSaving ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} 
+                          ${isCopying ? 'bg-gray-300' : 'bg-blue-500 hover:bg-blue-600'} 
                           text-white rounded-lg shadow-sm transition-colors duration-200
                         `}
                       >
-                        {isSaving ? (
+                        {isCopying ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Saving...</span>
+                            <span>Copying...</span>
                           </>
                         ) : (
                           <>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 14a3 3 0 110-6 3 3 0 010 6zm0 0V7" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                             </svg>
-                            <span>Save Message</span>
+                            <span>Copy Outreach</span>
                           </>
                         )}
                       </button>
-                    )}
+                    </div>
+                    <div>
+                      {input !== lead.pitch && (
+                        <button
+                          onClick={handleSavePitch}
+                          disabled={isSaving}
+                          className={`
+                            inline-flex items-center gap-2 px-4 py-2 
+                            ${isSaving ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'} 
+                            text-white rounded-lg shadow-sm transition-colors duration-200
+                          `}
+                        >
+                          {isSaving ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 14a3 3 0 110-6 3 3 0 010 6zm0 0V7" />
+                              </svg>
+                              <span>Save Message</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -825,7 +870,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         </>
                       )}
                     </button>
-                    {!isGenerating && (
+                    {!isGenerating && showInputs && (
                       <button 
                         onClick={() => setIsPreviewMode(!isPreviewMode)}
                         className={`
@@ -857,19 +902,21 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                       <span className="font-medium">Back to Editor</span>
                     </button>
                     <div className="flex-1" />
-                    <button 
-                      onClick={() => setIsPreviewMode(!isPreviewMode)}
-                      className={`
-                        inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all mt-0.5
-                        ${isPreviewMode 
-                          ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
-                          : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
-                        }
-                      `}
-                    >
-                      <Eye className="w-3 h-3" />
-                      Preview
-                    </button>
+                    {showInputs && (
+                      <button 
+                        onClick={() => setIsPreviewMode(!isPreviewMode)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all mt-0.5
+                          ${isPreviewMode 
+                            ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
+                            : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                          }
+                        `}
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
