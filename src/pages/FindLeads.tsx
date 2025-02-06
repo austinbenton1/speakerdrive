@@ -420,33 +420,74 @@ export default function FindLeads() {
 
   // Memoize unique count calculation
   const { totalCount, uniqueCount } = useMemo(() => {
-    // First filter by dedup value if needed
-    const baseLeads = showAllEvents 
-      ? availableLeads 
-      : availableLeads.filter(lead => lead.dedup_value === 2);
+    // Start with base leads
+    let filteredLeads = availableLeads.filter(lead => 
+      showAllEvents ? true : lead.dedup_value === 2
+    );
 
-    // Then filter by region if USA only
-    let filteredLeads = showAll
-      ? baseLeads
-      : baseLeads.filter(lead => lead.region === 'United States');
-
-    // Then filter by lead type
-    if (selectedLeadType === 'events') {
+    // Apply USA-only filter if enabled
+    if (!showAll) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.unlock_type === 'Unlock Event Email' || 
-        lead.unlock_type === 'Unlock Event URL'
-      );
-    } else if (selectedLeadType === 'contacts') {
-      filteredLeads = filteredLeads.filter(lead => 
-        lead.unlock_type === 'Unlock Contact Email'
+        lead.region === 'United States'
       );
     }
 
+    // First handle unlock type filters
+    if (filters.unlockType?.length === 1) {
+      const unlockType = filters.unlockType[0];
+
+      // Filter by specific unlock type
+      filteredLeads = filteredLeads.filter(lead => {
+        // For Event URLs or Event Emails, also check lead type
+        if (unlockType === 'Unlock Event URL' || unlockType === 'Unlock Event Email') {
+          return lead.lead_type === 'Event' && lead.unlock_type === unlockType;
+        }
+        // For Contact Emails
+        if (unlockType === 'Unlock Contact Email') {
+          return lead.lead_type === 'Contact' && lead.unlock_type === unlockType;
+        }
+        return false;
+      });
+
+      return {
+        totalCount: filteredLeads.length,
+        uniqueCount: filteredLeads.length
+      };
+    }
+
+    // Then handle master lead type selection
+    if (selectedLeadType === 'events') {
+      // Filter for event leads with either email or URL unlock types
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.lead_type === 'Event' && (
+          lead.unlock_type === 'Unlock Event Email' || 
+          lead.unlock_type === 'Unlock Event URL'
+        )
+      );
+
+      return {
+        totalCount: filteredLeads.length,
+        uniqueCount: filteredLeads.length
+      };
+    } else if (selectedLeadType === 'contacts') {
+      // Filter for contact leads with contact email unlock type
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.lead_type === 'Contact' && 
+        lead.unlock_type === 'Unlock Contact Email'
+      );
+
+      return {
+        totalCount: filteredLeads.length,
+        uniqueCount: filteredLeads.length
+      };
+    }
+
+    // Default case - no specific type filtering
     return {
-      totalCount: availableLeads.length,
+      totalCount: filteredLeads.length,
       uniqueCount: filteredLeads.length
     };
-  }, [availableLeads, showAllEvents, showAll, selectedLeadType]);
+  }, [availableLeads, showAllEvents, showAll, selectedLeadType, filters.unlockType]);
 
   // Calculate USA leads count
   const usaLeadsCount = useMemo(() => {
