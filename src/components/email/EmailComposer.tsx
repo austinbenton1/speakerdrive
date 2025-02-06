@@ -72,20 +72,14 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
     return (
       <ReactMarkdown
         components={{
-          // Override default element styling
           p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
           h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
           h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
           h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2" {...props} />,
-          ul: ({node, ...props}) => (
-            <ul className="mb-4 last:mb-0 space-y-0" {...props} />
-          ),
-          ol: ({node, ...props}) => (
-            <ol className="mb-4 last:mb-0 space-y-0" {...props} />
-          ),
+          ul: ({node, ...props}) => <ul className="mb-4 last:mb-0 space-y-0" {...props} />,
+          ol: ({node, ...props}) => <ol className="mb-4 last:mb-0 space-y-0" {...props} />,
           li: ({node, children, ...props}) => {
             const content = React.Children.toArray(children).map(child => {
-              // If it's a paragraph, extract its children to remove the wrapping <p>
               if (React.isValidElement(child) && child.type === 'p') {
                 return child.props.children;
               }
@@ -100,18 +94,10 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
             );
           },
           a: ({node, ...props}) => (
-            <a 
-              className="text-blue-600 hover:underline" 
-              target="_blank"
-              rel="noopener noreferrer"
-              {...props}
-            />
+            <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
           ),
           blockquote: ({node, ...props}) => (
-            <blockquote 
-              className="border-l-4 border-gray-200 pl-4 italic my-4" 
-              {...props}
-            />
+            <blockquote className="border-l-4 border-gray-200 pl-4 italic my-4" {...props} />
           ),
           code: ({node, inline, ...props}) => 
             inline ? (
@@ -131,26 +117,10 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
 
   if (type === 'email') {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">To:</span>
-              <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Subject:</span>
-              <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
-            </div>
-          </div>
-        </div>
-        <div className="p-4">
-          <div className="prose prose-sm max-w-none">
-            {content ? renderContent(content) : (
-              <span className="text-gray-400">Your email content will appear here...</span>
-            )}
-          </div>
-        </div>
+      <div className="prose prose-sm max-w-none">
+        {content ? renderContent(content) : (
+          <span className="text-gray-400">Your email content will appear here...</span>
+        )}
       </div>
     );
   }
@@ -803,18 +773,20 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
               {isPreviewMode && !showMessage && (
                 <div className="flex-1 p-4">
                   <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="border-b border-gray-200 bg-gray-50 p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">To:</span>
-                          <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">Subject:</span>
-                          <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                    {outreachChannel === 'email' && (
+                      <div className="border-b border-gray-200 bg-gray-50 p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600">To:</span>
+                            <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600">Subject:</span>
+                            <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                     <div className="p-4">
                       <MessagePreview content={input} type={outreachChannel} lead={lead} />
                     </div>
@@ -826,18 +798,20 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
               {showMessage && !isGenerating && !isPreviewMode && (
                 <div className="flex-1 p-4">
                   <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="border-b border-gray-200 bg-gray-50 p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">To:</span>
-                          <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">Subject:</span>
-                          <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                    {outreachChannel === 'email' && (
+                      <div className="border-b border-gray-200 bg-gray-50 p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600">To:</span>
+                            <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600">Subject:</span>
+                            <span className="text-sm font-medium">Speaking Opportunity: {lead.eventName}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                     <div className="p-4">
                       <div className="relative">
                         <textarea
