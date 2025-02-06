@@ -500,7 +500,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   {/* Unlock Value Display */}
                   {lead.unlockValue && (
                     <div className="flex items-center bg-blue-50 px-4 py-2">
-                      <Lock className="w-4 h-4 text-blue-500" />
                       <span className="text-sm font-medium text-blue-700 ml-2">
                         {lead.unlockValue} Credits
                       </span>
@@ -778,7 +777,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         <div className="space-y-2">
                           <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-600">To:</span>
-                            <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                            <span className="text-sm font-medium">
+                              {lead.unlockValue} Credits
+                            </span>
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-600">Subject:</span>
@@ -803,7 +804,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         <div className="space-y-2">
                           <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-600">To:</span>
-                            <span className="text-sm font-medium">{lead.email || 'recipient@example.com'}</span>
+                            <span className="text-sm font-medium">
+                              {lead.unlockValue} Credits
+                            </span>
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-600">Subject:</span>
