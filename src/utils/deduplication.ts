@@ -1,120 +1,105 @@
 import type { Lead } from '../types';
 
-interface GroupCounts {
-  total: number;
-  eventUrl: number;
-  eventEmail: number;
-  contactEmail: number;
-  related_ids: string[];
-}
-
 export function getUniqueLeads(leads: Lead[]): Lead[] {
-  // Helper functions to check unlock types
-  const isEventUrlType = (lead: Lead) => 
-    lead.unlock_type === 'Unlock Event URL';
-  
-  const isContactEmailType = (lead: Lead) => 
-    lead.unlock_type === 'Unlock Contact Email';
+  // Separate contacts and events
+  const contacts = leads.filter(lead => lead.lead_type === 'Contact');
+  const events = leads.filter(lead => lead.lead_type === 'Event');
 
-  const isEventEmailType = (lead: Lead) =>
-    lead.unlock_type === 'Unlock Event Email';
+  // Process contacts - keep all of them
+  const processedContacts = contacts.map(contact => ({
+    ...contact,
+    dedup_value: 2 // All contacts are kept
+  }));
 
-  // Group all leads by event name and organization
-  const groups = new Map<string, Lead[]>();
-  const groupCounts = new Map<string, GroupCounts>();
-  
-  // Group all leads (no separation of contacts now)
-  for (const lead of leads) {
-    const eventName = (lead.event_name || '').toLowerCase().trim();
-    const organization = (lead.organization || '').toLowerCase().trim();
-    const key = `${eventName}|${organization}`;
-    
-    if (!groups.has(key)) {
-      groups.set(key, []);
-      groupCounts.set(key, {
-        total: 0,
-        eventUrl: 0,
-        eventEmail: 0,
-        contactEmail: 0,
-        related_ids: []
+  // Group events by event name
+  const eventGroups = new Map<string, Lead[]>();
+  events.forEach(event => {
+    const key = event.event_name?.toLowerCase().trim() || '';
+    if (!eventGroups.has(key)) {
+      eventGroups.set(key, []);
+    }
+    eventGroups.get(key)!.push(event);
+  });
+
+  // Process each event group
+  const processedEvents: Lead[] = [];
+  eventGroups.forEach(groupLeads => {
+    // Sort by creation date
+    const sortedLeads = [...groupLeads].sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Find URL lead
+    const urlLead = sortedLeads.find(lead => 
+      lead.unlock_type === 'Unlock Event URL'
+    );
+
+    if (urlLead) {
+      // If URL lead exists, keep only that one
+      processedEvents.push({
+        ...urlLead,
+        dedup_value: 2
+      });
+      return;
+    }
+
+    // Find Tier 1 email lead
+    const tier1Patterns = [
+      'event', 'confer', 'speak', 'coach',
+      'consult', 'train', 'book', 'present'
+    ];
+    const tier1Lead = sortedLeads.find(lead => 
+      lead.unlock_type === 'Unlock Event Email' &&
+      tier1Patterns.some(pattern => 
+        lead.unlock_value?.toLowerCase().includes(pattern)
+      )
+    );
+
+    if (tier1Lead) {
+      // If Tier 1 email lead exists, keep that one
+      processedEvents.push({
+        ...tier1Lead,
+        dedup_value: 2
+      });
+      return;
+    }
+
+    // Find Tier 2 email lead
+    const tier2Patterns = [
+      'info', 'contact', 'hello', 'support', 'inquir'
+    ];
+    const tier2Lead = sortedLeads.find(lead => 
+      lead.unlock_type === 'Unlock Event Email' &&
+      tier2Patterns.some(pattern => 
+        lead.unlock_value?.toLowerCase().includes(pattern)
+      )
+    );
+
+    if (tier2Lead) {
+      // If Tier 2 email lead exists, keep that one
+      processedEvents.push({
+        ...tier2Lead,
+        dedup_value: 1
+      });
+      return;
+    }
+
+    // Find any email lead
+    const emailLead = sortedLeads.find(lead => 
+      lead.unlock_type === 'Unlock Event Email'
+    );
+
+    if (emailLead) {
+      // If any email lead exists, keep that one
+      processedEvents.push({
+        ...emailLead,
+        dedup_value: 1
       });
     }
-    
-    const group = groups.get(key)!;
-    const counts = groupCounts.get(key)!;
-    
-    group.push(lead);
-    counts.total++;
-    counts.related_ids.push(lead.id);
-    
-    if (isEventUrlType(lead)) counts.eventUrl++;
-    if (isEventEmailType(lead)) counts.eventEmail++;
-    if (isContactEmailType(lead)) counts.contactEmail++;
-  }
+  });
 
-  // Process each group according to the new rules
-  const resultLeads: Lead[] = [];
-  
-  for (const [key, groupLeads] of groups.entries()) {
-    const counts = groupCounts.get(key)!;
-    
-    // Rule 1: If group has any Event URL lead, make it unique
-    const eventUrlLeads = groupLeads.filter(isEventUrlType);
-    if (eventUrlLeads.length > 0) {
-      // Get the first Event URL lead as unique
-      const uniqueLead = eventUrlLeads[0];
-      const uniqueId = uniqueLead.id;
-      
-      // All leads in group (including the unique lead) are related
-      const relatedIds = groupLeads.map(lead => lead.id);
-      
-      resultLeads.push({
-        ...uniqueLead,
-        group_counts: {
-          ...counts,
-          related_ids: relatedIds
-        }
-      });
-      continue;
-    }
-
-    // Rule 2: If group has Contact Email leads, all are unique
-    const contactEmailLeads = groupLeads.filter(isContactEmailType);
-    if (contactEmailLeads.length > 0) {
-      // All leads in group (including contact emails) are related
-      const relatedIds = groupLeads.map(lead => lead.id);
-      
-      // Add all contact email leads as unique
-      for (const contactLead of contactEmailLeads) {
-        resultLeads.push({
-          ...contactLead,
-          group_counts: {
-            ...counts,
-            related_ids: relatedIds
-          }
-        });
-      }
-      continue;
-    }
-
-    // Rule 3: Only Event Email leads remain, make one unique
-    const eventEmailLeads = groupLeads.filter(isEventEmailType);
-    if (eventEmailLeads.length > 0) {
-      // Get first Event Email lead as unique
-      const uniqueLead = eventEmailLeads[0];
-      
-      // All leads in group (including the unique lead) are related
-      const relatedIds = groupLeads.map(lead => lead.id);
-      
-      resultLeads.push({
-        ...uniqueLead,
-        group_counts: {
-          ...counts,
-          related_ids: relatedIds
-        }
-      });
-    }
-  }
-
-  return resultLeads;
+  // Combine and return all processed leads
+  return [...processedContacts, ...processedEvents];
 }
