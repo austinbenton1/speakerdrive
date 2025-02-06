@@ -39,7 +39,7 @@ export default function FindLeads() {
   }, [location.state]);
 
   const [eventsFilter, setEventsFilter] = useState('');
-  const [selectedLeadType, setSelectedLeadType] = useState<string>('all');
+  const [selectedLeadType, setSelectedLeadType] = useState<'all' | 'contacts' | 'events'>('all');
   const [showAllEvents, setShowAllEvents] = useState(() => {
     const savedPreference = localStorage.getItem('showAllEvents');
     return savedPreference ? JSON.parse(savedPreference) : false;
@@ -72,12 +72,42 @@ export default function FindLeads() {
   const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
   
   const {
+    selectedEventUnlockTypes,
     filters,
     openSections,
     setFilters,
     setOpenSections,
+    toggleEventUnlockType,
     toggleSection,
+    handleUnlockTypeChange
   } = useLeadFilters();
+
+  // New function to handle lead type changes
+  const handleLeadTypeChange = (type: 'all' | 'contacts' | 'events') => {
+    setSelectedLeadType(type);
+    
+    // Update unlock type filters based on lead type
+    if (type === 'contacts') {
+      setFilters(prev => ({
+        ...prev,
+        unlockType: ['Unlock Contact Email'],
+        jobTitle: prev.jobTitle // Preserve job title filter
+      }));
+    } else if (type === 'events') {
+      setFilters(prev => ({
+        ...prev,
+        unlockType: ['Unlock Event Email', 'Unlock Event URL'],
+        jobTitle: [] // Clear job title filter for events
+      }));
+    } else {
+      // For 'all', clear unlock type filters
+      setFilters(prev => ({
+        ...prev,
+        unlockType: [],
+        jobTitle: []
+      }));
+    }
+  };
 
   const { sortConfig } = useRandomSort();
   const [sortField, setSortField] = useState<string | null>(null);
@@ -118,30 +148,59 @@ export default function FindLeads() {
 
   // Calculate filtered leads for display
   const displayedLeads = useMemo(() => {
-    let results = availableLeads;
+    // First deduplicate leads by ID
+    let results = Array.from(
+      new Map(availableLeads.map(lead => [lead.id, lead])).values()
+    );
 
-    // Apply showAllEvents filter first (this affects dedup_value)
+    // Apply deduplication if not showing all events
     if (!showAllEvents) {
-      results = results.filter(lead => lead.dedup_value === 2);
+      results = results.filter(lead => 
+        // Keep all contacts (they always have dedup_value === 2)
+        lead.lead_type === 'Contact' || 
+        // For events, only keep those with dedup_value === 2
+        (lead.lead_type === 'Event' && lead.dedup_value === 2)
+      );
     }
+
+    console.log('[DEBUG] Step 0: Initial leads', {
+      total: results.length,
+      contacts: results.filter(l => l.lead_type === 'Contact').length,
+      events: results.filter(l => l.lead_type === 'Event').length,
+      breakdown: results.map(l => ({
+        id: l.id,
+        name: l.lead_name || l.event_name,
+        type: l.lead_type,
+        unlock: l.unlock_type,
+        region: l.region,
+        dedup: l.dedup_value
+      }))
+    });
 
     // Apply USA-only filter if enabled
     if (!showAll) {
       results = results.filter(lead => lead.region === 'United States');
+      console.log('[DEBUG] Step 2: After USA filter', results.map(l => ({
+        id: l.id,
+        name: l.lead_name || l.event_name,
+        type: l.lead_type,
+        unlock: l.unlock_type,
+        region: l.region,
+        dedup: l.dedup_value
+      })));
     }
 
     // Apply other filters if active
     if (hasActiveFilters) {
       // Handle lead type filtering
-      if (selectedLeadType === 'events') {
-        results = results.filter(lead => 
-          lead.unlock_type === 'Unlock Event Email' || 
-          lead.unlock_type === 'Unlock Event URL'
-        );
-      } else if (selectedLeadType === 'contacts') {
-        results = results.filter(lead => 
-          lead.unlock_type === 'Unlock Contact Email'
-        );
+      if (selectedLeadType !== 'all') {
+        results = results.filter(lead => {
+          if (selectedLeadType === 'contacts') {
+            return lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email';
+          } else {
+            return lead.lead_type === 'Event';
+          }
+        });
       }
 
       // Filter by opportunities search term
@@ -242,7 +301,13 @@ export default function FindLeads() {
       // Filter by unlock type
       if (filters.unlockType && Array.isArray(filters.unlockType) && filters.unlockType.length > 0) {
         results = results.filter(lead => 
-          filters.unlockType.includes(lead.unlock_type)
+          filters.unlockType.includes(lead.unlock_type) && (
+            // For events, check lead type
+            (lead.unlock_type === 'Unlock Event URL' || lead.unlock_type === 'Unlock Event Email') 
+              ? lead.lead_type === 'Event'
+              // For contacts, check both type and unlock type
+              : lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email'
+          )
         );
       }
 
@@ -278,6 +343,16 @@ export default function FindLeads() {
     // Update current lead IDs
     setCurrentLeadIds(results.map(lead => lead.id));
     
+    // Final debug log
+    console.log('[DEBUG] Final filtered leads', results.map(l => ({
+      id: l.id,
+      name: l.lead_name || l.event_name,
+      type: l.lead_type,
+      unlock: l.unlock_type,
+      region: l.region,
+      dedup: l.dedup_value
+    })));
+
     return results;
   }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType, sortField, sortDirection]);
 
@@ -349,35 +424,6 @@ export default function FindLeads() {
     } catch (err) {
       // Silently handle errors for visit recording
     }
-  };
-
-  const handleLeadTypeChange = (type: LeadType) => {
-    setSelectedLeadType(type);
-    
-    // Reset unlock type filter when changing lead type
-    if (type === 'events') {
-      setFilters(prev => ({
-        ...prev,
-        unlockType: ['Unlock Event Email', 'Unlock Event URL'],
-        jobTitle: []
-      }));
-      return;
-    }
-
-    if (type === 'contacts') {
-      setFilters(prev => ({
-        ...prev,
-        unlockType: ['Unlock Contact Email'],
-        jobTitle: prev.jobTitle
-      }));
-      return;
-    }
-    
-    setFilters(prev => ({
-      ...prev,
-      unlockType: [],
-      jobTitle: []
-    }));
   };
 
   const handleResetFilters = () => {
@@ -512,33 +558,6 @@ export default function FindLeads() {
     return filteredLeads.filter(lead => lead.region === 'United States').length;
   }, [availableLeads, showAllEvents, selectedLeadType]);
 
-  const handleUnlockTypeChange = (type: string | undefined) => {
-    // If type is undefined, clear the filter
-    if (!type) {
-      setFilters(prev => ({
-        ...prev,
-        unlockType: []
-      }));
-      setSelectedLeadType('all');
-      return;
-    }
-
-    // Handle unlock type selection
-    setFilters(prev => ({
-      ...prev,
-      unlockType: [type]
-    }));
-
-    // Update master toggle based on unlock type
-    if (type === 'Unlock Contact Email') {
-      setSelectedLeadType('contacts');
-    } else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
-      setSelectedLeadType('events');
-    } else {
-      setSelectedLeadType('all');
-    }
-  };
-
   const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
     setSortField(field);
     setSortDirection(direction);
@@ -552,7 +571,32 @@ export default function FindLeads() {
         setFilters={setFilters}
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
-        handleUnlockTypeChange={handleUnlockTypeChange}
+        handleUnlockTypeChange={(type) => {
+          // If type is undefined, clear the filter
+          if (!type) {
+            setFilters(prev => ({
+              ...prev,
+              unlockType: []
+            }));
+            setSelectedLeadType('all');
+            return;
+          }
+
+          // Handle unlock type selection
+          setFilters(prev => ({
+            ...prev,
+            unlockType: [type]
+          }));
+
+          // Update master toggle based on unlock type
+          if (type === 'Unlock Contact Email') {
+            setSelectedLeadType('contacts');
+          } else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+            setSelectedLeadType('events');
+          } else {
+            setSelectedLeadType('all');
+          }
+        }}
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
@@ -561,7 +605,7 @@ export default function FindLeads() {
         totalCount={displayedLeads.length}
         uniqueCount={uniqueCount}
         usaCount={usaLeadsCount}
-        selectedLeadType={selectedLeadType as 'all' | 'contacts' | 'events'}
+        selectedLeadType={selectedLeadType}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -571,9 +615,9 @@ export default function FindLeads() {
             <div className="flex items-center gap-4">
               <div className="inline-flex bg-white rounded-lg shadow-sm border border-gray-200/75 p-0.5">
                 {[
-                  { id: 'all', label: 'All', icon: Filter, baseColor: 'gray' },
-                  { id: 'contacts', label: 'Contacts', icon: Users, baseColor: 'blue' },
-                  { id: 'events', label: 'Events', icon: Calendar, baseColor: 'emerald' }
+                  { id: 'all' as const, label: 'All', icon: Filter, baseColor: 'gray' },
+                  { id: 'contacts' as const, label: 'Contacts', icon: Users, baseColor: 'blue' },
+                  { id: 'events' as const, label: 'Events', icon: Calendar, baseColor: 'emerald' }
                 ].map((type) => {
                   const isSelected = selectedLeadType === type.id;
                   return (

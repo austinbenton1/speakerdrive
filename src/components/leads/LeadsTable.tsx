@@ -56,6 +56,20 @@ export default function LeadsTable({
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  
+  // Get unique leads once
+  const uniqueLeads = React.useMemo(() => {
+    return Array.from(
+      new Map(leads.map(lead => [lead.id, lead])).values()
+    );
+  }, [leads]);
+  
+  // Calculate paginated leads
+  const paginatedLeads = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return uniqueLeads.slice(startIndex, endIndex);
+  }, [uniqueLeads, currentPage, pageSize]);
 
   React.useEffect(() => {
     const container = scrollContainerRef.current;
@@ -76,9 +90,6 @@ export default function LeadsTable({
     };
   }, []);
 
-  // Paginate the leads directly (no sorting)
-  const paginatedLeads = paginate(leads);
-
   const handleRowClick = async (leadId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
@@ -94,7 +105,7 @@ export default function LeadsTable({
     }
 
     // Get all lead IDs for navigation
-    const leadIds = leads.map(lead => lead.id);
+    const leadIds = uniqueLeads.map(lead => lead.id);
     const currentIndex = leadIds.indexOf(leadId);
 
     // Create URL parameters for filters
@@ -199,15 +210,21 @@ export default function LeadsTable({
                 ))}
               </div>
             ) : (
-              <div className="contents">
-                {paginatedLeads.map(lead => (
-                  <LeadTableRow 
-                    key={lead.id} 
-                    lead={lead}
-                    onRowClick={handleRowClick}
-                  />
-                ))}
-              </div>
+              paginatedLeads.length > 0 ? (
+                <div className="contents">
+                  {paginatedLeads.map(lead => (
+                    <LeadTableRow 
+                      key={lead.id} 
+                      lead={lead}
+                      onRowClick={handleRowClick}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No leads found matching your criteria
+                </div>
+              )
             )}
           </div>
         </div>
@@ -216,9 +233,10 @@ export default function LeadsTable({
       <TablePagination
         currentPage={currentPage}
         pageSize={pageSize}
-        totalItems={leads.length}
+        totalItems={uniqueLeads.length}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
+        paginate={paginate}
       />
     </div>
   );
