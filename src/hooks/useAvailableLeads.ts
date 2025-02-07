@@ -4,6 +4,7 @@ import { fetchAvailableLeads } from '../lib/api/leadFinder';
 import { useAuth } from './useAuth';
 import type { Lead } from '../types';
 import { checkSupabaseConnection } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -14,6 +15,8 @@ export function useAvailableLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalLeads, setTotalLeads] = useState<number>(0);
+  const [allLeadsLoaded, setAllLeadsLoaded] = useState(false);
   const isInitialMount = useRef(true);
   const hasLoadedInitialBatch = useRef(false);
 
@@ -38,9 +41,20 @@ export function useAvailableLeads() {
 
         setLoading(true);
         setError(null);
+        setAllLeadsLoaded(false);
+        
+        // Get total leads count first
+        const { data, error: countError } = await supabase.rpc('count_total_leads');
+        if (countError) {
+          throw countError;
+        }
+        setTotalLeads(data);
         
         // Pass setLeads as the callback for remaining leads
-        const initialLeads = await fetchAvailableLeads(user.id, setLeads);
+        const initialLeads = await fetchAvailableLeads(user.id, (allLeads) => {
+          setLeads(allLeads);
+          setAllLeadsLoaded(true);
+        });
         setLeads(initialLeads);
         hasLoadedInitialBatch.current = true;
       } catch (err) {
@@ -60,5 +74,5 @@ export function useAvailableLeads() {
     loadLeads();
   }, [isAuthenticated, user, navigate]);
 
-  return { leads, loading, error };
+  return { leads, loading, error, totalLeads, allLeadsLoaded };
 }

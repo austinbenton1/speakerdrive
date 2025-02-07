@@ -68,7 +68,7 @@ export default function FindLeads() {
   }, [showAllEvents]);
 
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
-  const { leads: availableLeads, loading, error } = useAvailableLeads();
+  const { leads: availableLeads, loading, error, totalLeads, allLeadsLoaded } = useAvailableLeads();
   const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
   
   const {
@@ -163,31 +163,9 @@ export default function FindLeads() {
       );
     }
 
-    console.log('[DEBUG] Step 0: Initial leads', {
-      total: results.length,
-      contacts: results.filter(l => l.lead_type === 'Contact').length,
-      events: results.filter(l => l.lead_type === 'Event').length,
-      breakdown: results.map(l => ({
-        id: l.id,
-        name: l.lead_name || l.event_name,
-        type: l.lead_type,
-        unlock: l.unlock_type,
-        region: l.region,
-        dedup: l.dedup_value
-      }))
-    });
-
     // Apply USA-only filter if enabled
     if (!showAll) {
       results = results.filter(lead => lead.region === 'United States');
-      console.log('[DEBUG] Step 2: After USA filter', results.map(l => ({
-        id: l.id,
-        name: l.lead_name || l.event_name,
-        type: l.lead_type,
-        unlock: l.unlock_type,
-        region: l.region,
-        dedup: l.dedup_value
-      })));
     }
 
     // Apply other filters if active
@@ -342,19 +320,14 @@ export default function FindLeads() {
 
     // Update current lead IDs
     setCurrentLeadIds(results.map(lead => lead.id));
-    
-    // Final debug log
-    console.log('[DEBUG] Final filtered leads', results.map(l => ({
-      id: l.id,
-      name: l.lead_name || l.event_name,
-      type: l.lead_type,
-      unlock: l.unlock_type,
-      region: l.region,
-      dedup: l.dedup_value
-    })));
 
     return results;
   }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType, sortField, sortDirection]);
+
+  // Calculate unique count for display
+  const uniqueCount = useMemo(() => {
+    return displayedLeads.length;
+  }, [displayedLeads]);
 
   // Effect to handle region-based showAll state
   useEffect(() => {
@@ -464,30 +437,6 @@ export default function FindLeads() {
     });
   };
 
-  // Calculate USA leads count
-  const usaLeadsCount = useMemo(() => {
-    // Filter by dedup value if needed
-    const baseLeads = showAllEvents 
-      ? availableLeads 
-      : availableLeads.filter(lead => lead.dedup_value === 2);
-
-    // Then filter by region
-    return baseLeads.filter(lead => lead.region === 'United States').length;
-  }, [availableLeads, showAllEvents]);
-
-  // Memoize unique count calculation
-  const { totalCount, uniqueCount } = useMemo(() => {
-    // Filter by dedup value if needed
-    let filteredLeads = availableLeads.filter(lead => 
-      showAllEvents ? true : lead.dedup_value === 2
-    );
-
-    return {
-      totalCount: filteredLeads.length,
-      uniqueCount: filteredLeads.length
-    };
-  }, [availableLeads, showAllEvents]);
-
   const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
     setSortField(field);
     setSortDirection(direction);
@@ -534,7 +483,7 @@ export default function FindLeads() {
         onLocationToggle={() => setShowAll(!showAll)}
         totalCount={displayedLeads.length}
         uniqueCount={uniqueCount}
-        usaCount={usaLeadsCount}
+        usaCount={displayedLeads.filter(lead => lead.region === 'United States').length}
         selectedLeadType={selectedLeadType}
       />
 
@@ -638,9 +587,11 @@ export default function FindLeads() {
               uniqueCount={uniqueCount}
               selectedLeadType={selectedLeadType}
               filters={filters}
-              eventsFilter={filters.searchAll}
-              opportunityTags={filters.opportunities || []}
+              eventsFilter={eventsFilter}
+              opportunityTags={opportunityTags}
               showAll={showAll}
+              totalLeads={totalLeads}
+              allLeadsLoaded={allLeadsLoaded}
               onSortChange={handleSortChange}
               sortField={sortField}
               sortDirection={sortDirection}
