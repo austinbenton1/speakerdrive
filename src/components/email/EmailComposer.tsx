@@ -293,12 +293,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       location: `${lead.city || ''}${lead.city && (lead.state || lead.region) ? ', ' : ''}${lead.state || ''}${lead.state && lead.region ? ', ' : ''}${lead.region || ''}`.trim() || null,
       event_url: lead.eventUrl || null,
       event_name: lead.eventName || null,
+      event_info: lead.detailedInfo?.event_info || null,
       job_title: lead.jobTitle || null,
       lead_name: lead.lead_name || null,
 
       // EmailComposer details
       ...(isPitching && { pitching: selectedService || (profile?.services ? parseProfileServices(profile.services)[0] : null) }),
       ...(showMyContext && profile?.offering && { message_context: profile.offering }),
+      ...(profile?.display_name && { display_name: profile.display_name }),
       message_format: messageFormat === 'concise' ? 'email' : 'proposal',
       outreach_channel: outreachChannel,
       ...(showCustomization && customizationText?.trim() && { message_customization: customizationText })
