@@ -161,10 +161,11 @@ export default function LeadsTable({
                   <Layers className="w-3.5 h-3.5 text-gray-500" />
                   <div>
                     {showAllEvents ? (
-                      <>Showing <span className="text-gray-500">{leads.length}</span> Total Unlocks</>
+                      <>Showing <span className="text-gray-500">{leads.length}</span> Total Leads</>
                     ) : (
                       <>
-                        Showing <span className="text-gray-500">{uniqueCount}</span>{' '}
+                        Showing <span className="text-gray-500">{uniqueLeads.length}</span>{' '}
+                        High-Quality{' '}
                         {selectedLeadType === 'contacts' 
                           ? 'Contacts'
                           : selectedLeadType === 'events'

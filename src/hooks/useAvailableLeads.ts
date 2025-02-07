@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAvailableLeads } from '../lib/api/leadFinder';
 import { useAuth } from './useAuth';
-import { useUnlockedLeadIds } from './useUnlockedLeadIds';
 import type { Lead } from '../types';
 import { checkSupabaseConnection } from '../lib/supabase';
 
@@ -12,12 +11,11 @@ const RETRY_DELAY = 1000; // 1 second
 export function useAvailableLeads() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { leadIds: unlockedLeadIds, loading: idsLoading } = useUnlockedLeadIds();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isInitialMount = useRef(true);
-  const hasLoadedData = useRef(false);
+  const hasLoadedInitialBatch = useRef(false);
 
   useEffect(() => {
     const loadLeads = async (retryCount = 0) => {
@@ -27,13 +25,8 @@ export function useAvailableLeads() {
           return;
         }
 
-        // Skip loading if we already have data
-        if (hasLoadedData.current && leads.length > 0) {
-          return;
-        }
-
-        // Wait for unlocked lead IDs to load
-        if (idsLoading) {
+        // Skip loading if we already have initial batch
+        if (hasLoadedInitialBatch.current && leads.length > 0) {
           return;
         }
 
@@ -46,9 +39,10 @@ export function useAvailableLeads() {
         setLoading(true);
         setError(null);
         
-        const availableLeads = await fetchAvailableLeads(user.id, unlockedLeadIds);
-        setLeads(availableLeads);
-        hasLoadedData.current = true;
+        // Pass setLeads as the callback for remaining leads
+        const initialLeads = await fetchAvailableLeads(user.id, setLeads);
+        setLeads(initialLeads);
+        hasLoadedInitialBatch.current = true;
       } catch (err) {
         console.error('Error loading available leads:', err);
         
@@ -64,7 +58,7 @@ export function useAvailableLeads() {
     };
 
     loadLeads();
-  }, [isAuthenticated, user, unlockedLeadIds, idsLoading, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
-  return { leads, loading: loading || idsLoading, error };
+  return { leads, loading, error };
 }

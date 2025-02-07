@@ -49,7 +49,10 @@ function getRandomSort() {
   };
 }
 
-export async function fetchAvailableLeads(userId: string, unlockedLeadIds: string[] = []): Promise<Lead[]> {
+export async function fetchAvailableLeads(
+  userId: string,
+  onRemainingLeadsLoaded?: (leads: Lead[]) => void
+): Promise<Lead[]> {
   try {
     // Get user's profile sort configuration
     const { data: profileData } = await supabase
@@ -103,13 +106,13 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
       supabase
         .from('leads')
         .select(selectQuery)
-        .order('dedup_value', { ascending: false })
+        .order('id', { ascending: false })
         .range(0, 199)  // First 200 records
     );
 
     if (initialError) throw initialError;
 
-    // Apply random sort to initial batch
+    // Apply random sort to initial batch and return immediately
     const randomizedInitial = (initialLeads || []).sort((a, b) => {
       const aValue = a[finalSortConfig.field];
       const bValue = b[finalSortConfig.field];
@@ -122,34 +125,53 @@ export async function fetchAvailableLeads(userId: string, unlockedLeadIds: strin
       return finalSortConfig.ascending ? comparison : -comparison;
     });
 
-    // Start loading the rest in background
+    // Start loading the rest in background if callback is provided
+    if (onRemainingLeadsLoaded) {
+      loadRemainingLeads(selectQuery, finalSortConfig, randomizedInitial, onRemainingLeadsLoaded);
+    }
+
+    return randomizedInitial;
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Separate function to load remaining leads
+async function loadRemainingLeads(
+  selectQuery: string, 
+  sortConfig: { field: string; ascending: boolean },
+  initialLeads: Lead[],
+  setLeads: (leads: Lead[]) => void
+) {
+  try {
     const { data: remainingLeads, error: remainingError } = await retryableRequest(() =>
       supabase
         .from('leads')
         .select(selectQuery)
-        .order('dedup_value', { ascending: false })
+        .order('id', { ascending: false })
         .range(200, 999999)  // Rest of the records
     );
 
     if (remainingError) throw remainingError;
 
     // Combine and apply random sort to all leads
-    const allLeads = [...randomizedInitial, ...(remainingLeads || [])];
+    const allLeads = [...initialLeads, ...(remainingLeads || [])];
     const randomizedAll = allLeads.sort((a, b) => {
-      const aValue = a[finalSortConfig.field];
-      const bValue = b[finalSortConfig.field];
+      const aValue = a[sortConfig.field];
+      const bValue = b[sortConfig.field];
       
       if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return finalSortConfig.ascending ? aValue - bValue : bValue - aValue;
+        return sortConfig.ascending ? aValue - bValue : bValue - aValue;
       }
       
       const comparison = String(aValue || '').localeCompare(String(bValue || ''));
-      return finalSortConfig.ascending ? comparison : -comparison;
+      return sortConfig.ascending ? comparison : -comparison;
     });
 
-    return randomizedAll;
+    // Update the leads state with all leads
+    setLeads(randomizedAll);
   } catch (err) {
-    throw err;
+    console.error('Error loading remaining leads:', err);
   }
 }
 
