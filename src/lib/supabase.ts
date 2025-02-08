@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { validateEnv } from './env';
 
-// Supabase configuration from environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wpnhjwajdkedxttyzhsy.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwbmhqd2FqZGtlZHh0dHl6aHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0NDY5MTAsImV4cCI6MjA1MzAyMjkxMH0.gKeFwgRlToyiWp6ju67GlEsiE4br_VLvWo3BldC6vPE';
+// Validate and get environment variables
+const env = validateEnv();
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
 
 // Add retry logic for failed requests
 const MAX_RETRIES = 3;

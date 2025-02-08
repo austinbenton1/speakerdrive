@@ -3,6 +3,8 @@ import type { SpeakerLead } from '../../types';
 
 export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
   try {
+    console.log('Fetching lead by ID:', id);
+
     // First get the lead data
     const { data: leadData, error: leadError } = await supabase
       .from('leads')
@@ -44,6 +46,12 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
     if (leadError) throw leadError;
     if (!leadData) return null;
 
+    console.log('Raw lead data from database:', {
+      id: leadData.id,
+      event_info: leadData.event_info,
+      detailed_info: leadData.detailed_info
+    });
+
     // Then get the unlocked lead data if it exists
     const { data: unlockedData, error: unlockedError } = await supabase
       .from('unlocked_leads')
@@ -55,7 +63,8 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       throw unlockedError;
     }
 
-    return {
+    // Create the transformed lead object
+    const transformedLead: SpeakerLead = {
       id: leadData.id,
       unlocked_lead_id: unlockedData?.id || null,
       pitch: unlockedData?.pitch || null,
@@ -71,7 +80,7 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       eventName: leadData.event_name,
       eventUrl: leadData.event_url,
       createdAt: leadData.created_at,
-      eventInfo: leadData.event_info,
+      eventInfo: leadData.event_info, // Changed to match the SpeakerLead type
       detailedInfo: leadData.detailed_info,
       valueProfile: leadData.value_profile,
       outreachPathways: leadData.outreach_pathways,
@@ -90,6 +99,14 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       state: leadData.state,
       city: leadData.city
     };
+
+    console.log('Transformed lead data:', {
+      id: transformedLead.id,
+      eventInfo: transformedLead.eventInfo,
+      detailedInfo: transformedLead.detailedInfo
+    });
+
+    return transformedLead;
   } catch (error) {
     console.error('Error fetching lead by ID:', error);
     throw error;

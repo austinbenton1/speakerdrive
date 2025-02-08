@@ -284,8 +284,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     
     // Collect data for context
     const contextData = {
-      // Lead details
-      detailed_info: lead.detailedInfo || null,
       outreach_pathways: lead.outreachPathways || null,
       unlock_value: lead.unlockValue || null,
       unlock_type: lead.unlockType || null,
@@ -293,9 +291,9 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       location: `${lead.city || ''}${lead.city && (lead.state || lead.region) ? ', ' : ''}${lead.state || ''}${lead.state && lead.region ? ', ' : ''}${lead.region || ''}`.trim() || null,
       event_url: lead.eventUrl || null,
       event_name: lead.eventName || null,
-      event_info: lead.detailedInfo?.event_info || null,
+      event_info: lead.eventInfo || null, // Updated to use eventInfo property
       job_title: lead.jobTitle || null,
-      lead_name: lead.lead_name || null,
+      lead_name: lead.leadName || lead.lead_name || null,
 
       // EmailComposer details
       ...(isPitching && { pitching: selectedService || (profile?.services ? parseProfileServices(profile.services)[0] : null) }),
