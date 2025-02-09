@@ -29,9 +29,6 @@ interface OutreachSettingsPanelProps {
 
   parseProfileServices: (servicesStr: string | null) => string[];
 
-  messageFormat: 'concise' | 'expanded';
-  setMessageFormat: (val: 'concise' | 'expanded') => void;
-
   showCustomization: boolean;
   setShowCustomization: (val: boolean) => void;
   customizationText: string;
@@ -64,8 +61,6 @@ export default function OutreachSettingsPanel({
   showAdditionalServices,
   setShowAdditionalServices,
   parseProfileServices,
-  messageFormat,
-  setMessageFormat,
   showCustomization,
   setShowCustomization,
   customizationText,
@@ -228,68 +223,6 @@ export default function OutreachSettingsPanel({
                 </p>
               </div>
             )}
-          </div>
-
-          {/* Message Format toggles */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-900">
-                Message Format
-              </label>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setMessageFormat('concise')}
-                className={`
-                  relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                  transition-colors duration-200 border
-                  ${
-                    messageFormat === 'concise'
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                  }
-                `}
-              >
-                Concise
-                {messageFormat === 'concise' && (
-                  <span className="text-yellow-500 ml-1.5 hover:scale-110 transition-transform">
-                    ✨
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setMessageFormat('expanded')}
-                className={`
-                  relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                  transition-colors duration-200 border
-                  ${
-                    messageFormat === 'expanded'
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                  }
-                `}
-              >
-                Expanded
-              </button>
-              <div className="flex gap-2 text-xs text-gray-500">
-                {messageFormat === 'concise' && (
-                  <div className="flex items-center gap-1 ml-2">
-                    <span>Recommended</span>
-                    <a
-                      href="#"
-                      className="text-blue-600 hover:text-blue-700 hover:underline ml-1"
-                    >
-                      Learn more
-                    </a>
-                  </div>
-                )}
-                {messageFormat === 'expanded' && (
-                  <div className="ml-[82px]">
-                    <span>More detailed message</span>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Optional Customization instructions */}

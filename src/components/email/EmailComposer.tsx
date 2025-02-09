@@ -60,7 +60,7 @@ const parseProfileServices = (servicesStr: string | null): string[] => {
   }
 };
 
-/** Rendered content in “Preview” mode */
+/** For “Preview” mode display */
 interface PreviewProps {
   content: string;
   type: MessageType;
@@ -105,7 +105,7 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
     );
   }
 
-  // Otherwise "proposal" (Apply)
+  // Otherwise "proposal"
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
       <div className="p-6">
@@ -129,25 +129,24 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
 export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerProps) {
   const { profile } = useProfile();
 
-  // The actual text input (pitch) displayed after generation
+  // The text input displayed after generation
   const [input, setInput] = useState(lead.pitch || '');
 
-  // Outreach channel (Email / LinkedIn / Apply)
+  // Outreach channel
   const [outreachChannel, setOutreachChannel] = useState<MessageType>('email');
 
   // “Advanced settings”
-  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showAdvanced] = useState(true); // always show advanced
   const [isPitching, setIsPitching] = useState(true);
   const [selectedService, setSelectedService] = useState<string>('');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showCustomization, setShowCustomization] = useState(false);
   const [customizationText, setCustomizationText] = useState('');
   const [showAdditionalServices, setShowAdditionalServices] = useState(false);
-  const [messageFormat, setMessageFormat] = useState<'concise' | 'expanded'>('concise');
 
-  // States controlling the “before” vs. “after” flow
-  const [showInputs, setShowInputs] = useState(true);   // “before” we have a final message
-  const [showMessage, setShowMessage] = useState(false); // “after” we have generated or loaded a message
+  // “Before” vs. “After”
+  const [showInputs, setShowInputs] = useState(true);
+  const [showMessage, setShowMessage] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Busy states
@@ -161,7 +160,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
-  // If you want “enter to send”:
+  // If you want “enter to send”
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // For the header
@@ -185,7 +184,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return channels.find((ch) => !isButtonDisabled(ch)) || 'email';
   };
 
-  // On mount, see if the user’s profile has a default service
+  // If user has default service
   useEffect(() => {
     if (profile?.services) {
       const pServices = parseProfileServices(profile.services);
@@ -198,7 +197,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [profile?.services]);
 
-  // If there's already a pitch in the lead, show it “after” by default
+  // If there's already a pitch in the lead
   useEffect(() => {
     if (lead.pitch) {
       setInput(lead.pitch);
@@ -210,7 +209,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [lead.pitch]);
 
-  // If the modal just opened, reset
+  // If the modal just opened
   useEffect(() => {
     if (isOpen) {
       if (lead.pitch) {
@@ -224,14 +223,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [isOpen, lead.pitch]);
 
-  // If “email” is disabled, pick another channel
+  // If email is disabled
   useEffect(() => {
     if (isButtonDisabled('email')) {
       setOutreachChannel(findFirstEnabledButton());
     }
   }, [lead.unlockType]);
 
-  // “Enter to submit”
+  // Press enter to submit
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -253,6 +252,13 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  // MULTIPLE MESSAGE OPTIONS
+  const [messageOptions, setMessageOptions] = useState<
+    { message: string; keyElements: string[] }[]
+  >([]);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
+
+  // Our handleGenerate
   const handleGenerate = async () => {
     setIsGenerating(true);
 
@@ -260,19 +266,19 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       outreach_pathways: lead.outreachPathways || null,
       unlock_value: lead.unlockValue || null,
       unlock_type: lead.unlockType || null,
+      location:
+        `${lead.city || ''}${
+          lead.city && (lead.state || lead.region) ? ', ' : ''
+        }${lead.state || ''}${
+          lead.state && lead.region ? ', ' : ''
+        }${lead.region || ''}`.trim() || null,
       organization: lead.organization || null,
-      location: `${lead.city || ''}${
-        lead.city && (lead.state || lead.region) ? ', ' : ''
-      }${lead.state || ''}${lead.state && lead.region ? ', ' : ''}${
-        lead.region || ''
-      }`.trim() || null,
       event_url: lead.eventUrl || null,
       event_name: lead.eventName || null,
       event_info: (lead as any).eventInfo || null,
       job_title: lead.jobTitle || null,
       lead_name: lead.leadName || (lead as any).lead_name || null,
 
-      // advanced toggles
       ...(isPitching && {
         pitching:
           selectedService ||
@@ -284,7 +290,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       ...(profile?.display_name && {
         display_name: profile.display_name,
       }),
-      message_format: messageFormat === 'concise' ? 'email' : 'proposal',
       outreach_channel: outreachChannel,
       ...(showCustomization && customizationText.trim() && {
         message_customization: customizationText,
@@ -297,25 +302,47 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contextData),
       });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      const responseData = Array.isArray(result) ? result[0] : result;
-      const generated = responseData?.response;
-      if (!generated) throw new Error('No response content returned');
+      console.log('Raw result from n8n:', result);
 
-      const decodedResponse = generated
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/\\n/g, '\n');
+      let rawArray: any[] = [];
+      if (Array.isArray(result)) {
+        rawArray = result;
+      } else if (Array.isArray(result.messages)) {
+        rawArray = result.messages;
+      } else {
+        rawArray = [result];
+      }
 
-      setInput(decodedResponse);
-      // Now show the final “To:” + message area
+      const parsedMessageOptions = rawArray.map((item: any) => ({
+        message: (item.response || '')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\\n/g, '\n'),
+        keyElements: item.keyElements || [],
+      }));
+
+      console.log('Parsed message options:', parsedMessageOptions);
+
+      if (parsedMessageOptions.length === 0) {
+        throw new Error('No valid messages returned from the server');
+      }
+
+      setMessageOptions(parsedMessageOptions);
+      setSelectedOptionIndex(0);
+
+      // Use first message
+      setInput(parsedMessageOptions[0].message);
+
+      // Switch to "after" state
       setShowMessage(true);
       setShowInputs(false);
     } catch (err) {
@@ -328,6 +355,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  const refreshOption = () => {
+    if (messageOptions.length === 0) return;
+    const newIndex = (selectedOptionIndex + 1) % messageOptions.length;
+    setSelectedOptionIndex(newIndex);
+    setInput(messageOptions[newIndex].message);
+  };
+
+  // COPY & SAVE
   const handleCopyOutreach = async () => {
     setIsCopying(true);
     try {
@@ -371,177 +406,155 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
   if (!isOpen) return null;
 
+  // AFTER state => gather key elements
+  const isAfterState = showMessage && !isPreviewMode && !isGenerating;
+  const currentKeyElements = isAfterState
+    ? messageOptions[selectedOptionIndex]?.keyElements || []
+    : [];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50" onClick={onClose}>
-      <div className="fixed inset-y-0 right-0 flex max-w-full">
-        <div
-          className="w-screen max-w-lg transform transition-transform duration-500 ease-in-out translate-x-0 pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex h-full flex-col overflow-hidden bg-white shadow-2xl rounded-l-2xl">
+    <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
+      <div
+        className="absolute inset-y-0 right-0 w-screen max-w-lg pointer-events-auto
+                   flex flex-col min-h-0" // key: flex container, min-h-0
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* White panel with rounded left side */}
+        <div className="relative flex-1 overflow-y-auto bg-white shadow-2xl rounded-l-2xl flex flex-col min-h-0">
+          
+          {/* Header */}
+          <EmailComposerHeader
+            lead={lead}
+            onClose={onClose}
+            truncateText={truncateText}
+          />
+
+          {/* Scrollable Middle */}
+          <div className="p-4 flex-1 flex flex-col min-h-0">
             
-            {/* Header */}
-            <EmailComposerHeader
-              lead={lead}
-              onClose={onClose}
-              truncateText={truncateText}
-            />
-
-            {/* Main content */}
-            <div className="flex-1 flex flex-col overflow-y-auto">
-
-              {/* BEFORE state: advanced settings only (no “To” or message area) */}
-              {showInputs && !isPreviewMode && !showMessage && (
-                <div className="flex-1">
-                  {/* Outreach Channel buttons */}
-                  <div className="bg-white p-4 border-b border-gray-200">
-                    <p className="mb-3 text-sm font-medium text-gray-700">
-                      Outreach Channel
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {[
-                        { id: 'email' as MessageType, icon: Mail, label: 'Email' },
-                        { id: 'linkedin' as MessageType, icon: Linkedin, label: 'LinkedIn' },
-                        { id: 'proposal' as MessageType, icon: FileText, label: 'Apply' },
-                      ].map((type) => (
-                        <button
-                          key={type.id}
-                          onClick={() => setOutreachChannel(type.id)}
-                          disabled={isButtonDisabled(type.id)}
-                          className={`
-                            inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
-                            ${
-                              isButtonDisabled(type.id)
-                                ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200'
-                                : outreachChannel === type.id
-                                ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
-                                : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
-                            }
-                          `}
-                        >
-                          <type.icon className="w-3.5 h-3.5" />
-                          {type.label}
-                        </button>
-                      ))}
-                    </div>
+            {/* BEFORE */}
+            {showInputs && !isPreviewMode && !showMessage && (
+              <div>
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <p className="mb-3 text-sm font-medium text-gray-700">
+                    Outreach Channel
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {[
+                      { id: 'email' as MessageType, icon: Mail, label: 'Email' },
+                      { id: 'linkedin' as MessageType, icon: Linkedin, label: 'LinkedIn' },
+                      { id: 'proposal' as MessageType, icon: FileText, label: 'Apply' },
+                    ].map((type) => (
+                      <button
+                        key={type.id}
+                        onClick={() => setOutreachChannel(type.id)}
+                        disabled={isButtonDisabled(type.id)}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
+                          ${
+                            isButtonDisabled(type.id)
+                              ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200'
+                              : outreachChannel === type.id
+                              ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
+                              : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                          }`
+                        }
+                      >
+                        <type.icon className="w-3.5 h-3.5" />
+                        {type.label}
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Re-insert unlock_value display under channel buttons */}
-                  {lead.unlockValue && (
-                    <div className="flex items-center bg-blue-50 px-4 py-2">
-                      <span className="text-sm font-medium text-blue-700 ml-2">
-                        {lead.unlockValue}
-                      </span>
-                    </div>
-                  )}
+                <OutreachSettingsPanel
+                  showAdvanced={showAdvanced}
+                  isPitching={isPitching}
+                  setIsPitching={setIsPitching}
+                  showMyContext={showMyContext}
+                  setShowMyContext={setShowMyContext}
+                  profileOffering={profile?.offering}
+                  profileServicesString={profile?.services}
+                  selectedService={selectedService}
+                  setSelectedService={setSelectedService}
+                  showAdditionalServices={showAdditionalServices}
+                  setShowAdditionalServices={setShowAdditionalServices}
+                  parseProfileServices={parseProfileServices}
+                  showCustomization={showCustomization}
+                  setShowCustomization={setShowCustomization}
+                  customizationText={customizationText}
+                  setCustomizationText={setCustomizationText}
+                />
+              </div>
+            )}
 
-                  {/* Our advanced outreach settings (including My Context) */}
-                  <OutreachSettingsPanel
-                    showAdvanced={showAdvanced}
-                    isPitching={isPitching}
-                    setIsPitching={setIsPitching}
-                    showMyContext={showMyContext}
-                    setShowMyContext={setShowMyContext}
-                    profileOffering={profile?.offering}
-                    profileServicesString={profile?.services}
-                    selectedService={selectedService}
-                    setSelectedService={setSelectedService}
-                    showAdditionalServices={showAdditionalServices}
-                    setShowAdditionalServices={setShowAdditionalServices}
-                    parseProfileServices={parseProfileServices}
-                    messageFormat={messageFormat}
-                    setMessageFormat={setMessageFormat}
-                    showCustomization={showCustomization}
-                    setShowCustomization={setShowCustomization}
-                    customizationText={customizationText}
-                    setCustomizationText={setCustomizationText}
+            {/* PREVIEW */}
+            {isPreviewMode && !showMessage && (
+              <div className="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div className="p-4">
+                  <MessagePreview
+                    content={input}
+                    type={outreachChannel}
+                    lead={lead}
                   />
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* PREVIEW mode (still “before” state, but user wants a quick look) */}
-              {isPreviewMode && !showMessage && (
-                <div className="flex-1 p-4">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    {outreachChannel === 'email' && (
-                      <div className="border-b border-gray-200 bg-gray-50 p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-600">To:</span>
-                            <span className="text-sm font-medium">{lead.unlockValue}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <MessagePreview
-                        content={input}
-                        type={outreachChannel}
-                        lead={lead}
-                      />
-                    </div>
+            {/* AFTER state */}
+            {isAfterState && (
+              <div className="flex flex-col flex-1 min-h-0">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={`Your message to ${lead.leadName}...`}
+                  className="w-full text-sm leading-relaxed
+                             placeholder:text-gray-400
+                             focus:outline-none focus:ring-0 focus:border-0
+                             resize-none border border-gray-200 rounded-md
+                             p-3 flex-grow min-h-0"
+                />
+
+                {!!currentKeyElements.length && (
+                  <div className="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                      Key Elements
+                    </h3>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                      {currentKeyElements.map((el, idx) => (
+                        <li key={idx}>{el}</li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )}
-
-              {/* AFTER state: final “To:” + message area (only shown after generate) */}
-              {showMessage && !isGenerating && !isPreviewMode && (
-                <div className="flex-1 p-4">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-
-                    {/* “To:” line only if emailing */}
-                    {outreachChannel === 'email' && (
-                      <div className="border-b border-gray-200 bg-gray-50 p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-600">To:</span>
-                            <span className="text-sm font-medium">{lead.unlockValue}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Final text area to edit the generated message */}
-                    <div className="p-4">
-                      <div className="relative">
-                        <textarea
-                          ref={textareaRef}
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          placeholder={`Your message to ${lead.leadName}...`}
-                          className="w-full resize-none text-gray-900 placeholder:text-gray-400 focus:outline-none text-sm leading-relaxed min-h-[450px] bg-transparent focus:ring-0 focus:border-0"
-                          style={{ minHeight: '450px' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer with Generate, Preview, Copy, etc. */}
-            <EmailComposerFooter
-              showMessage={showMessage}
-              isGenerating={isGenerating}
-              isCopying={isCopying}
-              isSaving={isSaving}
-              showInputs={showInputs}
-              isPreviewMode={isPreviewMode}
-              input={input}
-              leadPitch={lead.pitch}
-              handleGenerate={handleGenerate}
-              handleCopyOutreach={handleCopyOutreach}
-              handleSavePitch={handleSavePitch}
-              togglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
-              onBackToEditor={() => {
-                // revert to “before” state
-                setShowMessage(false);
-                setShowInputs(true);
-                setIsPreviewMode(false);
-              }}
-            />
+                )}
+              </div>
+            )}
           </div>
+
+          {/* FOOTER pinned at bottom */}
+          <EmailComposerFooter
+            showMessage={showMessage}
+            isGenerating={isGenerating}
+            isCopying={isCopying}
+            isSaving={isSaving}
+            showInputs={showInputs}
+            isPreviewMode={isPreviewMode}
+            input={input}
+            leadPitch={lead.pitch}
+            handleGenerate={handleGenerate}
+            handleCopyOutreach={handleCopyOutreach}
+            handleSavePitch={handleSavePitch}
+            togglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
+            onBackToEditor={() => {
+              setShowMessage(false);
+              setShowInputs(true);
+              setIsPreviewMode(false);
+            }}
+            messageOptionsCount={messageOptions.length}
+            selectedOptionIndex={selectedOptionIndex}
+            onRefresh={refreshOption}
+          />
         </div>
       </div>
 

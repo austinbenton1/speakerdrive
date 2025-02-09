@@ -4,24 +4,24 @@ import { X } from 'lucide-react';
 interface EmailComposerHeaderProps {
   lead: {
     leadType: string;
-    leadName?: string;   // e.g. "Mary Ransier"
-    lead_name?: string;  // in some cases might be stored as lead_name
+    leadName?: string;
+    lead_name?: string;  // some back-ends store name as lead_name
     eventName?: string;
     jobTitle?: string;
     image: string;
-    focus?: string;
-    unlockType?: string; // e.g. "Unlock Contact Email"
+    // Must match the name actually passed from parent
+    unlockValue?: string; 
   };
   onClose: () => void;
-  truncateText: (text: string, maxLength: number) => string;
 }
 
-export default function EmailComposerHeader({ lead, onClose, truncateText }: EmailComposerHeaderProps) {
-  // If this is a contact, show the contact's name + job title.
-  // Otherwise (it's an event), show the eventName.
-  const isContact =
-    lead.leadType === 'Contact' || lead.unlockType === 'Unlock Contact Email';
+export default function EmailComposerHeader({
+  lead,
+  onClose,
+}: EmailComposerHeaderProps) {
+  const isContact = lead.leadType === 'Contact';
 
+  // Build the main heading text
   const headerTitle = isContact
     ? `${lead.leadName || lead.lead_name || ''}${
         lead.jobTitle ? `, ${lead.jobTitle}` : ''
@@ -37,34 +37,56 @@ export default function EmailComposerHeader({ lead, onClose, truncateText }: Ema
       >
         <div className="px-6 py-4">
           <div className="flex items-start justify-between">
+            {/* Left: Image + Title/Subheader */}
             <div className="flex items-start space-x-4">
+              {/* Image */}
               <div className="flex-shrink-0">
                 <img
                   src={lead.image}
                   alt={isContact ? (lead.leadName || lead.lead_name) : lead.eventName}
-                  className={`h-16 w-16 rounded-xl object-cover shadow-md ${
-                    isContact
-                      ? 'ring-2 ring-blue-100'
-                      : 'ring-2 ring-emerald-100'
-                  }`}
+                  className={`
+                    h-16 w-16 rounded-xl object-cover shadow-md
+                    ${isContact ? 'ring-2 ring-blue-100' : 'ring-2 ring-emerald-100'}
+                  `}
                 />
               </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-semibold text-gray-900 leading-6 break-words">
-                  {truncateText(headerTitle, 30)}
+
+              {/* Title + unlockValue (with forced max-width) */}
+              <div className="min-w-0 flex-1 max-w-sm">
+                {/* Title => up to 2 lines */}
+                <h2
+                  className="
+                    text-xl font-semibold text-gray-900 leading-6
+                    two-line-clamp break-words
+                  "
+                >
+                  {headerTitle}
                 </h2>
-                {lead.focus && (
-                  <div className="mt-1">
-                    <p className="text-sm text-gray-500">
-                      {lead.focus}
-                    </p>
-                  </div>
+
+                {/* Subheader => single line */}
+                {lead.unlockValue && (
+                  <p
+                    className="
+                      mt-1 text-base font-medium text-gray-600
+                      flex items-center gap-1.5
+                      one-line-truncate
+                      max-w-sm
+                    "
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                    {lead.unlockValue}
+                  </p>
                 )}
               </div>
             </div>
+
+            {/* Close button */}
             <button
               onClick={onClose}
-              className="flex-shrink-0 rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="
+                flex-shrink-0 rounded-md text-gray-400 hover:text-gray-500
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+              "
             >
               <X className="h-5 w-5" />
             </button>
