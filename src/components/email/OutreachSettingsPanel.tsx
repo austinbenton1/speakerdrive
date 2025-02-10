@@ -8,7 +8,6 @@ import {
   Briefcase,
   Users,
   Plus,
-  MoreHorizontal,
 } from 'lucide-react';
 
 interface OutreachSettingsPanelProps {
@@ -23,9 +22,6 @@ interface OutreachSettingsPanelProps {
 
   selectedService: string;
   setSelectedService: (val: string) => void;
-
-  showAdditionalServices: boolean;
-  setShowAdditionalServices: (val: boolean) => void;
 
   parseProfileServices: (servicesStr: string | null) => string[];
 
@@ -58,201 +54,152 @@ export default function OutreachSettingsPanel({
   profileServicesString,
   selectedService,
   setSelectedService,
-  showAdditionalServices,
-  setShowAdditionalServices,
   parseProfileServices,
   showCustomization,
   setShowCustomization,
   customizationText,
   setCustomizationText,
 }: OutreachSettingsPanelProps) {
-  // If user turned off advanced, skip
+  // If user turned off advanced, skip entirely
   if (!showAdvanced) return null;
 
   const profileServices = parseProfileServices(profileServicesString || '');
-
-  // Convert multi-paragraph “offering” to a single line, max ~150 chars
   const truncatedContext = truncateContextSingleLine(profileOffering || '');
 
   return (
-    <div className="bg-white p-4">
-      <div className="bg-white rounded-lg">
-        <p className="text-sm font-medium text-gray-700 mb-3">
-          Outreach Settings
-        </p>
-        <div className="space-y-6 px-3">
-          {/* I'm Pitching toggle + service selection */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <MinimalToggle
-                className="scale-[0.35] -ml-1"
-                checked={isPitching}
-                onChange={(e) => setIsPitching(e.target.checked)}
-              />
-              <label className="text-sm font-medium text-gray-900">
-                I&apos;m Pitching
-              </label>
-            </div>
-            {isPitching && (
-              <div className="flex items-center gap-2">
-                {services.slice(0, 3).map((service) => {
-                  const Icon = {
-                    Presentation,
-                    GraduationCap,
-                    Target,
-                    Briefcase,
-                    Users,
-                    Plus,
-                  }[service.icon];
+    <div className="mb-4 border-b border-gray-200 pb-4">
+      {/* Tier 1: heading (no extra padding) */}
+      <p className="text-sm font-medium text-gray-700 mb-3">Outreach Settings</p>
 
-                  const isInProfile = profileServices.includes(service.id);
-                  const isSelected = selectedService === service.id;
-
-                  const buttonClasses = [
-                    'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
-                    'transition-colors duration-200 border',
-                    isSelected
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
-                  ].join(' ');
-
-                  return (
-                    <button
-                      key={service.id}
-                      onClick={() => setSelectedService(service.id)}
-                      className={buttonClasses}
-                    >
-                      {Icon && (
-                        <Icon
-                          className={
-                            isSelected ? 'w-3 h-3 text-white' : 'w-3 h-3 text-gray-500'
-                          }
-                        />
-                      )}
-                      {service.label}
-                      {isInProfile && (
-                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                      )}
-                    </button>
-                  );
-                })}
-
-                {/* More... services */}
-                <div
-                  className="relative"
-                  onClick={() => setShowAdditionalServices(!showAdditionalServices)}
-                >
-                  <button className="p-1.5 rounded-md hover:bg-gray-100 transition-colors">
-                    <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-            )}
-            {isPitching && showAdditionalServices && (
-              <div className="flex gap-2 mt-2">
-                {services.slice(3).map((service) => {
-                  const Icon = {
-                    Presentation,
-                    GraduationCap,
-                    Target,
-                    Briefcase,
-                    Users,
-                    Plus,
-                  }[service.icon];
-
-                  const isInProfile = profileServices.includes(service.id);
-                  const isSelected = selectedService === service.id;
-
-                  const buttonClasses = [
-                    'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
-                    'transition-colors duration-200 border',
-                    isSelected
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
-                  ].join(' ');
-
-                  return (
-                    <button
-                      key={service.id}
-                      onClick={() => setSelectedService(service.id)}
-                      className={buttonClasses}
-                    >
-                      {Icon && (
-                        <Icon
-                          className={
-                            isSelected ? 'w-3 h-3 text-white' : 'w-3 h-3 text-gray-500'
-                          }
-                        />
-                      )}
-                      {service.label}
-                      {isInProfile && (
-                        <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      <div className="space-y-6">
+        {/* I'm Pitching toggle */}
+        <div>
+          {/* Tier 2: Toggle row */}
+          <div className="flex items-center gap-2 mb-3 pl-3">
+            <MinimalToggle
+              className="scale-[0.35] -ml-1"
+              checked={isPitching}
+              onChange={(e) => setIsPitching(e.target.checked)}
+            />
+            <label className="text-sm font-medium text-gray-900">
+              I&apos;m Pitching
+            </label>
           </div>
 
-          {/* My Context toggle, truncated to ~150 chars / single line */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <MinimalToggle
-                className="scale-[0.35] mr-1"
-                checked={showMyContext}
-                onChange={(e) => setShowMyContext(e.target.checked)}
-              />
-              <label className="text-sm font-medium text-gray-900">
-                My Context
-              </label>
-            </div>
-            {showMyContext && (
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-600 flex-1 min-w-0">
-                  {/* Single line, truncated snippet */}
-                  {truncatedContext || 'Award-winning keynote speaker...'}
-                  <a
-                    href="/settings"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
+          {/* Tier 3: Pitching service buttons */}
+          {isPitching && (
+            <div className="flex items-center gap-2 flex-wrap pl-6">
+              {services.map((service) => {
+                const Icon = {
+                  Presentation,
+                  GraduationCap,
+                  Target,
+                  Briefcase,
+                  Users,
+                  Plus,
+                }[service.icon];
+
+                const isInProfile = profileServices.includes(service.id);
+                const isSelected = selectedService === service.id;
+
+                const buttonClasses = [
+                  'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                  'transition-colors duration-200 border',
+                  isSelected
+                    ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                ].join(' ');
+
+                return (
+                  <button
+                    key={service.id}
+                    onClick={() => setSelectedService(service.id)}
+                    className={buttonClasses}
                   >
-                    Edit
-                  </a>
-                </p>
-              </div>
-            )}
+                    {Icon && (
+                      <Icon
+                        className={
+                          isSelected ? 'w-3 h-3 text-white' : 'w-3 h-3 text-gray-500'
+                        }
+                      />
+                    )}
+                    {service.label}
+                    {isInProfile && (
+                      <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* My Context toggle */}
+        <div className="space-y-3">
+          {/* Tier 2: Toggle row */}
+          <div className="flex items-center gap-2 pl-3">
+            <MinimalToggle
+              className="scale-[0.35] mr-1"
+              checked={showMyContext}
+              onChange={(e) => setShowMyContext(e.target.checked)}
+            />
+            <label className="text-sm font-medium text-gray-900">
+              My Context
+            </label>
           </div>
 
-          {/* Optional Customization instructions */}
-          <div className="pb-2">
-            <div className="flex items-center gap-2 mb-2">
-              <MinimalToggle
-                className="scale-[0.35] mr-1"
-                checked={showCustomization}
-                onChange={(e) => setShowCustomization(e.target.checked)}
-              />
-              <label className="text-sm font-medium text-gray-900">
-                Message Customization
-              </label>
+          {/* Tier 3: Context snippet */}
+          {showMyContext && (
+            <div className="pl-6">
+              <p className="text-sm text-gray-600 flex-1 min-w-0">
+                {truncatedContext || 'Award-winning keynote speaker...'}
+                <a
+                  href="/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
+                >
+                  Edit
+                </a>
+              </p>
             </div>
-            <p className="text-sm text-gray-600">
-              Add override or customization instructions for your outreach message
-            </p>
-            {showCustomization && (
+          )}
+        </div>
+
+        {/* Message Customization toggle */}
+        <div>
+          {/* Tier 2: Toggle row */}
+          <div className="flex items-center gap-2 mb-2 pl-3">
+            <MinimalToggle
+              className="scale-[0.35] mr-1"
+              checked={showCustomization}
+              onChange={(e) => setShowCustomization(e.target.checked)}
+            />
+            <label className="text-sm font-medium text-gray-900">
+              Message Customization
+            </label>
+          </div>
+
+          {/* Tier 2: Helper text remains at same level as toggle */}
+          <p className="pl-3 text-sm text-gray-600">
+            Add override or customization instructions for your outreach message
+          </p>
+
+          {/* Tier 3: The text area */}
+          {showCustomization && (
+            <div className="pl-6 mt-2">
               <textarea
                 value={customizationText}
                 onChange={(e) => setCustomizationText(e.target.value)}
                 placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
                 className={`
                   w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white
-                  rounded-lg resize-none mt-2
+                  rounded-lg resize-none
                   focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
                 `}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

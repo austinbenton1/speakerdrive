@@ -69,12 +69,14 @@ interface PreviewProps {
 
 const MessagePreview = ({ content, type, lead }: PreviewProps) => {
   const renderContent = (text: string) => (
-    <ReactMarkdown>{text}</ReactMarkdown>
+    <div className="text-[16px] leading-[1.7] text-[#1F2937] tracking-[-0.011em] font-normal max-w-[70ch] whitespace-pre-wrap">
+      <ReactMarkdown>{text}</ReactMarkdown>
+    </div>
   );
 
   if (type === 'email') {
     return (
-      <div className="prose prose-sm max-w-none">
+      <div>
         {content
           ? renderContent(content)
           : <span className="text-gray-400">Your email content will appear here...</span>
@@ -94,12 +96,10 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
               <div className="text-xs text-gray-500">1st</div>
             </div>
           </div>
-          <div className="text-[15px] text-gray-900">
-            {content
-              ? renderContent(content)
-              : <span className="text-gray-400">Your LinkedIn message will appear here...</span>
-            }
-          </div>
+          {content
+            ? renderContent(content)
+            : <span className="text-gray-400">Your LinkedIn message will appear here...</span>
+          }
         </div>
       </div>
     );
@@ -113,12 +113,10 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
         <div className="space-y-6">
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaking Proposal</h2>
-            <div className="prose prose-sm max-w-none">
-              {content
-                ? renderContent(content)
-                : <span className="text-gray-400">Your proposal content will appear here...</span>
-              }
-            </div>
+            {content
+              ? renderContent(content)
+              : <span className="text-gray-400">Your proposal content will appear here...</span>
+            }
           </section>
         </div>
       </div>
@@ -142,7 +140,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [showMyContext, setShowMyContext] = useState(true);
   const [showCustomization, setShowCustomization] = useState(false);
   const [customizationText, setCustomizationText] = useState('');
-  const [showAdditionalServices, setShowAdditionalServices] = useState(false);
 
   // “Before” vs. “After”
   const [showInputs, setShowInputs] = useState(true);
@@ -170,7 +167,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return text.slice(0, maxLength) + '...';
   };
 
-  // Channel restrictions
+  // Disable logic for certain channels based on unlockType
   const isButtonDisabled = (buttonId: string) => {
     return (
       (buttonId === 'proposal' && lead.unlockType === 'Unlock Contact Email') ||
@@ -184,16 +181,20 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return channels.find((ch) => !isButtonDisabled(ch)) || 'email';
   };
 
-  // If user has default service
+  // Default service (pick first from user profile or fallback to the first in the list)
   useEffect(() => {
     if (profile?.services) {
       const pServices = parseProfileServices(profile.services);
       const matchingService = services.find((svc) =>
-        pServices.some((ps) => svc.id === ps),
+        pServices.some((ps) => svc.id === ps)
       );
       if (matchingService) {
         setSelectedService(matchingService.id);
+      } else if (services.length > 0) {
+        setSelectedService(services[0].id);
       }
+    } else if (services.length > 0) {
+      setSelectedService(services[0].id);
     }
   }, [profile?.services]);
 
@@ -219,11 +220,10 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         setShowMessage(false);
         setShowInputs(true);
       }
-      setSelectedService('');
     }
   }, [isOpen, lead.pitch]);
 
-  // If email is disabled
+  // If email is disabled, find another default
   useEffect(() => {
     if (isButtonDisabled('email')) {
       setOutreachChannel(findFirstEnabledButton());
@@ -280,9 +280,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       lead_name: lead.leadName || (lead as any).lead_name || null,
 
       ...(isPitching && {
-        pitching:
-          selectedService ||
-          (profile?.services ? parseProfileServices(profile.services)[0] : null),
+        pitching: selectedService,
       }),
       ...(showMyContext && profile?.offering && {
         message_context: profile.offering,
@@ -416,7 +414,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
       <div
         className="absolute inset-y-0 right-0 w-screen max-w-lg pointer-events-auto
-                   flex flex-col min-h-0" // key: flex container, min-h-0
+                   flex flex-col min-h-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* White panel with rounded left side */}
@@ -435,11 +433,14 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             {/* BEFORE */}
             {showInputs && !isPreviewMode && !showMessage && (
               <div>
+                {/* Outreach Channel */}
                 <div className="mb-4 border-b border-gray-200 pb-4">
+                  {/* Tier 1 heading */}
                   <p className="mb-3 text-sm font-medium text-gray-700">
                     Outreach Channel
                   </p>
-                  <div className="flex items-center gap-2">
+                  {/* Tier 2 (same as toggles): channel buttons */}
+                  <div className="flex items-center gap-2 pl-3">
                     {[
                       { id: 'email' as MessageType, icon: Mail, label: 'Email' },
                       { id: 'linkedin' as MessageType, icon: Linkedin, label: 'LinkedIn' },
@@ -454,8 +455,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                             isButtonDisabled(type.id)
                               ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200'
                               : outreachChannel === type.id
-                              ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
-                              : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                              ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                              : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                           }`
                         }
                       >
@@ -466,6 +467,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   </div>
                 </div>
 
+                {/* Outreach Settings Panel */}
                 <OutreachSettingsPanel
                   showAdvanced={showAdvanced}
                   isPitching={isPitching}
@@ -476,8 +478,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   profileServicesString={profile?.services}
                   selectedService={selectedService}
                   setSelectedService={setSelectedService}
-                  showAdditionalServices={showAdditionalServices}
-                  setShowAdditionalServices={setShowAdditionalServices}
                   parseProfileServices={parseProfileServices}
                   showCustomization={showCustomization}
                   setShowCustomization={setShowCustomization}
@@ -509,23 +509,32 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={`Your message to ${lead.leadName}...`}
-                  className="w-full text-sm leading-relaxed
-                             placeholder:text-gray-400
-                             focus:outline-none focus:ring-0 focus:border-0
-                             resize-none border border-gray-200 rounded-md
-                             p-3 flex-grow min-h-0"
+                  className="
+                    w-full 
+                    text-[16px] leading-[1.7] text-[#1F2937] tracking-[-0.011em] font-normal
+                    placeholder:text-gray-400 
+                    focus:outline-none focus:ring-0 focus:border-0 
+                    resize-none 
+                    p-3 
+                    flex-grow min-h-0 
+                    max-w-[70ch]
+                  "
                 />
 
                 {!!currentKeyElements.length && (
-                  <div className="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                      Key Elements
-                    </h3>
-                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                      {currentKeyElements.map((el, idx) => (
-                        <li key={idx}>{el}</li>
-                      ))}
-                    </ul>
+                  <div className="mt-3 border border-gray-200 rounded-md shadow-sm overflow-hidden">
+                    {/* Subtle 1px gradient bar */}
+                    <div className="h-[1px] bg-gradient-to-r from-green-200 to-green-300" />
+                    <div className="p-4 bg-white">
+                      <h3 className="text-base font-semibold text-gray-900 mb-3">
+                        Why This Works
+                      </h3>
+                      <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
+                        {currentKeyElements.map((el, idx) => (
+                          <li key={idx}>{el}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
