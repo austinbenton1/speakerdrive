@@ -276,21 +276,26 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
 
                 {/* Static Unlock Icon with Simple Tooltip - Only show if lead is unlocked */}
                 {isUnlocked && (
-                  <Tooltip 
-                    content={
-                      <div className="p-2 max-w-[200px] text-sm">
-                        Unlocked. Click the View All Leads button to show more of these leads.
-                      </div>
-                    } 
-                    side="right" 
-                    delayShow={100}
-                  >
-                    <div 
-                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 shadow-[0_0_0_1px] group-hover:shadow-amber-200 group-hover:bg-amber-100 group-hover:text-amber-600 bg-blue-100 shadow-blue-200 text-blue-600"
+                  <div className="flex items-center gap-1">
+                    <Tooltip 
+                      content={
+                        <div className="p-2 max-w-[200px] text-sm">
+                          Unlocked. Click the View All Leads button to show more of these leads.
+                        </div>
+                      } 
+                      side="right" 
+                      delayShow={100}
                     >
-                      <Unlock className="w-3.5 h-3.5" />
-                    </div>
-                  </Tooltip>
+                      <div 
+                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 shadow-[0_0_0_1px] group-hover:shadow-amber-200 group-hover:bg-amber-100 group-hover:text-amber-600 bg-blue-100 shadow-blue-200 text-blue-600"
+                      >
+                        <Unlock className="w-3.5 h-3.5" />
+                      </div>
+                    </Tooltip>
+                    <span className="text-xs font-medium text-blue-600 group-hover:text-amber-600 transition-colors">
+                      Unlocked
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -374,7 +379,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       }`}>
         <button
           onClick={handleViewMore}
-          className="group inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200 w-[175px]"
+          className="group inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200 w-[185px]"
           title="View all leads from this event"
         >
           <div className="flex items-center gap-2">
@@ -385,13 +390,11 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
               </div>
             </div>
             <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
-              View All Leads
-              {lead.related_leads && Number(lead.related_leads) > 1 && (
+              View All Unlocks
+              {lead.related_leads && (
                 <>
-                  <span className="mx-1.5 text-gray-400">|</span>
-                  <span className="text-purple-700">
-                    {lead.related_leads}
-                  </span>
+                  <span className="ml-1 text-gray-400">·</span>
+                  <span className="ml-1 text-gray-500">{lead.related_leads}</span>
                 </>
               )}
             </span>

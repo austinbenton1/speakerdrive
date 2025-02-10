@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useLeadFilters } from '../hooks/useLeadFilters';
 import { useAvailableLeads } from '../hooks/useAvailableLeads';
+import { useUnlockedLeadsData } from '../hooks/useUnlockedLeadsData';
 import { Users, Calendar, Filter } from 'lucide-react';
 import SmartFiltersBar from '../components/filters/SmartFiltersBar';
 import { supabase } from '../lib/supabase';
@@ -10,6 +11,7 @@ import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import LocationToggle from '../components/common/LocationToggle';
+import UnlocksToggle from '../components/common/UnlocksToggle';
 import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTypeConfig';
 import type { Lead } from '../types';
 
@@ -19,7 +21,7 @@ const LOCATION_PREFERENCE_KEY = 'speakerdrive_location_preference';
 export default function FindLeads() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Initialize filters from URL parameters and location state
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function FindLeads() {
           : tags;
       });
       setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
-      setShowAllEvents(state.preservedFilters.showAllEvents || false);
+      setShowAll(state.preservedFilters.showAll || false);
       
       if (typeof state.preservedFilters.showAll === 'boolean' && !localStorage.getItem(LOCATION_PREFERENCE_KEY)) {
         setShowAll(state.preservedFilters.showAll);
@@ -88,15 +90,20 @@ export default function FindLeads() {
   });
   
   // Initialize showAll from localStorage, defaulting to false (USA only)
-  const [showAll, setShowAll] = useState(() => {
-    // First check if there's a saved preference
-    const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
-    if (savedPreference !== null) {
-      return JSON.parse(savedPreference);
-    }
-    // If no saved preference, set default to false (USA only) and save it
-    localStorage.setItem(LOCATION_PREFERENCE_KEY, 'false');
-    return false;
+  const [showAll, setShowAll] = useState(true);
+  const [showUnlocks, setShowUnlocks] = useState(false);
+  const [filters, setFilters] = useState<LeadFilters>({
+    industry: [],
+    eventFormat: [],
+    organization: [],
+    organizationType: [],
+    pastSpeakers: [],
+    searchAll: '',
+    jobTitle: [],
+    region: '',
+    state: [],
+    city: [],
+    unlockType: []
   });
 
   // Persist showAll value to localStorage whenever it changes
@@ -104,20 +111,23 @@ export default function FindLeads() {
     localStorage.setItem(LOCATION_PREFERENCE_KEY, JSON.stringify(showAll));
   }, [showAll]);
 
-  // Update local storage when showAllEvents changes
+  // Persist showUnlocks value to localStorage
   useEffect(() => {
-    localStorage.setItem('showAllEvents', showAllEvents.toString());
-  }, [showAllEvents]);
+    localStorage.setItem('showUnlocks', JSON.stringify(showUnlocks));
+  }, [showUnlocks]);
 
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error, totalLeads, allLeadsLoaded } = useAvailableLeads();
+  const { recordedLeads: unlockedLeads = [] } = useUnlockedLeadsData();
+  const unlockedLeadIds = useMemo(() => 
+    new Set(unlockedLeads?.map(ul => ul.lead_id) || []), 
+    [unlockedLeads]
+  );
   const [currentLeadIds, setCurrentLeadIds] = useState<string[]>([]);
   
   const {
     selectedEventUnlockTypes,
-    filters,
     openSections,
-    setFilters,
     setOpenSections,
     toggleEventUnlockType,
     toggleSection,
@@ -188,21 +198,15 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
-  // Calculate filtered leads for display
-  const displayedLeads = useMemo(() => {
-    // First deduplicate leads by ID
-    let results = Array.from(
-      new Map(availableLeads.map(lead => [lead.id, lead])).values()
-    );
+  // Start with available leads and apply all filters
+  const processedLeads = useMemo(() => {
+    if (!availableLeads) return [];
+    
+    let results = availableLeads;
 
-    // Apply deduplication if not showing all events
-    if (!showAllEvents) {
-      results = results.filter(lead => 
-        // Keep all contacts (they always have dedup_value === 2)
-        lead.lead_type === 'Contact' || 
-        // For events, only keep those with dedup_value === 2
-        (lead.lead_type === 'Event' && lead.dedup_value === 2)
-      );
+    // Remove unlocked leads if toggle is in 'Unlocks Hidden' state
+    if (!showUnlocks) {
+      results = results.filter(lead => !unlockedLeadIds.has(lead.id));
     }
 
     // Apply USA-only filter if enabled
@@ -210,178 +214,151 @@ export default function FindLeads() {
       results = results.filter(lead => lead.region === 'United States');
     }
 
-    // Apply other filters if active
-    if (hasActiveFilters) {
-      // Handle lead type filtering
-      if (selectedLeadType !== 'all') {
-        results = results.filter(lead => {
-          if (selectedLeadType === 'contacts') {
-            return lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email';
-          } else {
-            return lead.lead_type === 'Event';
-          }
-        });
-      }
-
-      // Filter by opportunities search term
-      if (eventsFilter || opportunityTags.length > 0) {
-        results = results.filter(lead => {
-          // Combine all searchable fields
-          const searchableText = [
-            lead.lead_name,
-            lead.event_name,
-            lead.keywords,
-            lead.subtext,
-            lead.job_title,
-            lead.organization
-          ].filter(Boolean).join(' ').toLowerCase();
-          
-          // Check text search
-          if (eventsFilter && searchableText.includes(eventsFilter.toLowerCase())) {
-            return true;
-          }
-          
-          // Check tags
-          if (opportunityTags.length > 0) {
-            return opportunityTags.some(tag => searchableText.includes(tag.toLowerCase()));
-          }
-          
-          return false;
-        });
-      }
-
-      // Filter by industry
-      if (filters.industry?.length) {
-        results = results.filter(lead => 
-          filters.industry.some(industry => 
-            lead.industry?.toLowerCase().includes(industry.toLowerCase())
-          )
-        );
-      }
-
-      // Filter by event format
-      if (filters.eventFormat?.length) {
-        results = results.filter(lead => 
-          filters.eventFormat.some(format => 
-            lead.event_format?.toLowerCase().includes(format.toLowerCase())
-          )
-        );
-      }
-
-      // Filter by organization
-      if (filters.organization?.length) {
-        results = results.filter(lead => 
-          filters.organization.some(org => 
-            lead.organization?.toLowerCase().includes(org.toLowerCase())
-          )
-        );
-      }
-
-      // Filter by organization type
-      if (filters.organizationType?.length) {
-        results = results.filter(lead => 
-          filters.organizationType.includes(lead.organization_type || '')
-        );
-      }
-
-      // Filter by job title
-      if (filters.jobTitle?.length) {
-        results = results.filter(lead => 
-          filters.jobTitle.some(job => 
-            lead.job_title?.toLowerCase().includes(job.toLowerCase())
-          )
-        );
-      }
-
-      // Filter by region
-      if (filters.region) {
-        results = results.filter(lead => 
-          lead.region?.toLowerCase() === filters.region.toLowerCase()
-        );
-      }
-
-      // Filter by state
-      if (filters.state?.length) {
-        results = results.filter(lead => 
-          filters.state.some(state => 
-            lead.state?.toLowerCase() === state.toLowerCase()
-          )
-        );
-      }
-
-      // Filter by city
-      if (filters.city?.length) {
-        results = results.filter(lead => 
-          filters.city.some(city => 
-            lead.city?.toLowerCase().includes(city.toLowerCase())
-          )
-        );
-      }
-
-      // Filter by unlock type
-      if (filters.unlockType && Array.isArray(filters.unlockType) && filters.unlockType.length > 0) {
-        results = results.filter(lead => 
-          filters.unlockType.includes(lead.unlock_type) && (
-            // For events, check lead type
-            (lead.unlock_type === 'Unlock Event URL' || lead.unlock_type === 'Unlock Event Email') 
-              ? lead.lead_type === 'Event'
-              // For contacts, check both type and unlock type
-              : lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email'
-          )
-        );
-      }
-
-      // Filter by past speakers
-      if (filters.pastSpeakers?.length) {
-        results = results.filter(lead => 
-          filters.pastSpeakers.some(speaker => 
-            lead.past_speakers_events?.toLowerCase().includes(speaker.toLowerCase())
-          )
-        );
-      }
-    }
-
-    // Apply client-side sorting if a sort field is selected
-    if (sortField && sortDirection) {
-      results = [...results].sort((a, b) => {
-        const aValue = a[sortField] || '';
-        const bValue = b[sortField] || '';
-        
-        // Handle numeric values
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortDirection === 'asc' 
-            ? aValue - bValue 
-            : bValue - aValue;
+    // Handle lead type filtering
+    if (selectedLeadType !== 'all') {
+      results = results.filter(lead => {
+        if (selectedLeadType === 'contacts') {
+          return lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email';
+        } else {
+          return lead.lead_type === 'Event';
         }
-        
-        // Handle string values
-        const comparison = String(aValue).localeCompare(String(bValue));
-        return sortDirection === 'asc' ? comparison : -comparison;
       });
     }
 
-    // Update current lead IDs
-    setCurrentLeadIds(results.map(lead => lead.id));
+    // Filter by opportunities search term
+    if (eventsFilter) {
+      results = results.filter(lead => {
+        // Combine all searchable fields
+        const searchableText = [
+          lead.lead_name,
+          lead.event_name,
+          lead.keywords,
+          lead.subtext,
+          lead.job_title,
+          lead.organization
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        return searchableText.includes(eventsFilter.toLowerCase());
+      });
+    }
+
+    // First deduplicate leads by ID
+    results = Array.from(
+      new Map(results.map(lead => [lead.id, lead])).values()
+    );
+
+    // Apply deduplication if not showing all events
+    if (!showAllEvents) {
+      results = results.filter(lead => lead.lead_type === 'Contact' || (lead.lead_type === 'Event' && lead.dedup_value === 2));
+    }
+
+    // Apply filters
+    if (hasActiveFilters) {
+      results = results.filter(lead => {
+        // Event Format Filter
+        if (filters.eventFormat.length > 0 && !filters.eventFormat.includes(lead.event_format)) {
+          return false;
+        }
+
+        // Industry Filter
+        if (filters.industry.length > 0 && !filters.industry.includes(lead.industry)) {
+          return false;
+        }
+
+        // Past Speakers Filter
+        if (filters.pastSpeakers.length > 0) {
+          const matchesSpeaker = filters.pastSpeakers.some(speaker =>
+            lead.past_speakers?.toLowerCase().includes(speaker.toLowerCase())
+          );
+          if (!matchesSpeaker) return false;
+        }
+
+        // Organization Filter
+        if (filters.organization.length > 0) {
+          const matchesOrg = filters.organization.some(org =>
+            lead.organization?.toLowerCase().includes(org.toLowerCase())
+          );
+          if (!matchesOrg) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // Apply region filter
+    if (filters.region) {
+      results = results.filter(lead => {
+        if (filters.region === 'Virtual Only') {
+          return lead.region === 'Virtual Only';
+        }
+        return lead.region === filters.region;
+      });
+    }
+
+    // Apply opportunity tags filter
+    if (opportunityTags.length > 0) {
+      results = results.filter(lead => {
+        return opportunityTags.every(tag => {
+          const tagLower = tag.toLowerCase();
+          return (
+            lead.event_name?.toLowerCase().includes(tagLower) ||
+            lead.focus?.toLowerCase().includes(tagLower) ||
+            lead.industry?.toLowerCase().includes(tagLower) ||
+            lead.past_speakers?.toLowerCase().includes(tagLower)
+          );
+        });
+      });
+    }
+
+    // Apply sorting
+    if (sortField) {
+      results.sort((a, b) => {
+        const aValue = a[sortField as keyof typeof a];
+        const bValue = b[sortField as keyof typeof b];
+        
+        if (!aValue && !bValue) return 0;
+        if (!aValue) return sortDirection === 'asc' ? 1 : -1;
+        if (!bValue) return sortDirection === 'asc' ? -1 : 1;
+        
+        return sortDirection === 'asc'
+          ? String(aValue).localeCompare(String(bValue))
+          : String(bValue).localeCompare(String(aValue));
+      });
+    }
 
     return results;
-  }, [availableLeads, eventsFilter, filters, opportunityTags, hasActiveFilters, showAllEvents, showAll, selectedLeadType, sortField, sortDirection]);
+  }, [
+    availableLeads,
+    showUnlocks,
+    unlockedLeadIds,
+    showAll,
+    selectedLeadType,
+    eventsFilter,
+    showAllEvents,
+    hasActiveFilters,
+    filters,
+    opportunityTags,
+    sortField,
+    sortDirection
+  ]);
 
-  // Calculate unique count for display
-  const uniqueCount = useMemo(() => {
-    return displayedLeads.length;
-  }, [displayedLeads]);
-
-  // Effect to handle region-based showAll state
+  // Update current lead IDs based on processed leads
   useEffect(() => {
-    // If region is set to something other than United States or Virtual Only,
-    // ensure worldwide view is enabled
-    if (filters.region && filters.region !== 'United States' && filters.region !== 'Virtual Only') {
-      setShowAll(true);
-    } else if (filters.region === 'United States') {
-      // If region is set to United States, ensure USA-only view is enabled
-      setShowAll(false);
+    const newLeadIds = processedLeads.map(lead => lead.id);
+    if (JSON.stringify(newLeadIds) !== JSON.stringify(currentLeadIds)) {
+      setCurrentLeadIds(newLeadIds);
     }
-  }, [filters.region]);
+  }, [processedLeads]);
+
+  // Calculate total leads count
+  const totalLeadsCount = useMemo(() => {
+    return processedLeads?.length || 0;
+  }, [processedLeads]);
+
+  // Calculate unique leads count
+  const uniqueLeadsCount = useMemo(() => {
+    return new Set(processedLeads?.map(lead => lead.id) || []).size;
+  }, [processedLeads]);
 
   const handleLeadClick = async (leadId: string) => {
     // Build Navigation Params
@@ -479,7 +456,7 @@ export default function FindLeads() {
     });
   };
 
-  const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
+  const handleSortChange = (field: string, direction: 'asc' | 'desc' | null) => {
     setSortField(field);
     setSortDirection(direction);
   };
@@ -523,9 +500,9 @@ export default function FindLeads() {
         onViewToggle={() => setShowAllEvents(!showAllEvents)}
         showAll={showAll}
         onLocationToggle={() => setShowAll(!showAll)}
-        totalCount={displayedLeads.length}
-        uniqueCount={uniqueCount}
-        usaCount={displayedLeads.filter(lead => lead.region === 'United States').length}
+        totalCount={totalLeadsCount}
+        uniqueCount={uniqueLeadsCount}
+        usaCount={processedLeads.filter(lead => lead.region === 'United States').length}
         selectedLeadType={selectedLeadType}
       />
 
@@ -582,11 +559,17 @@ export default function FindLeads() {
                 })}
               </div>
 
-              {/* Location Toggle */}
-              <LocationToggle
-                isUSAOnly={!showAll}
-                onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
-              />
+              {/* Location and Unlocks Toggles */}
+              <div className="flex items-center gap-2">
+                <LocationToggle
+                  isUSAOnly={!showAll}
+                  onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
+                />
+                <UnlocksToggle 
+                  isShown={showUnlocks}
+                  onChange={setShowUnlocks}
+                />
+              </div>
             </div>
 
             <div className="mt-4">
@@ -621,18 +604,18 @@ export default function FindLeads() {
 
           <div className="bg-white border border-gray-200 rounded-lg mt-6">
             <LeadsTable 
-              leads={displayedLeads}
+              leads={processedLeads}
               loading={loading}
               onResetFilters={handleResetFilters}
               onLeadClick={handleLeadClick}
               showAllEvents={showAllEvents}
-              uniqueCount={uniqueCount}
+              uniqueCount={uniqueLeadsCount}
               selectedLeadType={selectedLeadType}
               filters={filters}
               eventsFilter={eventsFilter}
               opportunityTags={opportunityTags}
               showAll={showAll}
-              totalLeads={totalLeads}
+              totalLeads={totalLeadsCount}
               allLeadsLoaded={allLeadsLoaded}
               onSortChange={handleSortChange}
               sortField={sortField}

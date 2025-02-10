@@ -198,7 +198,7 @@ export default function LeadsTable({
                 Location
               </div>
 
-              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[64px] border-b-2 border-gray-100">Event Group</div>
+              <div className="bg-white px-3 py-3 text-left text-[13.5px] font-medium text-gray-800 uppercase tracking-wider ml-[64px] border-b-2 border-gray-100">Unlock Group</div>
             </div>
 
             {/* Content */}
