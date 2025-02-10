@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import OutlinedToggle from '../common/OutlinedToggle';
+import UnlocksToggle from '../common/UnlocksToggle';
 
 interface LocationSectionProps {
   showAll: boolean;
@@ -15,7 +16,7 @@ export default function LocationSection({
   totalCount,
   usaCount 
 }: LocationSectionProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(true);
 
   return (
     <div>
@@ -53,12 +54,15 @@ export default function LocationSection({
             </a>
           </div>
 
-          <OutlinedToggle
-            checked={showAll}
-            onChange={onToggle}
-            leftLabel="USA"
-            rightLabel="All"
-          />
+          <div className="flex items-center gap-2">
+            <OutlinedToggle
+              checked={showAll}
+              onChange={onToggle}
+              leftLabel="USA"
+              rightLabel="All"
+            />
+            <UnlocksToggle />
+          </div>
           
           <div className="space-y-1">
             <p className="text-xs text-gray-500">
