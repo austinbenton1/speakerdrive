@@ -21,22 +21,64 @@ export default function FindLeads() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // Initialize filters from location state if available
+  // Initialize filters from URL parameters and location state
   useEffect(() => {
+    // Check URL parameters
+    const eventParam = searchParams.get('event');
+    const organizationParam = searchParams.get('organization');
+    
+    // If we have URL parameters, set them as filters
+    if (eventParam || organizationParam) {
+      // Add event to opportunity tags if present
+      if (eventParam) {
+        setOpportunityTags(prev => {
+          if (!prev.includes(eventParam)) {
+            return [...prev, eventParam];
+          }
+          return prev;
+        });
+      }
+
+      // Set organization filter and expand the section if present
+      if (organizationParam) {
+        setFilters(prev => ({
+          ...prev,
+          organization: [organizationParam]
+        }));
+        // Expand both the organization section and its parent section
+        setOpenSections(prev => ({
+          ...prev,
+          organization: true,
+          moreFilters: true
+        }));
+      }
+    }
+
+    // Handle location state filters
     const state = location.state as { preservedFilters?: any };
     if (state?.preservedFilters) {
-      setFilters(state.preservedFilters);
+      setFilters(prev => ({
+        ...prev,
+        ...state.preservedFilters,
+        // Preserve organization from URL if it exists
+        organization: organizationParam ? [organizationParam] : state.preservedFilters.organization || []
+      }));
       setEventsFilter(state.preservedFilters.eventsFilter || '');
-      setOpportunityTags(state.preservedFilters.opportunityTags || []);
+      setOpportunityTags(prev => {
+        const tags = state.preservedFilters.opportunityTags || [];
+        // Add event from URL if it exists and isn't already in the tags
+        return eventParam && !tags.includes(eventParam) 
+          ? [...tags, eventParam]
+          : tags;
+      });
       setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
       setShowAllEvents(state.preservedFilters.showAllEvents || false);
       
-      // Don't override showAll if it's already set from localStorage
       if (typeof state.preservedFilters.showAll === 'boolean' && !localStorage.getItem(LOCATION_PREFERENCE_KEY)) {
         setShowAll(state.preservedFilters.showAll);
       }
     }
-  }, [location.state]);
+  }, [location.state, searchParams]);
 
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<'all' | 'contacts' | 'events'>('all');

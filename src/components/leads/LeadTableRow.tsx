@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, Mail, Eye, Layers, ArrowUpRight, Target, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe, Loader, Calendar } from 'lucide-react';
+import { Link, Mail, Eye, Layers, ArrowUpRight, Target, Building2, Users, MapPin, Search, Briefcase, Tag, ExternalLink, Globe, Loader, Calendar, Unlock } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { supabase } from '../../lib/supabase';
 import type { Lead } from '../../types';
@@ -12,6 +12,10 @@ interface LeadTableRowProps {
 
 export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { recordedLeads } = useUnlockedLeadsData();
+
+  // Check if this lead is unlocked
+  const isUnlocked = recordedLeads.some(recordedLead => recordedLead.lead_id === lead.id);
 
   // Get topic from keywords (first keyword)
   const topic = lead.keywords?.split(',')[0]?.trim();
@@ -152,7 +156,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
               {lead.keywords.split(',').map((keyword, index) => (
                 <span 
                   key={index}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
+                  className="inline-flex items-start gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
                 >
                   {keyword.trim()}
                 </span>
@@ -184,7 +188,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
   const urlData = getFormattedUrl(lead.event_url);
 
   return (
-    <div className="contents group">
+    <div className={`contents group ${isUnlocked ? 'unlocked-row' : ''}`}>
       {/* Main Content */}
       <div 
         onClick={async () => {
@@ -196,7 +200,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
             setIsLoading(false);
           }
         }}
-        className={`w-full text-left px-4 py-3 border-t border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer bg-white relative ${isLoading ? 'pointer-events-none' : ''}`}
+        className={`w-full text-left px-4 py-3 border-t border-gray-200 transition-colors cursor-pointer relative ${
+          isUnlocked ? 'bg-blue-50/80 hover:bg-blue-100/90 group-hover:bg-blue-100/90' : 'bg-white hover:bg-gray-50'
+        } ${isLoading ? 'pointer-events-none' : ''}`}
       >
         {isLoading && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10">
@@ -267,6 +273,25 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
                     <Eye className="w-3.5 h-3.5 text-gray-400 hover:text-gray-500 transition-colors" />
                   </div>
                 </Tooltip>
+
+                {/* Static Unlock Icon with Simple Tooltip - Only show if lead is unlocked */}
+                {isUnlocked && (
+                  <Tooltip 
+                    content={
+                      <div className="p-2 max-w-[200px] text-sm">
+                        Unlocked. Click the View All Leads button to show more of these leads.
+                      </div>
+                    } 
+                    side="right" 
+                    delayShow={100}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 shadow-[0_0_0_1px] group-hover:shadow-amber-200 group-hover:bg-amber-100 group-hover:text-amber-600 bg-blue-100 shadow-blue-200 text-blue-600"
+                    >
+                      <Unlock className="w-3.5 h-3.5" />
+                    </div>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </div>
@@ -274,7 +299,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       </div>
 
       {/* Topic Column */}
-      <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative`}>
+      <div className={`px-3 border-t border-gray-200 flex flex-col items-start justify-center min-h-[88px] gap-2 relative transition-colors ${
+        isUnlocked ? 'bg-blue-50/80 group-hover:bg-blue-100/90' : 'bg-white group-hover:bg-gray-50'
+      }`}>
         {topic && (
           <div className="flex items-start relative">
             <span className={`
@@ -298,7 +325,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       </div>
 
       {/* Event URL Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative`}>
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative transition-colors ${
+        isUnlocked ? 'bg-blue-50/80 group-hover:bg-blue-100/90' : 'bg-white group-hover:bg-gray-50'
+      }`}>
         {urlData && (
           <button
             onClick={(e) => {
@@ -324,7 +353,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       </div>
 
       {/* Location Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative`}>
+      <div className={`px-3 border-t border-gray-200 flex items-center min-h-[88px] relative transition-colors ${
+        isUnlocked ? 'bg-blue-50/80 group-hover:bg-blue-100/90' : 'bg-white group-hover:bg-gray-50'
+      }`}>
         {lead.region && (
           <div className="flex items-start text-[14.5px] text-gray-700">
             <MapPin className="w-4 h-4 mr-1.5 text-[#DD4B3E] flex-shrink-0" />
@@ -338,7 +369,9 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
       </div>
 
       {/* Group Column */}
-      <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative`}>
+      <div className={`px-3 border-t border-gray-200 flex items-center justify-end min-h-[88px] relative transition-colors ${
+        isUnlocked ? 'bg-blue-50/80 group-hover:bg-blue-100/90' : 'bg-white group-hover:bg-gray-50'
+      }`}>
         <button
           onClick={handleViewMore}
           className="group inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:border-gray-300 transition-all duration-200 w-[175px]"
