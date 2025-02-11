@@ -90,7 +90,10 @@ export default function FindLeads() {
   });
   
   // Initialize showAll from localStorage, defaulting to false (USA only)
-  const [showAll, setShowAll] = useState(true);
+  const [showAll, setShowAll] = useState(() => {
+    const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
+    return savedPreference ? JSON.parse(savedPreference) : false;
+  });
   const [showUnlocks, setShowUnlocks] = useState(false);
   const [filters, setFilters] = useState<LeadFilters>({
     industry: [],
@@ -235,7 +238,10 @@ export default function FindLeads() {
           lead.event_name,
           lead.keywords,
           lead.subtext,
-          lead.organization
+          lead.organization,
+          lead.industry,
+          lead.past_speakers,
+          lead.focus
         ].filter(Boolean).join(' ').toLowerCase();
         
         return searchableText.includes(eventsFilter.toLowerCase());
@@ -300,12 +306,18 @@ export default function FindLeads() {
       results = results.filter(lead => {
         return opportunityTags.every(tag => {
           const tagLower = tag.toLowerCase();
-          return (
-            lead.event_name?.toLowerCase().includes(tagLower) ||
-            lead.focus?.toLowerCase().includes(tagLower) ||
-            lead.industry?.toLowerCase().includes(tagLower) ||
-            lead.past_speakers?.toLowerCase().includes(tagLower)
-          );
+          const searchableText = [
+            lead.lead_name,
+            lead.event_name,
+            lead.keywords,
+            lead.subtext,
+            lead.organization,
+            lead.industry,
+            lead.past_speakers,
+            lead.focus
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          return searchableText.includes(tagLower);
         });
       });
     }
@@ -467,32 +479,53 @@ export default function FindLeads() {
         setOpenSections={setOpenSections}
         toggleSection={toggleSection}
         handleUnlockTypeChange={(type) => {
-          // If type is undefined, clear the filter
+          // If type is undefined, clear the filter and set lead type to 'all'
           if (!type) {
             setFilters(prev => ({
               ...prev,
               unlockType: []
             }));
+            setSelectedLeadType('all');
             return;
           }
 
           // Handle unlock type selection
           setFilters(prev => {
-            const currentTypes = prev.unlockType || [];
-            const isSelected = currentTypes.includes(type);
-
-            // If already selected, remove it
-            if (isSelected) {
-              return {
-                ...prev,
-                unlockType: currentTypes.filter(t => t !== type)
-              };
+            let newUnlockTypes: string[] = [];
+            
+            // Handle Contact Email selection
+            if (type === 'Unlock Contact Email') {
+              newUnlockTypes = ['Unlock Contact Email'];
+              // Set lead type to contacts
+              setSelectedLeadType('contacts');
+            }
+            // Handle Event Email or URL selection
+            else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+              const currentTypes = prev.unlockType || [];
+              const isSelected = currentTypes.includes(type);
+              
+              // If already selected, remove it
+              if (isSelected) {
+                newUnlockTypes = currentTypes.filter(t => t !== type && t !== 'Unlock Contact Email');
+              } else {
+                // Add new selection, ensuring Contact Email is removed
+                newUnlockTypes = [
+                  ...currentTypes.filter(t => t !== 'Unlock Contact Email' && t !== type),
+                  type
+                ];
+              }
+              
+              // Set lead type based on remaining selections
+              if (newUnlockTypes.length > 0) {
+                setSelectedLeadType('events');
+              } else {
+                setSelectedLeadType('all');
+              }
             }
 
-            // Add new selection
             return {
               ...prev,
-              unlockType: [...currentTypes, type]
+              unlockType: newUnlockTypes
             };
           });
         }}
