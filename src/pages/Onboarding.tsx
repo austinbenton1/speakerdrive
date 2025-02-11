@@ -11,24 +11,64 @@ import ServiceSelector from '../components/onboarding/ServiceSelector';
 import WebsiteInput from '../components/onboarding/WebsiteInput';
 import { onboardingSchema, type OnboardingFormData } from '../types/auth';
 
-// Retry mechanism for failed requests
-async function retryRequest<T>(
-  request: () => Promise<T>,
+// Helper for delayed retries
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Function to send both webhooks with retries
+async function sendWebhooks(
+  urlAI: string,
+  urlOnboarding: string,
+  body: object,
   retries = 3,
   delay = 1000
-): Promise<T> {
-  let lastError: Error | null = null;
+): Promise<boolean> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      return await request();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error');
-      if (attempt < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt)));
+      console.log('[Webhook Debug] Attempt:', attempt + 1);
+
+      const [aiResponse, onboardingResponse] = await Promise.all([
+        fetch(urlAI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+        fetch(urlOnboarding, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+      ]);
+
+      console.log('[Webhook Debug] AI Response:', {
+        status: aiResponse.status,
+        ok: aiResponse.ok,
+      });
+      console.log('[Webhook Debug] Onboarding Response:', {
+        status: onboardingResponse.status,
+        ok: onboardingResponse.ok,
+      });
+
+      if (aiResponse.ok && onboardingResponse.ok) {
+        return true;
       }
+
+      // If either failed, wait before retrying
+      if (attempt < retries - 1) {
+        console.log('[Webhook Debug] One or both webhooks failed. Retrying...');
+        await sleep(delay * Math.pow(2, attempt)); // Exponential backoff
+      }
+    } catch (error) {
+      console.error('[Webhook Debug] Error during webhook calls:', error);
+      if (attempt === retries - 1) {
+        throw error;
+      }
+      // Wait before retrying
+      await sleep(delay * Math.pow(2, attempt));
     }
   }
-  throw lastError;
+  return false;
 }
 
 export default function Onboarding() {
@@ -42,7 +82,10 @@ export default function Onboarding() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
         if (!session?.user) {
           await supabase.auth.signOut();
@@ -50,8 +93,8 @@ export default function Onboarding() {
           return;
         }
         setUser(session.user);
-      } catch (error) {
-        console.error('Error checking user:', error);
+      } catch (err) {
+        console.error('Error checking user:', err);
         await supabase.auth.signOut();
         navigate('/login');
       } finally {
@@ -87,126 +130,57 @@ export default function Onboarding() {
   const onSubmit = async (data: OnboardingFormData) => {
     if (!user) return;
 
-    let webhookSuccess = false;
     try {
       setError(null);
       setIsSubmitting(true);
       setProgress(20);
 
-      // Function to send both webhooks
-      const sendWebhooks = async (retries = 3): Promise<boolean> => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            // Send both webhooks in parallel
-            const [aiResponse, onboardingResponse] = await Promise.all([
-              fetch('https://n8n.speakerdrive.com/webhook/ai-data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  message: 'onboarding_init',
-                  email: user.email,
-                  display_name: data.fullName,
-                  services: data.services,
-                  website: data.website || null
-                })
-              }),
-              fetch('https://n8n.speakerdrive.com/webhook/onboarding', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  email: user.email,
-                  display_name: data.fullName,
-                  services: data.services,
-                  website: data.website || null
-                })
-              })
-            ]);
-
-            if (aiResponse.ok && onboardingResponse.ok) {
-              return true;
-            }
-
-            // Wait before retrying
-            if (i < retries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-            }
-          } catch (error) {
-            console.error('Webhook attempt failed:', error);
-            if (i === retries - 1) throw error;
-          }
-        }
-        return false;
-      };
-
-      // Function to retry webhook
-      const sendWebhook = async (retries = 3): Promise<boolean> => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            const response = await fetch('https://n8n.speakerdrive.com/webhook/ai-data', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                message: 'onboarding_init',
-                email: user.email,
-                display_name: data.fullName,
-                services: data.services,
-                website: data.website || null
-              })
-            });
-
-            if (response.ok) {
-              return true;
-            }
-
-            // Wait before retrying
-            if (i < retries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-            }
-          } catch (error) {
-            console.error('Webhook attempt failed:', error);
-            if (i === retries - 1) throw error;
-          }
-        }
-        return false;
-      };
-
-      // First update auth user metadata
+      // 1) Update user metadata
       const { error: updateUserError } = await supabase.auth.updateUser({
         data: {
-          display_name: data.fullName
-        }
+          display_name: data.fullName,
+        },
       });
-
       if (updateUserError) throw updateUserError;
       setProgress(40);
 
-      // Then update profile
+      // 2) Update profile table
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
           display_name: data.fullName,
           services: data.services,
-          website: data.website || null
+          website: data.website || null,
         });
-
       if (profileError) throw profileError;
       setProgress(60);
 
-      // Try to send webhook with retries
-      webhookSuccess = await sendWebhooks();
+      // 3) Fire off webhooks (one for ai-data, one for onboarding)
+      const webhookBody = {
+        message: 'onboarding_init',
+        email: user.email,
+        display_name: data.fullName,
+        services: data.services,
+        website: data.website || null,
+      };
+
+      const webhookSuccess = await sendWebhooks(
+        'https://n8n.speakerdrive.com/webhook/ai-data',
+        'https://n8n.speakerdrive.com/webhook/onboarding',
+        webhookBody
+      );
+
       if (!webhookSuccess) {
         throw new Error('Failed to send onboarding webhooks after multiple attempts');
       }
 
       setProgress(100);
 
-      // Navigate to chat with onboarding parameters
+      // 4) Navigate to chat with onboarding parameters
       navigate('/chat/conversation?source=onboarding&trigger=auto');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to complete onboarding');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete onboarding');
     } finally {
       setIsSubmitting(false);
     }
