@@ -12,8 +12,8 @@ interface ChatbotResponse {
 }
 
 export async function sendChatMessage(
-  message: string, 
-  email: string, 
+  message: string,
+  email: string,
   display_name?: string,
   services?: string[],
   website?: string
@@ -27,18 +27,20 @@ export async function sendChatMessage(
     const url = 'https://n8n.speakerdrive.com/webhook/ai-data';
 
     console.log('[Chatbot] Sending message to:', url);
-    console.log(JSON.stringify({
-      message,
-      email,
-      display_name,
-      services,
-      website
-    }));
-    
+    console.log(
+      JSON.stringify({
+        message,
+        email,
+        display_name,
+        services,
+        website,
+      })
+    );
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -46,14 +48,14 @@ export async function sendChatMessage(
         email,
         display_name,
         services,
-        website
-      })
+        website,
+      }),
     });
 
     if (!response.ok) {
       console.error('[Chatbot] Error response:', {
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
       });
 
       // Try to get error details from response
@@ -65,35 +67,57 @@ export async function sendChatMessage(
         // Ignore JSON parse error
       }
 
-      throw new Error(`Failed to get chatbot response: ${response.status}${errorDetails ? ` - ${errorDetails}` : ''}`);
+      throw new Error(
+        `Failed to get chatbot response: ${response.status}${
+          errorDetails ? ` - ${errorDetails}` : ''
+        }`
+      );
     }
 
     const data = await response.json();
     console.log('[Chatbot] Response received:', data);
-    
-    // Validate response format and content
+
+    // Validate response format
     if (!data?.body) {
       throw new Error('Invalid response format: missing body');
     }
-    
+
     if (!data.body.response?.output) {
       throw new Error('Invalid response format: missing output field');
     }
-    
-    if (typeof data.body.response.output !== 'string') {
-      throw new Error('Invalid response format: expected string output');
+
+    // Extract the actual message content from the nested structure.
+    const rawOutput = data.body.response.output;
+    let messageContent: string;
+
+    if (
+      typeof rawOutput === 'object' &&
+      rawOutput?.body?.response &&
+      typeof rawOutput.body.response === 'string'
+    ) {
+      // If the output is nested, use the inner response string.
+      messageContent = rawOutput.body.response;
+    } else if (typeof rawOutput === 'string') {
+      // Otherwise, use the output as is.
+      messageContent = rawOutput;
+    } else {
+      throw new Error(
+        'Invalid response format: expected output to be a string or an object containing body.response'
+      );
     }
 
-    // Truncate extremely long responses to prevent UI issues
+    // Unescape newlines and truncate extremely long responses to prevent UI issues
     const maxResponseLength = 10000;
-    const unescapedOutput = data.body.response.output.replace(/\\n/g, '\n');
-    const responseText = unescapedOutput.length > maxResponseLength
-      ? unescapedOutput.slice(0, maxResponseLength) + '\n\n[Message truncated due to length]'
-      : unescapedOutput;
+    const unescapedOutput = messageContent.replace(/\\n/g, '\n');
+    const responseText =
+      unescapedOutput.length > maxResponseLength
+        ? unescapedOutput.slice(0, maxResponseLength) +
+          '\n\n[Message truncated due to length]'
+        : unescapedOutput;
 
     return {
       response: responseText,
-      status: response.status
+      status: response.status,
     };
   } catch (error) {
     console.error('[Chatbot] Error sending message:', error);

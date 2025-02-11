@@ -1,10 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Mail,
   Linkedin,
   FileText,
+  Bold,
+  Italic,
+  Link2,
+  Copy,
+  List,
+  ChevronsDown,
+  Underline as UnderlineIcon,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import { Mark } from '@tiptap/core';
 
 import EmailComposerHeader from './EmailComposerHeader';
 import OutreachSettingsPanel from './OutreachSettingsPanel';
@@ -15,10 +26,30 @@ import { services } from '../../utils/constants';
 import { supabase } from '../../lib/supabase';
 import Toast from '../ui/Toast';
 
+/** Minimal custom Underline extension (avoids installing @tiptap/extension-underline). */
+const Underline = Mark.create({
+  name: 'underline',
+  parseHTML() {
+    return [{ tag: 'u' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['u', HTMLAttributes, 0];
+  },
+  addCommands() {
+    return {
+      toggleUnderline:
+        () =>
+        ({ commands }) => {
+          return commands.toggleMark('underline');
+        },
+    };
+  },
+});
+
 interface EmailComposerProps {
   lead: {
     leadType: 'Contact' | 'Event';
-    leadName: string;
+    lead_name?: string;
     eventName?: string;
     jobTitle?: string;
     image: string;
@@ -30,13 +61,13 @@ interface EmailComposerProps {
     };
     outreachPathways?: any;
     unlockValue?: any;
-    unlockType?: any;
+    unlockType?: string;
     organization?: any;
     location?: any;
     eventUrl?: any;
-    city?: any;
-    state?: any;
-    region?: any;
+    city?: string;
+    state?: string;
+    region?: string;
     pitch?: string;
     id?: string;
     unlocked_lead_id?: string;
@@ -60,30 +91,21 @@ const parseProfileServices = (servicesStr: string | null): string[] => {
   }
 };
 
-/** For “Preview” mode display */
-interface PreviewProps {
-  content: string;
+function MessagePreview({
+  contentHTML,
+  type,
+  lead,
+}: {
+  contentHTML: string;
   type: MessageType;
   lead: EmailComposerProps['lead'];
-}
-
-const MessagePreview = ({ content, type, lead }: PreviewProps) => {
-  const renderContent = (text: string) => (
-    <div className="text-[16px] leading-[1.7] text-[#1F2937] tracking-[-0.011em] font-normal max-w-[70ch] whitespace-pre-wrap">
-      <ReactMarkdown>{text}</ReactMarkdown>
-    </div>
+}) {
+  const renderContent = (html: string) => (
+    <div
+      className="text-[16px] leading-[1.7] text-gray-800 tracking-[-0.011em] font-normal max-w-[70ch]"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
-
-  if (type === 'email') {
-    return (
-      <div>
-        {content
-          ? renderContent(content)
-          : <span className="text-gray-400">Your email content will appear here...</span>
-        }
-      </div>
-    );
-  }
 
   if (type === 'linkedin') {
     return (
@@ -96,8 +118,8 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
               <div className="text-xs text-gray-500">1st</div>
             </div>
           </div>
-          {content
-            ? renderContent(content)
+          {contentHTML
+            ? renderContent(contentHTML)
             : <span className="text-gray-400">Your LinkedIn message will appear here...</span>
           }
         </div>
@@ -105,48 +127,202 @@ const MessagePreview = ({ content, type, lead }: PreviewProps) => {
     );
   }
 
-  // Otherwise "proposal"
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{lead.eventName}</h1>
-        <div className="space-y-6">
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaking Proposal</h2>
-            {content
-              ? renderContent(content)
-              : <span className="text-gray-400">Your proposal content will appear here...</span>
-            }
-          </section>
+  if (type === 'proposal') {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{lead.eventName}</h1>
+          <div className="space-y-6">
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Speaking Proposal</h2>
+              {contentHTML
+                ? renderContent(contentHTML)
+                : <span className="text-gray-400">Your proposal content will appear here...</span>
+              }
+            </section>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // Default: email
+  return contentHTML ? (
+    renderContent(contentHTML)
+  ) : (
+    <span className="text-gray-400">Your email content will appear here...</span>
+  );
+}
+
+/** Minimal Tiptap Editor with B/I/U, bullet list, link, copy, and scroll (smaller icons/text). */
+function TiptapEditor({
+  content,
+  onUpdate,
+  handleCopyOutreach,
+  handleScrollDown,
+  isCopying,
+}: {
+  content: string;
+  onUpdate: (html: string) => void;
+  handleCopyOutreach: () => void;
+  handleScrollDown: () => void;
+  isCopying: boolean;
+}) {
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Tiptap
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({}),
+      Link.configure({ openOnClick: false }),
+      Underline,
+    ],
+    content,
+    onUpdate: ({ editor }) => {
+      onUpdate(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [editor, content]);
+
+  if (!editor) return null;
+
+  const scrollToBottom = () => {
+    if (!editorContainerRef.current) return;
+    editorContainerRef.current.scrollTo({
+      top: editorContainerRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
+  const onScrollClick = () => {
+    scrollToBottom();
+    handleScrollDown();
+  };
+
+  const setLink = () => {
+    const url = prompt('Enter the URL:', 'https://');
+    if (url) {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    }
+  };
+
+  return (
+    <div className="border border-gray-300 rounded-lg flex flex-col shadow-2xl bg-gray-100 h-full">
+      {/* Toolbar with smaller text/icons */}
+      <div className="flex items-center gap-1 p-1 border-b border-gray-300 text-xs">
+        {/* Bold */}
+        <button
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`p-1 rounded hover:bg-gray-200 transition ${
+            editor.isActive('bold') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <Bold className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Italic */}
+        <button
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`p-1 rounded hover:bg-gray-200 transition ${
+            editor.isActive('italic') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <Italic className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Underline */}
+        <button
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={`p-1 rounded hover:bg-gray-200 transition ${
+            editor.isActive('underline') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <UnderlineIcon className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Bullet List */}
+        <button
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`p-1 rounded hover:bg-gray-200 transition ${
+            editor.isActive('bulletList') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <List className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Link */}
+        <button
+          onClick={setLink}
+          className="p-1 rounded hover:bg-gray-200 transition text-gray-600"
+        >
+          <Link2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Copy Button */}
+        <button
+          onClick={handleCopyOutreach}
+          disabled={isCopying}
+          className="flex items-center gap-1 px-1 py-1 rounded hover:bg-gray-200 transition-colors text-gray-600"
+        >
+          {isCopying ? (
+            <span>Copying...</span>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </>
+          )}
+        </button>
+
+        {/* Scroll Button */}
+        <button
+          onClick={onScrollClick}
+          className="flex items-center gap-1 px-1 py-1 rounded hover:bg-gray-200 transition-colors text-gray-600"
+        >
+          <ChevronsDown className="w-3.5 h-3.5" />
+          Scroll
+        </button>
+      </div>
+
+      {/* Flexible editor area with scrolling */}
+      <div
+        ref={editorContainerRef}
+        className="p-3 bg-white rounded-b-lg flex-1 min-h-0 overflow-y-auto"
+      >
+        <EditorContent editor={editor} />
       </div>
     </div>
   );
-};
+}
 
 export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerProps) {
   const { profile } = useProfile();
 
-  // The text input displayed after generation
-  const [input, setInput] = useState(lead.pitch || '');
-
-  // Outreach channel
+  // The “main” HTML content
+  const [htmlContent, setHtmlContent] = useState<string>(lead.pitch || '');
   const [outreachChannel, setOutreachChannel] = useState<MessageType>('email');
 
-  // “Advanced settings”
-  const [showAdvanced] = useState(true); // always show advanced
+  // Toggles
+  const [showAdvanced] = useState(true);
   const [isPitching, setIsPitching] = useState(true);
   const [selectedService, setSelectedService] = useState<string>('');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showCustomization, setShowCustomization] = useState(false);
   const [customizationText, setCustomizationText] = useState('');
 
-  // “Before” vs. “After”
   const [showInputs, setShowInputs] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
-  // Busy states
+  // States for generating, copying, saving, etc.
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -157,22 +333,24 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
-  // If you want “enter to send”
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Multi-option messages
+  const [messageOptions, setMessageOptions] = useState<
+    { message: string; keyElements: string[] }[]
+  >([]);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
 
-  // For the header
   const truncateText = (text: string, maxLength: number) => {
     if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+    return text.length <= maxLength ? text : text.slice(0, maxLength) + '...';
   };
 
-  // Disable logic for certain channels based on unlockType
   const isButtonDisabled = (buttonId: string) => {
     return (
       (buttonId === 'proposal' && lead.unlockType === 'Unlock Contact Email') ||
-      ((buttonId === 'linkedin' || buttonId === 'proposal') && lead.unlockType === 'Unlock Event Email') ||
-      ((buttonId === 'email' || buttonId === 'linkedin') && lead.unlockType === 'Unlock Event URL')
+      ((buttonId === 'linkedin' || buttonId === 'proposal') &&
+        lead.unlockType === 'Unlock Event Email') ||
+      ((buttonId === 'email' || buttonId === 'linkedin') &&
+        lead.unlockType === 'Unlock Event URL')
     );
   };
 
@@ -181,7 +359,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     return channels.find((ch) => !isButtonDisabled(ch)) || 'email';
   };
 
-  // Default service (pick first from user profile or fallback to the first in the list)
   useEffect(() => {
     if (profile?.services) {
       const pServices = parseProfileServices(profile.services);
@@ -198,10 +375,10 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [profile?.services]);
 
-  // If there's already a pitch in the lead
+  // Decide initial state
   useEffect(() => {
     if (lead.pitch) {
-      setInput(lead.pitch);
+      setHtmlContent(lead.pitch);
       setShowMessage(true);
       setShowInputs(false);
     } else {
@@ -210,7 +387,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [lead.pitch]);
 
-  // If the modal just opened
   useEffect(() => {
     if (isOpen) {
       if (lead.pitch) {
@@ -223,78 +399,46 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   }, [isOpen, lead.pitch]);
 
-  // If email is disabled, find another default
+  // If email is disabled, pick another channel
   useEffect(() => {
     if (isButtonDisabled('email')) {
       setOutreachChannel(findFirstEnabledButton());
     }
   }, [lead.unlockType]);
 
-  // Press enter to submit
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!input.trim() || isSubmitting || input.length > 1000) return;
-    try {
-      setIsSubmitting(true);
-      // your actual sending logic ...
-      onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-      setInput('');
-    }
-  };
-
-  // MULTIPLE MESSAGE OPTIONS
-  const [messageOptions, setMessageOptions] = useState<
-    { message: string; keyElements: string[] }[]
-  >([]);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
-
-  // Our handleGenerate
+  // Generate from external API
   const handleGenerate = async () => {
     setIsGenerating(true);
-
-    const contextData = {
-      outreach_pathways: lead.outreachPathways || null,
-      unlock_value: lead.unlockValue || null,
-      unlock_type: lead.unlockType || null,
-      location:
-        `${lead.city || ''}${
-          lead.city && (lead.state || lead.region) ? ', ' : ''
-        }${lead.state || ''}${
-          lead.state && lead.region ? ', ' : ''
-        }${lead.region || ''}`.trim() || null,
-      organization: lead.organization || null,
-      event_url: lead.eventUrl || null,
-      event_name: lead.eventName || null,
-      event_info: (lead as any).eventInfo || null,
-      job_title: lead.jobTitle || null,
-      lead_name: lead.leadName || (lead as any).lead_name || null,
-
-      ...(isPitching && {
-        pitching: selectedService,
-      }),
-      ...(showMyContext && profile?.offering && {
-        message_context: profile.offering,
-      }),
-      ...(profile?.display_name && {
-        display_name: profile.display_name,
-      }),
-      outreach_channel: outreachChannel,
-      ...(showCustomization && customizationText.trim() && {
-        message_customization: customizationText,
-      }),
-    };
-
     try {
+      const contextData = {
+        outreach_pathways: lead.outreachPathways || null,
+        unlock_value: lead.unlockValue || null,
+        unlock_type: lead.unlockType || null,
+        location:
+          `${lead.city || ''}${
+            lead.city && (lead.state || lead.region) ? ', ' : ''
+          }${lead.state || ''}${
+            lead.state && lead.region ? ', ' : ''
+          }${lead.region || ''}`.trim() || null,
+        organization: lead.organization || null,
+        event_url: lead.eventUrl || null,
+        event_name: lead.eventName || null,
+        event_info: (lead as any).eventInfo || null,
+        job_title: lead.jobTitle || null,
+        lead_name: lead.lead_name || null,
+        ...(isPitching && { pitching: selectedService }),
+        ...(showMyContext && profile?.offering && {
+          message_context: profile.offering,
+        }),
+        ...(profile?.display_name && {
+          display_name: profile.display_name,
+        }),
+        outreach_channel: outreachChannel,
+        ...(showCustomization && customizationText.trim() && {
+          message_customization: customizationText,
+        }),
+      };
+
       const response = await fetch('https://n8n.speakerdrive.com/webhook/composer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -304,9 +448,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const result = await response.json();
-      console.log('Raw result from n8n:', result);
+      console.log('Raw result from composer:', result);
 
       let rawArray: any[] = [];
       if (Array.isArray(result)) {
@@ -317,35 +460,30 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         rawArray = [result];
       }
 
-      const parsedMessageOptions = rawArray.map((item: any) => ({
-        message: (item.response || '')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/\\n/g, '\n'),
-        keyElements: item.keyElements || [],
-      }));
+      // Convert \n to <br> for Tiptap
+      const parsedMessageOptions = rawArray.map((item: any) => {
+        let text = item.response || '';
+        text = text.replace(/\\n/g, '\n');
+        text = text.replace(/\n/g, '<br>');
+        return {
+          message: text,
+          keyElements: item.keyElements || [],
+        };
+      });
 
-      console.log('Parsed message options:', parsedMessageOptions);
-
-      if (parsedMessageOptions.length === 0) {
+      if (!parsedMessageOptions.length) {
         throw new Error('No valid messages returned from the server');
       }
 
       setMessageOptions(parsedMessageOptions);
       setSelectedOptionIndex(0);
+      setHtmlContent(parsedMessageOptions[0].message);
 
-      // Use first message
-      setInput(parsedMessageOptions[0].message);
-
-      // Switch to "after" state
       setShowMessage(true);
       setShowInputs(false);
     } catch (err) {
       console.error(err);
-      setInput('We encountered an error. Please contact the administrators.');
+      setHtmlContent('<p>We encountered an error. Please contact the administrators.</p>');
       setShowMessage(true);
       setShowInputs(false);
     } finally {
@@ -353,19 +491,20 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  // Next message option
   const refreshOption = () => {
-    if (messageOptions.length === 0) return;
+    if (!messageOptions.length) return;
     const newIndex = (selectedOptionIndex + 1) % messageOptions.length;
     setSelectedOptionIndex(newIndex);
-    setInput(messageOptions[newIndex].message);
+    setHtmlContent(messageOptions[newIndex].message);
   };
 
-  // COPY & SAVE
+  // Copy final HTML
   const handleCopyOutreach = async () => {
     setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(input);
-      setToastMessage('Outreach message copied to clipboard');
+      await navigator.clipboard.writeText(htmlContent);
+      setToastMessage('Outreach message (HTML) copied to clipboard');
       setToastType('success');
       setShowToast(true);
     } catch (error) {
@@ -378,17 +517,22 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  // Called by the "Scroll" button
+  const handleScrollDown = () => {
+    console.log('Scrolling to bottom...');
+  };
+
+  // Save pitch
   const handleSavePitch = async () => {
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('unlocked_leads')
-        .update({ pitch: input })
+        .update({ pitch: htmlContent })
         .eq('id', lead.unlocked_lead_id);
 
       if (error) throw error;
-
-      lead.pitch = input;
+      lead.pitch = htmlContent;
       setToastMessage('Message saved successfully');
       setToastType('success');
       setShowToast(true);
@@ -402,9 +546,27 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
     }
   };
 
+  // Example submission
+  const handleSubmit = async () => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    const plainText = tempDiv.innerText.trim() || '';
+
+    if (!plainText || isSubmitting || plainText.length > 1000) return;
+    try {
+      setIsSubmitting(true);
+      // ... your sending logic ...
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+      setHtmlContent('');
+    }
+  };
+
   if (!isOpen) return null;
 
-  // AFTER state => gather key elements
   const isAfterState = showMessage && !isPreviewMode && !isGenerating;
   const currentKeyElements = isAfterState
     ? messageOptions[selectedOptionIndex]?.keyElements || []
@@ -413,33 +575,27 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   return (
     <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
       <div
-        className="absolute inset-y-0 right-0 w-screen max-w-lg pointer-events-auto
-                   flex flex-col min-h-0"
+        className="absolute inset-y-0 right-0 w-screen max-w-lg pointer-events-auto flex flex-col min-h-0"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* White panel with rounded left side */}
         <div className="relative flex-1 overflow-y-auto bg-white shadow-2xl rounded-l-2xl flex flex-col min-h-0">
           
-          {/* Header */}
+          {/* HEADER */}
           <EmailComposerHeader
             lead={lead}
             onClose={onClose}
             truncateText={truncateText}
           />
 
-          {/* Scrollable Middle */}
-          <div className="p-4 flex-1 flex flex-col min-h-0">
-            
-            {/* BEFORE */}
+          {/* MAIN BODY (fills space above footer) */}
+          <div className="px-4 flex-1 flex flex-col min-h-0">
+            {/* BEFORE: choose channel */}
             {showInputs && !isPreviewMode && !showMessage && (
               <div>
-                {/* Outreach Channel */}
-                <div className="mb-4 border-b border-gray-200 pb-4">
-                  {/* Tier 1 heading */}
+                <div className="mb-2 border-b border-gray-200 pb-2">
                   <p className="mb-3 text-sm font-medium text-gray-700">
                     Outreach Channel
                   </p>
-                  {/* Tier 2 (same as toggles): channel buttons */}
                   <div className="flex items-center gap-2 pl-3">
                     {[
                       { id: 'email' as MessageType, icon: Mail, label: 'Email' },
@@ -450,15 +606,16 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                         key={type.id}
                         onClick={() => setOutreachChannel(type.id)}
                         disabled={isButtonDisabled(type.id)}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
+                        className={`
+                          inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all
                           ${
                             isButtonDisabled(type.id)
                               ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200'
                               : outreachChannel === type.id
                               ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
                               : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                          }`
-                        }
+                          }
+                        `}
                       >
                         <type.icon className="w-3.5 h-3.5" />
                         {type.label}
@@ -467,7 +624,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   </div>
                 </div>
 
-                {/* Outreach Settings Panel */}
                 <OutreachSettingsPanel
                   showAdvanced={showAdvanced}
                   isPitching={isPitching}
@@ -487,12 +643,12 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
               </div>
             )}
 
-            {/* PREVIEW */}
+            {/* PREVIEW mode */}
             {isPreviewMode && !showMessage && (
               <div className="bg-white border border-gray-200 rounded-md shadow-sm">
                 <div className="p-4">
                   <MessagePreview
-                    content={input}
+                    contentHTML={htmlContent}
                     type={outreachChannel}
                     lead={lead}
                   />
@@ -500,40 +656,35 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
               </div>
             )}
 
-            {/* AFTER state */}
+            {/* AFTER: main Editor (75%) + Why This Works (25%) */}
             {isAfterState && (
-              <div className="flex flex-col flex-1 min-h-0">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`Your message to ${lead.leadName}...`}
-                  className="
-                    w-full 
-                    text-[16px] leading-[1.7] text-[#1F2937] tracking-[-0.011em] font-normal
-                    placeholder:text-gray-400 
-                    focus:outline-none focus:ring-0 focus:border-0 
-                    resize-none 
-                    p-3 
-                    flex-grow min-h-0 
-                    max-w-[70ch]
-                  "
-                />
+              <div className="flex flex-col h-full min-h-0">
+                {/* Top 75%: Editor */}
+                <div className="flex-1 basis-3/4 min-h-0 flex flex-col overflow-hidden mb-4">
+                  <TiptapEditor
+                    content={htmlContent}
+                    onUpdate={(val) => setHtmlContent(val)}
+                    handleCopyOutreach={handleCopyOutreach}
+                    handleScrollDown={handleScrollDown}
+                    isCopying={isCopying}
+                  />
+                </div>
 
+                {/* Bottom 25%: Why This Works */}
                 {!!currentKeyElements.length && (
-                  <div className="mt-3 border border-gray-200 rounded-md shadow-sm overflow-hidden">
-                    {/* Subtle 1px gradient bar */}
-                    <div className="h-[1px] bg-gradient-to-r from-green-200 to-green-300" />
-                    <div className="p-4 bg-white">
-                      <h3 className="text-base font-semibold text-gray-900 mb-3">
-                        Why This Works
-                      </h3>
-                      <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
-                        {currentKeyElements.map((el, idx) => (
-                          <li key={idx}>{el}</li>
-                        ))}
-                      </ul>
+                  <div className="flex-none basis-1/4 min-h-0 flex flex-col overflow-hidden">
+                    <div className="border border-gray-200 rounded-lg shadow-sm flex flex-col overflow-hidden h-full">
+                      <div className="h-[2px] bg-gradient-to-r from-green-200 to-green-300" />
+                      <div className="flex-1 p-4 bg-white overflow-y-auto">
+                        <h3 className="text-base font-semibold text-gray-900 mb-3">
+                          Why This Works
+                        </h3>
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
+                          {currentKeyElements.map((el, idx) => (
+                            <li key={idx}>{el}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -541,18 +692,16 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             )}
           </div>
 
-          {/* FOOTER pinned at bottom */}
+          {/* FOOTER (button row) */}
           <EmailComposerFooter
             showMessage={showMessage}
             isGenerating={isGenerating}
-            isCopying={isCopying}
             isSaving={isSaving}
             showInputs={showInputs}
             isPreviewMode={isPreviewMode}
-            input={input}
+            input={htmlContent}
             leadPitch={lead.pitch}
             handleGenerate={handleGenerate}
-            handleCopyOutreach={handleCopyOutreach}
             handleSavePitch={handleSavePitch}
             togglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
             onBackToEditor={() => {
@@ -563,10 +712,21 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             messageOptionsCount={messageOptions.length}
             selectedOptionIndex={selectedOptionIndex}
             onRefresh={refreshOption}
+            lead={{
+              leadType: lead.leadType,
+              lead_name: lead.lead_name,
+              region: lead.region,
+              state: lead.state,
+              city: lead.city,
+              unlockType: lead.unlockType,
+              eventName: lead.eventName,
+            }}
+            displayName={profile?.display_name}
           />
         </div>
       </div>
 
+      {/* Toast notification */}
       {showToast && (
         <Toast
           message={toastMessage}

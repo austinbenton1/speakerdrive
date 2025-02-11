@@ -1,15 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Wand2,
   Eye,
   ArrowLeft,
-  Copy,
   Save as SaveIcon,
   Download,
-  ChevronRight,
   FlaskConical as Flask,
   UserPlus,
 } from 'lucide-react';
+
+/**
+ * Updated to show an actual progress bar that fills from 0% to 100%.
+ * Also ensure we use 'lead_name' consistently.
+ */
+interface LoadingMessage {
+  id: string;
+  template: string;
+  condition?: {
+    field: string;
+    value: string | null;
+  };
+  variables: string[];
+}
+
+const loadingSequence: LoadingMessage[] = [
+  {
+    id: 'event_context',
+    template: 'Initializing info: {event_name}...',
+    variables: ['event_name']
+  },
+  {
+    id: 'lead_review',
+    template: "Reviewing {lead_name}'s background...",
+    condition: {
+      field: 'leadType',
+      value: 'Contact'
+    },
+    variables: ['lead_name']
+  },
+  {
+    id: 'lead_review_event',
+    template: 'SpeakerDrive lead type is {unlockType}...',
+    condition: {
+      field: 'leadType',
+      value: 'Event'
+    },
+    variables: ['unlockType']
+  },
+  {
+    id: 'profile_match',
+    template: "Matching with {display_name}'s profile...",
+    variables: ['display_name']
+  },
+  {
+    id: 'location',
+    template: 'Checking location: {region} {state} {city}',
+    variables: ['region', 'state', 'city']
+  },
+  {
+    id: 'personalization',
+    template: 'Pinpointing {display_name} personalization...',
+    variables: ['display_name']
+  },
+  {
+    id: 'message',
+    template: 'Crafting optimal message...',
+    variables: []
+  },
+  {
+    id: 'variations',
+    template: 'Creating message variations...',
+    variables: []
+  },
+  {
+    id: 'finalizing',
+    template: 'Finalizing your outreach...',
+    variables: []
+  }
+];
 
 interface EmailComposerFooterProps {
   showMessage: boolean;
@@ -25,13 +93,25 @@ interface EmailComposerFooterProps {
   handleSavePitch: () => void;
   togglePreviewMode: () => void;
   onBackToEditor: () => void;
-  // For multiple message options:
+  // For multiple message options
   messageOptionsCount?: number;
   selectedOptionIndex?: number;
   onRefresh?: () => void;
+
+  lead?: {
+    leadType?: 'Contact' | 'Event';
+    lead_name?: string;
+    region?: string;
+    state?: string;
+    city?: string;
+    unlockType?: string;
+    eventName?: string;
+  };
+  displayName?: string;
 }
 
 export default function EmailComposerFooter({
+  // Standard props
   showMessage,
   isGenerating,
   isCopying,
@@ -41,42 +121,153 @@ export default function EmailComposerFooter({
   input,
   leadPitch,
   handleGenerate,
-  handleCopyOutreach,
+  handleCopyOutreach, // passed, but not used for a button
   handleSavePitch,
   togglePreviewMode,
   onBackToEditor,
   messageOptionsCount,
   selectedOptionIndex,
   onRefresh,
+  // For loading sequence
+  lead,
+  displayName,
 }: EmailComposerFooterProps) {
-  /**
-   * Tracks which version index (if any) has been saved.
-   * If null, no version is saved yet.
-   */
   const [savedOptionIndex, setSavedOptionIndex] = useState<number | null>(null);
 
-  /**
-   * Called when the user clicks "Save".
-   * - Only allow saving if nothing is saved yet (savedOptionIndex === null).
-   * - Then call the existing handleSavePitch() (to do the actual saving logic).
-   * - Finally store which version index got saved.
-   */
+  // ─────────────────────────────────────────
+  // 1) Build the list of relevant messages
+  // ─────────────────────────────────────────
+  const filteredMessages = React.useMemo(() => {
+    if (!lead) return [];
+    return loadingSequence.filter((msg) => {
+      if (msg.condition) {
+        const actual = (lead as any)[msg.condition.field];
+        if (actual !== msg.condition.value) return false;
+      }
+      // skip "location" if user has no region/state/city
+      if (msg.id === 'location') {
+        const hasLocation = lead.region || lead.state || lead.city;
+        if (!hasLocation) return false;
+      }
+      return true;
+    });
+  }, [lead]);
+
+  // ─────────────────────────────────────────
+  // 2) Animate through the messages
+  // ─────────────────────────────────────────
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ↓↓↓ Make this faster ↓↓↓
+  const messageInterval = 2000; // 2 seconds instead of 4
+
+  useEffect(() => {
+    if (isGenerating && filteredMessages.length > 0) {
+      setCurrentIndex(0);
+
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex((prev) => {
+          if (prev < filteredMessages.length - 1) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, messageInterval);
+
+    } else {
+      // Not generating => reset
+      setCurrentIndex(0);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isGenerating, filteredMessages]);
+
+  // Once generation completes, jump to last message
+  useEffect(() => {
+    if (!isGenerating && filteredMessages.length > 0) {
+      setCurrentIndex(filteredMessages.length - 1);
+    }
+  }, [isGenerating, filteredMessages]);
+
+  // ─────────────────────────────────────────
+  // 3) Build the final text for the current message
+  // ─────────────────────────────────────────
+  function getLoadingMessage(): string {
+    if (!lead || filteredMessages.length === 0) {
+      return 'Preparing your outreach...';
+    }
+    const msg = filteredMessages[currentIndex];
+    if (!msg) return 'Preparing your outreach...';
+
+    let text = msg.template;
+    for (const v of msg.variables) {
+      let replacement = '';
+      switch (v) {
+        case 'event_name':
+          replacement = lead.eventName ?? '';
+          break;
+        case 'lead_name':
+          replacement = lead.lead_name ?? '';
+          break;
+        case 'leadType':
+          replacement = lead.leadType ?? '';
+          break;
+        case 'unlockType':
+          replacement = lead.unlockType ?? '';
+          break;
+        case 'display_name':
+          replacement = displayName ?? '';
+          break;
+        case 'region':
+          replacement = lead.region ?? '';
+          break;
+        case 'state':
+          replacement = lead.state ?? '';
+          break;
+        case 'city':
+          replacement = lead.city ?? '';
+          break;
+        default:
+          break;
+      }
+      text = text.replace(`{${v}}`, replacement.trim());
+    }
+
+    return text.replace(/\s+/g, ' ').trim();
+  }
+
+  // Calculate progress as a percentage
+  const totalSteps = filteredMessages.length;
+  const progressPercent =
+    totalSteps > 1
+      ? ((currentIndex + 1) / totalSteps) * 100
+      : 100; // fallback if only 1 step
+
+  // ─────────────────────────────────────────
+  // SAVE LOGIC
+  // ─────────────────────────────────────────
   function onClickSavePitch() {
-    // If we haven't saved anything yet, proceed
     if (savedOptionIndex === null) {
       handleSavePitch();
       setSavedOptionIndex(selectedOptionIndex ?? 0);
     }
   }
-
-  /**
-   * Decide if the currently selected version is the saved one.
-   */
   const isSaved = savedOptionIndex !== null && savedOptionIndex === selectedOptionIndex;
+  const textHasChanged = input !== leadPitch;
 
-  //
-  // BEFORE / PREVIEW STATE
-  //
+  // ─────────────────────────────────────────
+  // BEFORE / PREVIEW vs AFTER
+  // ─────────────────────────────────────────
+
+  // If not in the AFTER state (or we're previewing), show “Generate”/“Preview” UI
   if (!showMessage || isPreviewMode) {
     return (
       <div
@@ -96,9 +287,10 @@ export default function EmailComposerFooter({
           </div>
         )}
 
-        {/* Generate + Preview (BEFORE) */}
+        {/* BEFORE => Generate + Preview */}
         {!showMessage && (
-          <div className="flex items-start gap-3 px-4 py-3 bg-gradient-to-b from-white to-gray-50/50">
+          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-b from-white to-gray-50/50">
+            {/* The “Generate Outreach” button */}
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -125,11 +317,29 @@ export default function EmailComposerFooter({
               )}
             </button>
 
+            {/* Loading area if generating */}
+            {isGenerating && (
+              <div className="flex flex-col items-start gap-1">
+                {/* Actual progress bar */}
+                <div className="relative w-48 h-2 bg-gray-300 rounded overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-blue-500 transition-all"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                {/* The dynamic text */}
+                <div className="whitespace-normal break-words flex-1 min-w-0 text-sm text-gray-700 font-medium mt-1">
+                  {getLoadingMessage()}
+                </div>
+              </div>
+            )}
+
+            {/* “Preview” button if not generating */}
             {!isGenerating && showInputs && (
               <button
                 onClick={togglePreviewMode}
                 className={`
-                  inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all mt-0.5
+                  inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                   ${
                     isPreviewMode
                       ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
@@ -147,17 +357,8 @@ export default function EmailComposerFooter({
     );
   }
 
-  //
   // AFTER STATE
-  //
-
-  /**
-   * If one version is already saved, and the user tries to see
-   * a different version (selectedOptionIndex !== savedOptionIndex),
-   * hide that content entirely so it "disappears" as an option.
-   */
   if (savedOptionIndex !== null && savedOptionIndex !== selectedOptionIndex) {
-    // This ensures you cannot view or save any other versions once one is saved
     return null;
   }
 
@@ -167,9 +368,9 @@ export default function EmailComposerFooter({
       style={{ zIndex: 10 }}
     >
       <div className="p-3 bg-gray-50">
-        {/* Single row, no scroll and no wrap => can get clipped if too narrow */}
         <div className="flex items-center gap-3 flex-nowrap">
-          {/* "Version" button if multiple message options AND nothing is saved yet */}
+
+          {/* "Version" button if multiple message options AND not saved */}
           {onRefresh && messageOptionsCount && messageOptionsCount > 1 && savedOptionIndex === null && (
             <button
               onClick={onRefresh}
@@ -183,18 +384,13 @@ export default function EmailComposerFooter({
               Version
               <span className="opacity-40 text-sm">|</span>
               {selectedOptionIndex! + 1} of {messageOptionsCount}
-              <ChevronRight size={18} />
+              {/* (Chevron removed) */}
             </button>
           )}
 
-          {/* Save (or Saved confirmation) */}
+          {/* Save button or “Saved” */}
           {(() => {
-            // We show the button if text changed, or if it's saved (to confirm).
-            // Because we want to keep the button visible in a "Saved" state.
-            const textHasChanged = input !== leadPitch;
-
             if (isSaved) {
-              // Already saved => show "Saved"
               return (
                 <button
                   disabled
@@ -209,7 +405,6 @@ export default function EmailComposerFooter({
                 </button>
               );
             } else if (textHasChanged || savedOptionIndex === null) {
-              // Not saved yet => show Save button
               return (
                 <button
                   onClick={onClickSavePitch}
@@ -238,39 +433,30 @@ export default function EmailComposerFooter({
                 </button>
               );
             }
-            // If none of the above apply, render nothing
             return null;
           })()}
 
           {/* Divider */}
           <div className="h-5 w-px bg-gray-300 flex-shrink-0" />
 
-          {/* Copy (icon only) */}
-          <button
-            onClick={handleCopyOutreach}
-            disabled={isCopying}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center text-gray-600"
-            title="Copy to Clipboard"
-          >
-            {isCopying ? (
-              <div className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Copy size={16} />
-            )}
-          </button>
+          {/* (Copy button removed from here) */}
 
-          {/* Download (icon only) */}
+          {/* Download */}
           <button
-            onClick={() => {/* do nothing for now */}}
+            onClick={() => {
+              /* do nothing for now */
+            }}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             title="Download"
           >
             <Download size={16} className="text-gray-600" />
           </button>
 
-          {/* Export to CRM - uses UserPlus icon */}
+          {/* Export to CRM */}
           <button
-            onClick={() => {/* do nothing for now */}}
+            onClick={() => {
+              /* do nothing for now */
+            }}
             className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
             title="Export to CRM"
           >
