@@ -11,7 +11,6 @@ import LeadsTable from '../components/leads/LeadsTable';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import LocationToggle from '../components/common/LocationToggle';
-import UnlocksToggle from '../components/common/UnlocksToggle';
 import { leadTypes, type LeadType } from '../components/filters/lead-type/leadTypeConfig';
 import type { Lead } from '../types';
 
@@ -28,9 +27,10 @@ export default function FindLeads() {
     // Check URL parameters
     const eventParam = searchParams.get('event');
     const organizationParam = searchParams.get('organization');
+    const showUnlocksParam = searchParams.get('show_unlocks');
     
     // If we have URL parameters, set them as filters
-    if (eventParam || organizationParam) {
+    if (eventParam || organizationParam || showUnlocksParam) {
       // Add event to opportunity tags if present
       if (eventParam) {
         setOpportunityTags(prev => {
@@ -53,6 +53,11 @@ export default function FindLeads() {
           organization: true,
           moreFilters: true
         }));
+      }
+
+      // Set show unlocks state if present
+      if (showUnlocksParam) {
+        // Do nothing since we're only using URL parameter now
       }
     }
 
@@ -94,7 +99,8 @@ export default function FindLeads() {
     const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
     return savedPreference ? JSON.parse(savedPreference) : false;
   });
-  const [showUnlocks, setShowUnlocks] = useState(false);
+  // Remove useState for showUnlocks and only use URL parameter
+  const showUnlocks = searchParams.get('show_unlocks') === 'true';
   const [filters, setFilters] = useState<LeadFilters>({
     industry: [],
     eventFormat: [],
@@ -113,10 +119,21 @@ export default function FindLeads() {
     localStorage.setItem(LOCATION_PREFERENCE_KEY, JSON.stringify(showAll));
   }, [showAll]);
 
-  // Persist showUnlocks value to localStorage
+  // Remove localStorage effect for showUnlocks since we're only using URL parameter now
+
+  // Update URL when filters change
   useEffect(() => {
-    localStorage.setItem('showUnlocks', JSON.stringify(showUnlocks));
-  }, [showUnlocks]);
+    const newParams = new URLSearchParams(searchParams);
+    
+    // Update show_unlocks parameter
+    if (showUnlocks) {
+      newParams.set('show_unlocks', 'true');
+    } else {
+      newParams.delete('show_unlocks');
+    }
+
+    setSearchParams(newParams);
+  }, [showUnlocks, setSearchParams]);
 
   const [opportunityTags, setOpportunityTags] = useState<string[]>([]);
   const { leads: availableLeads, loading, error, totalLeads, allLeadsLoaded } = useAvailableLeads();
@@ -241,7 +258,8 @@ export default function FindLeads() {
           lead.organization,
           lead.industry,
           lead.past_speakers,
-          lead.focus
+          lead.focus,
+          lead.job_title
         ].filter(Boolean).join(' ').toLowerCase();
         
         return searchableText.includes(eventsFilter.toLowerCase());
@@ -314,7 +332,8 @@ export default function FindLeads() {
             lead.organization,
             lead.industry,
             lead.past_speakers,
-            lead.focus
+            lead.focus,
+            lead.job_title
           ].filter(Boolean).join(' ').toLowerCase();
           
           return searchableText.includes(tagLower);
@@ -593,15 +612,11 @@ export default function FindLeads() {
                 })}
               </div>
 
-              {/* Location and Unlocks Toggles */}
+              {/* Location Toggle only */}
               <div className="flex items-center gap-2">
                 <LocationToggle
                   isUSAOnly={!showAll}
                   onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
-                />
-                <UnlocksToggle 
-                  isShown={showUnlocks}
-                  onChange={setShowUnlocks}
                 />
               </div>
             </div>

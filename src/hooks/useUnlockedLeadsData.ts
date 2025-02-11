@@ -22,13 +22,15 @@ export function useUnlockedLeadsData() {
           lead_id,
           unlocked_at:created_at,
           unlocked,
-          leads (
+          leads:lead_id!inner (
             event_name,
             focus,
             industry,
             lead_type,
             subtext,
-            image_url
+            image_url,
+            unlock_value,
+            related_leads
           )
         `)
         .eq('user_id', userId)
@@ -36,6 +38,9 @@ export function useUnlockedLeadsData() {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
+
+      // Debug logging
+      console.log('Raw data from Supabase:', data);
 
       // Extract lead IDs from the new data
       const newLeadIds = (data || []).map(item => item.lead_id);
@@ -57,8 +62,11 @@ export function useUnlockedLeadsData() {
           subtext: item.leads.subtext,
           image_url: item.leads.image_url,
           unlocked_at: item.unlocked_at,
-          unlocked: item.unlocked
+          unlocked: item.unlocked,
+          related_leads: item.leads.related_leads
         })) || [];
+
+        console.log('Transformed leads:', transformedLeads);
 
         setRecordedLeads(transformedLeads);
       }

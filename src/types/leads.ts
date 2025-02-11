@@ -10,6 +10,7 @@ export interface RecordedLead {
   image_url: string;
   unlocked_at: string;
   unlocked: boolean;
+  related_leads?: number;
 }
 
 export interface Lead {

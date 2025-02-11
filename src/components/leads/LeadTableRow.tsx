@@ -39,6 +39,7 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
     if (lead.event_name) params.set('event', lead.event_name);
     if (lead.organization) params.set('organization', lead.organization);
     params.set('event_display', 'all');
+    params.set('show_unlocks', 'true');  // Add show_unlocks parameter
     
     // Open in new tab
     const url = `${window.location.pathname}?${params.toString()}`;

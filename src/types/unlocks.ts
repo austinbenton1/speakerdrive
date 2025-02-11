@@ -9,6 +9,7 @@ export interface UnlockedLead {
   keywords: string | null;
   unlock_value: string | null;
   focus: string | null;
+  related_leads: number | null;
 }
 
 export interface UnlockStatus {
