@@ -10,7 +10,7 @@ interface FilterParams {
   organizationType: string[];
   pastSpeakers: string[];
   searchAll: string;
-  unlockType?: string;
+  unlockType?: string[];
   targetAudience: string[];
   jobTitle: string;
   region: string;
@@ -187,6 +187,19 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
       });
     }
 
+    // Apply unlock type filter
+    if (filters.unlockType && filters.unlockType.length > 0) {
+      console.log('[useLeadsFilter] Applying unlock type filter:', filters.unlockType);
+      filteredLeads = filteredLeads.filter(lead => {
+        // Skip leads without unlock_type
+        if (!lead.unlock_type) return false;
+        
+        // Exact match with selected unlock types
+        return filters.unlockType.includes(lead.unlock_type);
+      });
+      console.log('[useLeadsFilter] Filtered leads count:', filteredLeads.length);
+    }
+
     // Global search across all fields
     if (filters.searchAll) {
       const globalSearch = filters.searchAll.toLowerCase();
@@ -201,13 +214,6 @@ export function useLeadsFilter(leads: Lead[], filters: FilterParams) {
         ];
         return searchFields.some(field => field?.toLowerCase().includes(globalSearch));
       });
-    }
-
-    // Quick Lead Type filter - applied last
-    if (filters.unlockType) {
-      filteredLeads = filteredLeads.filter(lead => 
-        lead.unlock_type.toLowerCase() === filters.unlockType.toLowerCase()
-      );
     }
 
     return filteredLeads;

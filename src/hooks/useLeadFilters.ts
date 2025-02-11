@@ -30,31 +30,22 @@ export function useLeadFilters() {
     console.log('[useLeadFilters] handleUnlockTypeChange:', type);
     
     setFilters(prev => {
-      const currentTypes = prev.unlockType;
+      const currentTypes = prev.unlockType || [];
       const isSelected = currentTypes.includes(type);
-      
-      console.log('[useLeadFilters] Current unlock types:', currentTypes);
-      console.log('[useLeadFilters] Is type selected:', isSelected);
-      
-      // If type is already selected, remove it
+
+      // If already selected, remove it
       if (isSelected) {
-        const newTypes: string[] = [];  // Clear all types when deselecting
-        console.log('[useLeadFilters] Removing type, new types:', newTypes);
         return {
           ...prev,
-          unlockType: newTypes,
-          jobTitle: []  // Clear job title when clearing unlock type
+          unlockType: currentTypes.filter(t => t !== type)
         };
       }
-      
-      // If selecting a new type
-      const newFilters = {
+
+      // Add new selection
+      return {
         ...prev,
-        unlockType: [type], // Single selection - replace array with new type
-        jobTitle: type === 'Unlock Contact Email' ? prev.jobTitle : []
+        unlockType: [...currentTypes, type]
       };
-      console.log('[useLeadFilters] Adding type, new filters:', newFilters);
-      return newFilters;
     });
   };
 

@@ -73,7 +73,7 @@ export default function FindLeads() {
           ? [...tags, eventParam]
           : tags;
       });
-      setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all');
+      setSelectedLeadType(state.preservedFilters.selectedLeadType || 'all', false);
       setShowAll(state.preservedFilters.showAll || false);
       
       if (typeof state.preservedFilters.showAll === 'boolean' && !localStorage.getItem(LOCATION_PREFERENCE_KEY)) {
@@ -99,7 +99,6 @@ export default function FindLeads() {
     organizationType: [],
     pastSpeakers: [],
     searchAll: '',
-    jobTitle: [],
     region: '',
     state: [],
     city: [],
@@ -134,7 +133,7 @@ export default function FindLeads() {
     handleUnlockTypeChange
   } = useLeadFilters();
 
-  // New function to handle lead type changes
+  // Function to handle lead type changes
   const handleLeadTypeChange = (type: 'all' | 'contacts' | 'events') => {
     setSelectedLeadType(type);
     
@@ -142,21 +141,18 @@ export default function FindLeads() {
     if (type === 'contacts') {
       setFilters(prev => ({
         ...prev,
-        unlockType: ['Unlock Contact Email'],
-        jobTitle: prev.jobTitle // Preserve job title filter
+        unlockType: ['Unlock Contact Email']
       }));
     } else if (type === 'events') {
       setFilters(prev => ({
         ...prev,
-        unlockType: ['Unlock Event Email', 'Unlock Event URL'],
-        jobTitle: [] // Clear job title filter for events
+        unlockType: ['Unlock Event Email', 'Unlock Event URL']
       }));
     } else {
-      // For 'all', clear unlock type filters
+      // For 'all', select all unlock types
       setFilters(prev => ({
         ...prev,
-        unlockType: [],
-        jobTitle: []
+        unlockType: ['Unlock Contact Email', 'Unlock Event Email', 'Unlock Event URL']
       }));
     }
   };
@@ -175,7 +171,6 @@ export default function FindLeads() {
       filters.organizationType?.length ||
       filters.pastSpeakers?.length ||
       filters.searchAll ||
-      filters.jobTitle?.length ||
       filters.region ||
       filters.state?.length ||
       filters.city?.length ||
@@ -190,7 +185,6 @@ export default function FindLeads() {
     filters.organizationType,
     filters.pastSpeakers,
     filters.searchAll,
-    filters.jobTitle,
     filters.region,
     filters.state,
     filters.city,
@@ -218,11 +212,18 @@ export default function FindLeads() {
     if (selectedLeadType !== 'all') {
       results = results.filter(lead => {
         if (selectedLeadType === 'contacts') {
-          return lead.lead_type === 'Contact' && lead.unlock_type === 'Unlock Contact Email';
+          return lead.lead_type === 'Contact';
         } else {
           return lead.lead_type === 'Event';
         }
       });
+    }
+
+    // Apply unlock type filter if any are selected
+    if (filters.unlockType && filters.unlockType.length > 0) {
+      results = results.filter(lead => 
+        lead.unlock_type && filters.unlockType.includes(lead.unlock_type)
+      );
     }
 
     // Filter by opportunities search term
@@ -234,7 +235,6 @@ export default function FindLeads() {
           lead.event_name,
           lead.keywords,
           lead.subtext,
-          lead.job_title,
           lead.organization
         ].filter(Boolean).join(' ').toLowerCase();
         
@@ -374,7 +374,6 @@ export default function FindLeads() {
     if (filters.organizationType?.length) params.set('orgType', filters.organizationType.join(','));
     if (filters.pastSpeakers?.length) params.set('speakers', filters.pastSpeakers.join(','));
     if (filters.searchAll) params.set('search', filters.searchAll);
-    if (filters.jobTitle?.length) params.set('job', filters.jobTitle.join(','));
     if (filters.region) params.set('region', filters.region);
     if (filters.state?.length) params.set('state', filters.state.join(','));
     if (filters.city?.length) params.set('city', filters.city.join(','));
@@ -427,14 +426,13 @@ export default function FindLeads() {
       pastSpeakers: [],
       searchAll: '',
       unlockType: undefined,
-      jobTitle: [],
       region: '',
       state: [],
       city: []
     });
     setEventsFilter('');
     setOpportunityTags([]);
-    setSelectedLeadType('all');
+    setSelectedLeadType('all', false);
     setShowAllEvents(false);
     setShowAll(false);
   };
@@ -449,7 +447,6 @@ export default function FindLeads() {
       organization: false,
       organizationType: false,
       location: false,
-      jobTitle: false,
       region: false,
       moreFilters: false,
       unlockType: true
@@ -476,24 +473,28 @@ export default function FindLeads() {
               ...prev,
               unlockType: []
             }));
-            setSelectedLeadType('all');
             return;
           }
 
           // Handle unlock type selection
-          setFilters(prev => ({
-            ...prev,
-            unlockType: [type]
-          }));
+          setFilters(prev => {
+            const currentTypes = prev.unlockType || [];
+            const isSelected = currentTypes.includes(type);
 
-          // Update master toggle based on unlock type
-          if (type === 'Unlock Contact Email') {
-            setSelectedLeadType('contacts');
-          } else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
-            setSelectedLeadType('events');
-          } else {
-            setSelectedLeadType('all');
-          }
+            // If already selected, remove it
+            if (isSelected) {
+              return {
+                ...prev,
+                unlockType: currentTypes.filter(t => t !== type)
+              };
+            }
+
+            // Add new selection
+            return {
+              ...prev,
+              unlockType: [...currentTypes, type]
+            };
+          });
         }}
         selectedUnlockType={filters.unlockType}
         showAllEvents={showAllEvents}
