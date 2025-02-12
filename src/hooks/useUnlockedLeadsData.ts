@@ -39,9 +39,6 @@ export function useUnlockedLeadsData() {
 
       if (fetchError) throw fetchError;
 
-      // Debug logging
-      console.log('Raw data from Supabase:', data);
-
       // Extract lead IDs from the new data
       const newLeadIds = (data || []).map(item => item.lead_id);
 
@@ -65,8 +62,6 @@ export function useUnlockedLeadsData() {
           unlocked: item.unlocked,
           related_leads: item.leads.related_leads
         })) || [];
-
-        console.log('Transformed leads:', transformedLeads);
 
         setRecordedLeads(transformedLeads);
       }
