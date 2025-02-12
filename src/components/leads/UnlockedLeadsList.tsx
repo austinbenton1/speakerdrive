@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Eye, Calendar, Users, Building2, MapPin, Tag, ExternalLink, Unlock, Layers, ArrowUpRight } from 'lucide-react';
+import { Star, Eye, Calendar, Users, Building2, MapPin, Tag, ExternalLink, Unlock, Layers, ArrowUpRight, MessageSquare } from 'lucide-react';
 import { formatDate } from '../../utils/date';
 import type { UnlockedLead } from '../../types/unlocks';
 import { Tooltip } from '../ui/Tooltip';
@@ -71,8 +71,9 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
       <div 
         ref={scrollContainerRef}
         className="overflow-x-auto pb-4 hide-scrollbar"
+        style={{ minWidth: '100%', width: '100%' }}
       >
-        <div className="min-w-full divide-y divide-gray-200">
+        <div className="min-w-[1600px] divide-y divide-gray-200">
           {paginatedLeads.map((lead) => {
             const LeadIcon = lead.lead_type === 'Event' ? Calendar : Users;
             const styles = {
@@ -115,7 +116,7 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                 </div>
 
                 {/* Lead Info */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-[500px]">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-medium text-gray-900 truncate">
                       {lead.event_name}
@@ -148,7 +149,7 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                 </div>
 
                 {/* View All Unlocks Button Column */}
-                <div className="flex-shrink-0 px-4">
+                <div className="flex-shrink-0 px-6 min-w-[250px]">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();  // Prevent row click
@@ -186,14 +187,28 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                   </button>
                 </div>
 
+                {/* Pitch Column */}
+                <div className="flex-shrink-0 w-[350px] px-4">
+                  <div className="flex items-start gap-1.5">
+                    <MessageSquare className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
+                    <p className="text-sm text-gray-600 line-clamp-3">
+                      {lead.pitch || 'No saved pitch yet.'}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Combined Unlock Info - Stacked */}
-                <div className="flex-shrink-0 w-[400px] pr-16">
+                <div className="flex-shrink-0 w-[450px] pr-16">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5">
                       <Unlock className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                      <span className="font-medium text-gray-900 truncate max-w-[40ch]">
-                        {lead.unlock_value || 'N/A'}
-                      </span>
+                      <Tooltip content={lead.unlock_value || 'N/A'}>
+                        <span className="font-medium text-gray-900 truncate max-w-[20ch]">
+                          {lead.unlock_value?.length > 20 
+                            ? `${lead.unlock_value.slice(0, 20)}...` 
+                            : lead.unlock_value || 'N/A'}
+                        </span>
+                      </Tooltip>
                     </div>
                     <div className="flex items-center gap-1.5 text-sm text-gray-500">
                       <Eye className="h-4 w-4" />

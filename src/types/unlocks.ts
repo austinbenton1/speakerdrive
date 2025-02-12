@@ -10,6 +10,7 @@ export interface UnlockedLead {
   unlock_value: string | null;
   focus: string | null;
   related_leads: number | null;
+  pitch: string | null;
 }
 
 export interface UnlockStatus {

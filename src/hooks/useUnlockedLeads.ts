@@ -21,6 +21,7 @@ export function useUnlockedLeads() {
           .select(`
             lead_id,
             created_at,
+            pitch,
             leads!inner (
               event_name,
               subtext,
@@ -53,7 +54,8 @@ export function useUnlockedLeads() {
           keywords: item.leads.keywords,
           unlock_value: item.leads.unlock_value,
           focus: item.leads.focus,
-          related_leads: item.leads.related_leads
+          related_leads: item.leads.related_leads,
+          pitch: item.pitch
         })) || [];
 
         setLeads(formattedLeads);
