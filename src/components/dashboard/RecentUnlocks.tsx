@@ -44,9 +44,11 @@ export default function RecentUnlocks() {
   if (!unlockedLeads.length) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col items-start space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-4">
           <h2 className="text-lg font-medium text-gray-900">Recent Unlocked Leads</h2>
-          <FilterTabs filter={filter} setFilter={setFilter} />
+          <div className="mt-4 flex justify-center">
+            <FilterTabs filter={filter} setFilter={setFilter} />
+          </div>
         </div>
         <div className="text-center py-8">
           <Star className="mx-auto h-12 w-12 text-gray-400" />
@@ -67,20 +69,22 @@ export default function RecentUnlocks() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-medium text-gray-900">Recent Unlocked Leads</h2>
-          <p className="text-sm text-gray-500">Last 10 unlocked leads</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <FilterTabs filter={filter} setFilter={setFilter} />
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-gray-900">Recent Unlocked Leads</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Last 10 unlocked leads</p>
+          </div>
           <Link 
-            to="/leads" 
-            className="group inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+            to="/find-leads" 
+            className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
           >
             View all
-            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+        <div className="mt-4 flex justify-center">
+          <FilterTabs filter={filter} setFilter={setFilter} />
         </div>
       </div>
 
@@ -112,7 +116,7 @@ function FilterTabs({
   setFilter: (filter: 'all' | 'events' | 'contacts') => void;
 }) {
   return (
-    <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+    <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
       <button
         onClick={() => setFilter('all')}
         className={`

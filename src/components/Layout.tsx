@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { User, Shield, Image, Users, ChevronDown } from 'lucide-react';
+import { Outlet, useNavigate, Link } from 'react-router-dom';
+import { User, Shield, Image, Users, ChevronDown, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useProfile } from '../hooks/useProfile';
 import { useAvatarStore } from '../lib/store';
@@ -13,6 +13,7 @@ export default function Layout() {
   const globalAvatarUrl = useAvatarStore((state) => state.avatarUrl);
   const { isAdmin } = useAdminRole();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     if (!loading && error) {
@@ -29,95 +30,136 @@ export default function Layout() {
   }
 
   const getDisplayName = () => {
-    if (profile.display_name) return profile.display_name;
+    if (profile.display_name) {
+      // For mobile, return only the first name
+      const fullName = profile.display_name;
+      return {
+        full: fullName,
+        first: fullName.split(' ')[0]
+      };
+    }
 
     // If no name is available, format the email
     const [username] = profile.email.split('@');
-    // Capitalize first letter of each word
-    return username
+    const formattedName = username
       .split(/[._-]/)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    
+    return {
+      full: formattedName,
+      first: formattedName.split(' ')[0]
+    };
   };
+
+  const displayName = getDisplayName();
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <Sidebar />
+      <div className="hidden sm:block">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
-          {/* Admin Menu */}
-          {isAdmin && (
-            <div className="relative">
-              <button
-                onClick={() => setShowAdminMenu(!showAdminMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-purple-50 text-gray-700 hover:text-purple-700 transition-colors"
-              >
-                <Shield className="w-5 h-5" />
-                <span className="text-sm font-medium">Admin</span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6">
+          {/* Mobile Menu Button */}
+          <button 
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="sm:hidden p-2 rounded-md hover:bg-gray-100"
+          >
+            <Menu className="h-6 w-6 text-gray-600" />
+          </button>
 
-              {showAdminMenu && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <button
-                    onClick={() => {
-                      navigate('/users');
-                      setShowAdminMenu(false);
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Users Management
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate('/store-image');
-                      setShowAdminMenu(false);
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
-                  >
-                    <Image className="w-4 h-4 mr-2" />
-                    Store Images
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Logo - Mobile Only */}
+          <div className="sm:hidden absolute left-1/2 transform -translate-x-1/2">
+            <Link to="/dashboard">
+              <img 
+                src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png"
+                alt="SpeakerDrive" 
+                className="h-6 w-auto"
+              />
+            </Link>
+          </div>
+
+          {/* Admin Menu - Desktop Only, Left Aligned */}
+          <div className="hidden sm:flex sm:flex-1 items-center">
+            {isAdmin && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowAdminMenu(!showAdminMenu)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-50"
+                >
+                  <Shield className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Admin</span>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+                {showAdminMenu && (
+                  <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <button
+                      onClick={() => {
+                        navigate('/users');
+                        setShowAdminMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Users Management
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/store-image');
+                        setShowAdminMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                    >
+                      <Image className="w-4 h-4 mr-2" />
+                      Store Images
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* User Profile */}
-          <div 
-            onClick={() => navigate('/settings')}
-            className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors ml-auto"
-          >
-            <div className="flex-shrink-0">
-              {(globalAvatarUrl || profile.avatar_url) ? (
-                <img
-                  key={globalAvatarUrl || profile.avatar_url}
-                  src={globalAvatarUrl || profile.avatar_url}
-                  alt={getDisplayName()}
-                  className="w-8 h-8 rounded-full border border-gray-200 shadow-sm object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                  }}
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <User className="w-4 h-4 text-gray-600" />
-                </div>
-              )}
-            </div>
-            <div className="ml-3 overflow-hidden">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {getDisplayName()}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {profile.user_type}
-              </p>
+          <div className="flex items-center ml-auto">
+            <div className="flex items-center space-x-3">
+              <img
+                src={globalAvatarUrl || profile.avatar_url}
+                alt={displayName.full}
+                className="h-8 w-8 rounded-full border border-gray-200 shadow-sm object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                }}
+              />
+              <div className="flex flex-col">
+                <span className="hidden sm:block text-sm font-medium text-gray-700">{displayName.full}</span>
+                <span className="sm:hidden text-sm font-medium text-gray-700">{displayName.first}</span>
+              </div>
             </div>
           </div>
         </header>
+
+        {/* Mobile Menu Overlay */}
+        <div 
+          className={`fixed inset-0 z-40 transition-opacity duration-300 ease-in-out ${
+            showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div 
+            className="absolute inset-0 bg-gray-600 opacity-50" 
+            onClick={() => setShowMobileMenu(false)}
+          />
+          <div 
+            className={`absolute inset-y-0 left-0 w-52 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+              showMobileMenu ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <Sidebar />
+          </div>
+        </div>
+
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
