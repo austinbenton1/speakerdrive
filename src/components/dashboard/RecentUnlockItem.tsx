@@ -40,14 +40,19 @@ export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
             {formatRelativeTime(new Date(lead.unlocked_at))}
           </span>
         </div>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-center gap-2 mt-1 sm:mb-0 mb-0">
           <div className="flex items-center text-xs text-gray-500 min-w-0">
             <Building2 className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
             <span className="truncate max-w-[200px]">
               {lead.subtext || 'No description'}
             </span>
           </div>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 flex-shrink-0">
+          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 flex-shrink-0">
+            {lead.industry || 'Uncategorized'}
+          </span>
+        </div>
+        <div className="sm:hidden mt-[1px]">
+          <span className="inline-flex items-center px-1.5 py-px rounded-full text-[10px] font-medium bg-blue-50 text-blue-700">
             {lead.industry || 'Uncategorized'}
           </span>
         </div>

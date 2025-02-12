@@ -1,0 +1,37 @@
+/* Large Desktop styles (1280px - 1535px) */
+@media screen and (min-width: 1280px) {
+  /* Base large desktop styles */
+  .container {
+    max-width: 1280px;
+  }
+
+  /* Tables and Grids */
+  .grid-cols-default {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* FindLeads page specific */
+  .leads-table {
+    min-width: 1600px;
+  }
+
+  .lead-row {
+    grid-template-columns: [main] 600px [topic] 300px [url] 250px [location] 220px [group] 260px;
+  }
+
+  /* Filters sidebar */
+  .filters-sidebar {
+    width: 360px;
+  }
+
+  /* Card layouts */
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 2rem;
+  }
+
+  /* Modal and overlay */
+  .modal-container {
+    max-width: 1000px;
+  }
+}

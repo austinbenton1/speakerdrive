@@ -1,0 +1,66 @@
+/* Mobile styles (0-639px) */
+@media screen and (max-width: 639px) {
+  /* Hide sidebar with very specific selectors */
+  body div.flex.h-screen.bg-gray-100.overflow-hidden > div:first-child,
+  body div.flex.h-screen.bg-gray-100.overflow-hidden nav,
+  body div.flex.h-screen.bg-gray-100.overflow-hidden aside,
+  .sidebar,
+  nav[role="navigation"] {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+  }
+
+  /* Ensure main content takes full width */
+  body div.flex.h-screen.bg-gray-100.overflow-hidden > div.flex-1,
+  .flex-1,
+  main,
+  .main-content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Remove any potential grid columns */
+  .grid,
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Add bottom navigation */
+  .mobile-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white !important;
+    border-top: 1px solid #e5e7eb !important;
+    padding: 0.75rem !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    z-index: 50 !important;
+  }
+
+  /* Adjust content for bottom nav */
+  body div.flex.h-screen.bg-gray-100.overflow-hidden > div.flex-1 {
+    padding-bottom: 4rem !important;
+  }
+
+  /* Force content to be visible */
+  .flex-1 > *,
+  main > *,
+  .main-content > * {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}

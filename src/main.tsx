@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthProvider';
 import App from './App';
-import './index.css';
+import './styles/index.css';
 import { validateEnv } from './lib/env';
 
 // Validate environment variables before app initialization

@@ -1,0 +1,85 @@
+/* Desktop styles (1024px - 1279px) */
+@media screen and (min-width: 1024px) {
+  /* Base desktop styles */
+  .container {
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* Navigation */
+  .nav-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    border-right: 1px solid #e5e7eb;
+  }
+
+  /* Main content area */
+  .main-content {
+    margin-left: 280px;
+  }
+
+  /* Tables and Grids */
+  .grid-cols-default {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  /* Spacing */
+  .section {
+    padding: 2rem;
+  }
+
+  /* Show desktop elements */
+  .desktop-only {
+    display: block;
+  }
+
+  /* FindLeads page specific */
+  .leads-table {
+    min-width: 1400px;
+  }
+
+  .lead-row {
+    display: grid;
+    grid-template-columns: [main] 500px [topic] 275px [url] 230px [location] 200px [group] 240px;
+  }
+
+  /* Filters sidebar */
+  .filters-sidebar {
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 64px);
+    width: 320px;
+    overflow-y: auto;
+  }
+
+  /* Table layout */
+  .table-container {
+    overflow-x: visible;
+  }
+
+  /* Card layouts */
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* Modal and overlay */
+  .modal-container {
+    max-width: 800px;
+    margin: 2rem auto;
+  }
+}

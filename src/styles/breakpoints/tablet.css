@@ -1,0 +1,66 @@
+/* Tablet styles (640px - 1023px) */
+@media screen and (min-width: 640px) and (max-width: 1023px) {
+  /* Base tablet styles */
+  .container {
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Navigation */
+  .nav-menu {
+    position: relative;
+    padding: 1rem;
+  }
+
+  /* Tables and Grids */
+  .grid-cols-default {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  /* Spacing */
+  .section {
+    padding: 1.5rem;
+  }
+
+  /* Adjust FindLeads page */
+  .leads-table {
+    overflow-x: auto;
+  }
+
+  .lead-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  /* Filters */
+  .filters-sidebar {
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 64px);
+    width: 280px;
+  }
+
+  /* Responsive table columns */
+  .table-grid {
+    grid-template-columns: [main] 1fr [details] 2fr;
+  }
+
+  /* Card layouts */
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+}
