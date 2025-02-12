@@ -9,15 +9,16 @@ export default function LinkedInCallback() {
 
   useEffect(() => {
     const handleOAuthResponse = async () => {
-      // Get the current session from Supabase (which parses tokens from the URL)
+      console.log("Processing LinkedIn OAuth callback...");
+
+      // Use getSessionFromUrl() to extract the OAuth tokens from the URL
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession();
+      } = await supabase.auth.getSessionFromUrl();
 
       if (error) {
         console.error('Error fetching session:', error);
-        // Redirect or show error as needed
         navigate('/login');
         return;
       }
@@ -35,20 +36,19 @@ export default function LinkedInCallback() {
         return;
       }
 
-      // Check if this user already has a profile in the "profiles" table
+      // Check if a corresponding profile row exists in your "profiles" table
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      // If there's a real DB error (other than "row not found")
       if (profileError && !profileError.message.includes('row not found')) {
         console.error('Profile error:', profileError);
       }
 
       if (!existingProfile) {
-        // This is a brand-new user; create a row in "profiles"
+        // Brand-new user: create their profile and send them to onboarding
         const fullName =
           user.user_metadata?.full_name ||
           user.user_metadata?.name ||
@@ -64,10 +64,11 @@ export default function LinkedInCallback() {
           console.error('Error creating profile:', insertError);
         }
 
-        // Redirect brand-new user to onboarding
+        console.log('New user detected. Redirecting to onboarding.');
         navigate('/onboarding');
       } else {
-        // Existing user – send to dashboard
+        // Existing user: send them to the dashboard.
+        console.log('Existing user detected. Redirecting to dashboard.');
         navigate('/dashboard');
       }
     };
