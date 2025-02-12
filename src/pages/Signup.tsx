@@ -1,3 +1,5 @@
+// /home/project/src/pages/Signup.tsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -23,6 +25,27 @@ export default function Signup() {
       password: 'Password12345!'
     }
   });
+
+  // --- LINKEDIN ADDED ---
+  const handleLinkedInSignIn = async () => {
+    try {
+      // This will redirect the user to LinkedIn’s OAuth screen.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'linkedin',
+        options: {
+          // Replace with your actual LinkedIn callback URL
+          redirectTo: `${window.location.origin}/linkedin-callback`
+        }
+      });
+      if (error) {
+        console.error('LinkedIn sign-in error:', error.message);
+      }
+      // No further action needed here; user is redirected.
+    } catch (err) {
+      console.error('LinkedIn OAuth exception:', err);
+    }
+  };
+  // --- END LINKEDIN ADD ---
 
   const onSubmit = async (data: SignupFormData) => {
     try {
@@ -140,7 +163,28 @@ export default function Signup() {
           )}
         </button>
 
-        <div className="text-sm text-center">
+        {/* --- LINKEDIN BUTTON --- */}
+        <div className="relative mt-6 text-center">
+          <hr className="border-gray-200" />
+          <span className="bg-white px-2 text-gray-500 text-sm -mt-3 absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            or
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleLinkedInSignIn}
+          className="w-full flex items-center justify-center mt-4 py-2 px-4 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png"
+            alt="LinkedIn"
+            className="h-5 w-5 mr-2"
+          />
+          Sign up with LinkedIn
+        </button>
+        {/* --- END LINKEDIN BUTTON --- */}
+
+        <div className="text-sm text-center mt-4">
           <span className="text-gray-600">Already have an account?</span>{' '}
           <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
             Sign in

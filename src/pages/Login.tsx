@@ -1,3 +1,5 @@
+// /home/project/src/pages/Login.tsx
+
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -28,6 +30,25 @@ export default function Login() {
     }
   });
 
+  // --- LINKEDIN ADDED ---
+  const handleLinkedInSignIn = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'linkedin',
+        options: {
+          redirectTo: `${window.location.origin}/linkedin-callback`
+        }
+      });
+      if (error) {
+        console.error('LinkedIn login error:', error.message);
+      }
+      // User will be redirected to LinkedIn’s OAuth flow
+    } catch (err) {
+      console.error('LinkedIn OAuth exception:', err);
+    }
+  };
+  // --- END LINKEDIN ADD ---
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
@@ -49,10 +70,10 @@ export default function Login() {
       }
 
       // Check if user is banned
-      const { isBanned, bannedAt } = await checkUserBanStatus(signInData.user.id);
+      const { isBanned } = await checkUserBanStatus(signInData.user.id);
       if (isBanned) {
         await supabase.auth.signOut(); // Sign out the banned user
-        setError('Your account has been banned. Please contact support for assistance.');
+        setError('Your account has been locked. Please contact support for assistance.');
         return;
       }
 
@@ -147,7 +168,28 @@ export default function Login() {
           )}
         </button>
 
-        <div className="text-sm text-center">
+        {/* --- LINKEDIN BUTTON --- */}
+        <div className="relative mt-6 text-center">
+          <hr className="border-gray-200" />
+          <span className="bg-white px-2 text-gray-500 text-sm -mt-3 absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            or
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleLinkedInSignIn}
+          className="w-full flex items-center justify-center mt-4 py-2 px-4 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png"
+            alt="LinkedIn"
+            className="h-5 w-5 mr-2"
+          />
+          Sign in with LinkedIn
+        </button>
+        {/* --- END LINKEDIN BUTTON --- */}
+
+        <div className="text-sm text-center mt-4">
           <span className="text-gray-600">Don't have an account?</span>{' '}
           <a href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
             Sign up
