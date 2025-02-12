@@ -11,87 +11,54 @@ import ServiceSelector from '../components/onboarding/ServiceSelector';
 import WebsiteInput from '../components/onboarding/WebsiteInput';
 import { onboardingSchema, type OnboardingFormData } from '../types/auth';
 
-// Utility for sleeping (used in exponential backoff)
+/** Simple sleep utility for exponential backoff */
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Function to send both webhooks with retries, 
-// but only retry the ones that failed.
-async function sendWebhooks(
-  urlAI: string,
+/**
+ * sendOnboardingWebhook
+ * Fires only the `/webhook/onboarding` endpoint with retries.
+ */
+async function sendOnboardingWebhook(
   urlOnboarding: string,
   body: Record<string, unknown>,
   retries = 3,
   delay = 1000
 ): Promise<boolean> {
-  let aiSuccess = false;
-  let onboardingSuccess = false;
-
   for (let attempt = 0; attempt < retries; attempt++) {
-    console.log(`[Webhook Debug] Attempt #${attempt + 1}`);
-
-    // Build a list of calls that need to run this round
-    const calls = [];
-    
-    if (!aiSuccess) {
-      calls.push(
-        fetch(urlAI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }).then((res) => ({ type: 'ai', ok: res.ok }))
-      );
-    }
-
-    if (!onboardingSuccess) {
-      calls.push(
-        fetch(urlOnboarding, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }).then((res) => ({ type: 'onboarding', ok: res.ok }))
-      );
-    }
-
+    console.log(`[Onboarding Debug] Sending onboarding webhook - Attempt #${attempt + 1}`);
     try {
-      // If we have nothing left to call, everything succeeded previously
-      if (calls.length === 0) {
+      const response = await fetch(urlOnboarding, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        console.log('[Onboarding Debug] Onboarding webhook succeeded!');
         return true;
       }
 
-      // Fire off all needed calls in parallel
-      const results = await Promise.all(calls);
+      console.log('[Onboarding Debug] Onboarding webhook failed. Response status:', response.status);
 
-      // Update success flags for whichever calls returned OK
-      for (const { type, ok } of results) {
-        if (type === 'ai' && ok) aiSuccess = true;
-        if (type === 'onboarding' && ok) onboardingSuccess = true;
-      }
-
-      // If both are successful, we're done
-      if (aiSuccess && onboardingSuccess) {
-        return true;
-      }
-
-      // If we're not done yet, wait & retry unless we’re on the last attempt
       if (attempt < retries - 1) {
-        console.log('[Webhook Debug] One or both webhooks failed. Retrying...');
-        await sleep(delay * Math.pow(2, attempt)); // exponential backoff
+        console.log('[Onboarding Debug] Retrying in exponential backoff...');
+        await sleep(delay * Math.pow(2, attempt));
       }
     } catch (error) {
-      console.error('[Webhook Debug] Error sending webhooks:', error);
-      if (attempt === retries - 1) throw error; // Out of retries
+      console.error('[Onboarding Debug] Error sending onboarding webhook:', error);
+      if (attempt === retries - 1) throw error;
       await sleep(delay * Math.pow(2, attempt));
     }
   }
 
-  // If we exit the loop without returning true, 
-  // it means we never got both webhooks to succeed
+  console.log('[Onboarding Debug] Onboarding webhook did not succeed within max retries.');
   return false;
 }
 
 export default function Onboarding() {
+  console.log('[Onboarding Debug] Component mounted...');
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -100,6 +67,7 @@ export default function Onboarding() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    console.log('[Onboarding Debug] useEffect => Checking if user is logged in...');
     const checkUser = async () => {
       try {
         const {
@@ -108,13 +76,15 @@ export default function Onboarding() {
         } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
         if (!session?.user) {
+          console.log('[Onboarding Debug] No user session found, redirecting to /login');
           await supabase.auth.signOut();
           navigate('/login');
           return;
         }
+        console.log('[Onboarding Debug] User session found:', session.user);
         setUser(session.user);
       } catch (err) {
-        console.error('Error checking user:', err);
+        console.error('[Onboarding Debug] Error checking user:', err);
         await supabase.auth.signOut();
         navigate('/login');
       } finally {
@@ -144,27 +114,38 @@ export default function Onboarding() {
   const website = watch('website', '');
 
   const handleServiceChange = (value: string) => {
+    console.log('[Onboarding Debug] Service changed =>', value);
     setValue('services', value, { shouldValidate: true });
   };
 
+  /**
+   * Handle form submission
+   */
   const onSubmit = async (data: OnboardingFormData) => {
-    if (!user) return;
+    console.log('[Onboarding Debug] onSubmit fired => Data:', data);
+    if (!user) {
+      console.log('[Onboarding Debug] No user found. Aborting.');
+      return;
+    }
 
     try {
       setError(null);
       setIsSubmitting(true);
       setProgress(20);
 
-      // 1) Update user metadata
+      console.log('[Onboarding Debug] Updating user metadata in Supabase...');
       const { error: updateUserError } = await supabase.auth.updateUser({
         data: {
           display_name: data.fullName,
         },
       });
-      if (updateUserError) throw updateUserError;
+      if (updateUserError) {
+        console.error('[Onboarding Debug] Failed to update user metadata:', updateUserError);
+        throw updateUserError;
+      }
       setProgress(40);
 
-      // 2) Update profile table
+      console.log('[Onboarding Debug] Upserting user profile in Supabase...');
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -173,10 +154,13 @@ export default function Onboarding() {
           services: data.services,
           website: data.website || null,
         });
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('[Onboarding Debug] Failed to upsert profile:', profileError);
+        throw profileError;
+      }
       setProgress(60);
 
-      // 3) Fire off webhooks (one for ai-data, one for onboarding)
+      // Fire only the /webhook/onboarding endpoint here
       const webhookBody = {
         message: 'onboarding_init',
         email: user.email,
@@ -185,22 +169,24 @@ export default function Onboarding() {
         website: data.website || null,
       };
 
-      const webhookSuccess = await sendWebhooks(
-        'https://n8n.speakerdrive.com/webhook/ai-data',
+      console.log('[Onboarding Debug] Sending ONLY onboarding webhook...');
+      const onboardingOk = await sendOnboardingWebhook(
         'https://n8n.speakerdrive.com/webhook/onboarding',
         webhookBody
       );
-
-      if (!webhookSuccess) {
-        throw new Error('Failed to send onboarding webhooks after multiple attempts');
+      if (!onboardingOk) {
+        throw new Error('Failed to send onboarding webhook after multiple attempts');
       }
 
       setProgress(100);
+      console.log('[Onboarding Debug] Onboarding webhook succeeded, navigating to /chat...');
 
       // 4) Navigate to chat with onboarding parameters
       navigate('/chat/conversation?source=onboarding&trigger=auto');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete onboarding');
+      const msg = err instanceof Error ? err.message : 'Failed to complete onboarding';
+      console.error('[Onboarding Debug] Error during onboarding:', msg);
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -269,8 +255,8 @@ export default function Onboarding() {
             className={`
               w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg
               text-white font-medium transition-colors
-              ${isSubmitting 
-                ? 'bg-blue-400 cursor-not-allowed' 
+              ${isSubmitting
+                ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
               }
             `}
