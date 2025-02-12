@@ -31,7 +31,7 @@ export default function Signup() {
     try {
       // This will redirect the user to LinkedIn’s OAuth screen.
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
+        provider: 'linkedin_oidc',
         options: {
           // Replace with your actual LinkedIn callback URL
           redirectTo: `${window.location.origin}/linkedin-callback`
