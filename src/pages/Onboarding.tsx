@@ -11,63 +11,83 @@ import ServiceSelector from '../components/onboarding/ServiceSelector';
 import WebsiteInput from '../components/onboarding/WebsiteInput';
 import { onboardingSchema, type OnboardingFormData } from '../types/auth';
 
-// Helper for delayed retries
+// Utility for sleeping (used in exponential backoff)
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Function to send both webhooks with retries
+// Function to send both webhooks with retries, 
+// but only retry the ones that failed.
 async function sendWebhooks(
   urlAI: string,
   urlOnboarding: string,
-  body: object,
+  body: Record<string, unknown>,
   retries = 3,
   delay = 1000
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      console.log('[Webhook Debug] Attempt:', attempt + 1);
+  let aiSuccess = false;
+  let onboardingSuccess = false;
 
-      const [aiResponse, onboardingResponse] = await Promise.all([
+  for (let attempt = 0; attempt < retries; attempt++) {
+    console.log(`[Webhook Debug] Attempt #${attempt + 1}`);
+
+    // Build a list of calls that need to run this round
+    const calls = [];
+    
+    if (!aiSuccess) {
+      calls.push(
         fetch(urlAI, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-        }),
+        }).then((res) => ({ type: 'ai', ok: res.ok }))
+      );
+    }
+
+    if (!onboardingSuccess) {
+      calls.push(
         fetch(urlOnboarding, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-        }),
-      ]);
+        }).then((res) => ({ type: 'onboarding', ok: res.ok }))
+      );
+    }
 
-      console.log('[Webhook Debug] AI Response:', {
-        status: aiResponse.status,
-        ok: aiResponse.ok,
-      });
-      console.log('[Webhook Debug] Onboarding Response:', {
-        status: onboardingResponse.status,
-        ok: onboardingResponse.ok,
-      });
-
-      if (aiResponse.ok && onboardingResponse.ok) {
+    try {
+      // If we have nothing left to call, everything succeeded previously
+      if (calls.length === 0) {
         return true;
       }
 
-      // If either failed, wait before retrying
+      // Fire off all needed calls in parallel
+      const results = await Promise.all(calls);
+
+      // Update success flags for whichever calls returned OK
+      for (const { type, ok } of results) {
+        if (type === 'ai' && ok) aiSuccess = true;
+        if (type === 'onboarding' && ok) onboardingSuccess = true;
+      }
+
+      // If both are successful, we're done
+      if (aiSuccess && onboardingSuccess) {
+        return true;
+      }
+
+      // If we're not done yet, wait & retry unless we’re on the last attempt
       if (attempt < retries - 1) {
         console.log('[Webhook Debug] One or both webhooks failed. Retrying...');
-        await sleep(delay * Math.pow(2, attempt)); // Exponential backoff
+        await sleep(delay * Math.pow(2, attempt)); // exponential backoff
       }
     } catch (error) {
-      console.error('[Webhook Debug] Error during webhook calls:', error);
-      if (attempt === retries - 1) {
-        throw error;
-      }
-      // Wait before retrying
+      console.error('[Webhook Debug] Error sending webhooks:', error);
+      if (attempt === retries - 1) throw error; // Out of retries
       await sleep(delay * Math.pow(2, attempt));
     }
   }
+
+  // If we exit the loop without returning true, 
+  // it means we never got both webhooks to succeed
   return false;
 }
 
