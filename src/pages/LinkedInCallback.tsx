@@ -9,34 +9,59 @@ export default function LinkedInCallback() {
 
   useEffect(() => {
     const handleOAuthResponse = async () => {
-      console.log("Processing LinkedIn OAuth callback...");
+      console.log('LinkedIn callback reached with URL fragment:', window.location.hash);
 
-      // Use getSessionFromUrl() to extract the OAuth tokens from the URL
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSessionFromUrl();
+      // Example final URL might look like:
+      // https://app.speakerdrive.com/linkedin-callback#access_token=eyJhbGciOi...
+      const hash = window.location.hash; // The part after '#'
+      if (!hash) {
+        console.error('No hash fragment found in URL. Cannot parse LinkedIn token.');
+        navigate('/login');
+        return;
+      }
+
+      // Remove the leading '#' and parse the key/value pairs
+      const params = new URLSearchParams(hash.slice(1));
+
+      // LinkedIn might call this 'access_token' (often for implicit OIDC).
+      // If it's labeled something else (e.g. 'id_token'), change accordingly.
+      const accessToken = params.get('access_token');
+      if (!accessToken) {
+        console.error('No "access_token" found in hash:', hash);
+        navigate('/login');
+        return;
+      }
+
+      // Now we call Supabase to "exchange" this token for a session.
+      // Even though Supabase calls it "code", we're actually passing the
+      // access token from the implicit flow:
+      const { data, error } = await supabase.auth.exchangeCodeForSession({
+        code: accessToken,
+        // If LinkedIn requires the same redirect URI as part of the exchange:
+        // redirectUri: 'https://app.speakerdrive.com/linkedin-callback'
+      });
 
       if (error) {
-        console.error('Error fetching session:', error);
+        console.error('Error exchanging token with Supabase:', error);
         navigate('/login');
         return;
       }
 
-      if (!session) {
-        console.warn('No session found.');
+      if (!data.session) {
+        console.error('No session returned from Supabase exchange.');
         navigate('/login');
         return;
       }
 
-      const user = session.user;
+      // At this point, we have a valid Supabase session
+      const user = data.session.user;
       if (!user) {
         console.warn('No user found in session.');
         navigate('/login');
         return;
       }
 
-      // Check if a corresponding profile row exists in your "profiles" table
+      // Next: check if a "profiles" row exists or not
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -48,7 +73,7 @@ export default function LinkedInCallback() {
       }
 
       if (!existingProfile) {
-        // Brand-new user: create their profile and send them to onboarding
+        // Brand-new user => create a profile row
         const fullName =
           user.user_metadata?.full_name ||
           user.user_metadata?.name ||
@@ -64,11 +89,11 @@ export default function LinkedInCallback() {
           console.error('Error creating profile:', insertError);
         }
 
-        console.log('New user detected. Redirecting to onboarding.');
+        console.log('New user. Redirecting to /onboarding.');
         navigate('/onboarding');
       } else {
-        // Existing user: send them to the dashboard.
-        console.log('Existing user detected. Redirecting to dashboard.');
+        // Existing user => redirect to dashboard
+        console.log('Existing user. Redirecting to /dashboard.');
         navigate('/dashboard');
       }
     };
