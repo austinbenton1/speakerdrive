@@ -19,6 +19,7 @@ export function useAvailableLeads() {
   const [allLeadsLoaded, setAllLeadsLoaded] = useState(false);
   const isInitialMount = useRef(true);
   const hasLoadedInitialBatch = useRef(false);
+  const currentPage = useRef(1);
 
   useEffect(() => {
     const loadLeads = async (retryCount = 0) => {
@@ -51,8 +52,13 @@ export function useAvailableLeads() {
         setTotalLeads(data);
         
         // Pass setLeads as the callback for remaining leads
-        const initialLeads = await fetchAvailableLeads(user.id, (allLeads) => {
-          setLeads(allLeads);
+        const initialLeads = await fetchAvailableLeads(user.id, (newLeads) => {
+          // Append new leads while preserving the order of existing leads
+          setLeads(prevLeads => {
+            const existingLeadIds = new Set(prevLeads.map(lead => lead.id));
+            const newFilteredLeads = newLeads.filter(lead => !existingLeadIds.has(lead.id));
+            return [...prevLeads, ...newFilteredLeads];
+          });
           setAllLeadsLoaded(true);
         });
         setLeads(initialLeads);

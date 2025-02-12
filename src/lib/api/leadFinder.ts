@@ -112,25 +112,12 @@ export async function fetchAvailableLeads(
 
     if (initialError) throw initialError;
 
-    // Apply random sort to initial batch and return immediately
-    const randomizedInitial = (initialLeads || []).sort((a, b) => {
-      const aValue = a[finalSortConfig.field];
-      const bValue = b[finalSortConfig.field];
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return finalSortConfig.ascending ? aValue - bValue : bValue - aValue;
-      }
-      
-      const comparison = String(aValue || '').localeCompare(String(bValue || ''));
-      return finalSortConfig.ascending ? comparison : -comparison;
-    });
-
     // Start loading the rest in background if callback is provided
     if (onRemainingLeadsLoaded) {
-      loadRemainingLeads(selectQuery, finalSortConfig, randomizedInitial, onRemainingLeadsLoaded);
+      loadRemainingLeads(selectQuery, finalSortConfig, initialLeads, onRemainingLeadsLoaded);
     }
 
-    return randomizedInitial;
+    return initialLeads;
   } catch (err) {
     throw err;
   }
@@ -154,22 +141,9 @@ async function loadRemainingLeads(
 
     if (remainingError) throw remainingError;
 
-    // Combine and apply random sort to all leads
+    // Combine leads while preserving initial leads order
     const allLeads = [...initialLeads, ...(remainingLeads || [])];
-    const randomizedAll = allLeads.sort((a, b) => {
-      const aValue = a[sortConfig.field];
-      const bValue = b[sortConfig.field];
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortConfig.ascending ? aValue - bValue : bValue - aValue;
-      }
-      
-      const comparison = String(aValue || '').localeCompare(String(bValue || ''));
-      return sortConfig.ascending ? comparison : -comparison;
-    });
-
-    // Update the leads state with all leads
-    setLeads(randomizedAll);
+    setLeads(allLeads);
   } catch (err) {
     console.error('Error loading remaining leads:', err);
   }
