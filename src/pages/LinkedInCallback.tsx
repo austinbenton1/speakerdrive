@@ -8,10 +8,8 @@ export default function LinkedInCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Once the user is redirected back to our site, Supabase automatically handles
-    // token parsing via the URL. We just need to check the session or user object.
     const handleOAuthResponse = async () => {
-      // Check if we have a valid session
+      // Get the current session from Supabase (which parses tokens from the URL)
       const {
         data: { session },
         error,
@@ -19,13 +17,13 @@ export default function LinkedInCallback() {
 
       if (error) {
         console.error('Error fetching session:', error);
-        // Handle error or redirect somewhere
+        // Redirect or show error as needed
+        navigate('/login');
         return;
       }
 
       if (!session) {
         console.warn('No session found.');
-        // Possibly show an error or redirect to login
         navigate('/login');
         return;
       }
@@ -37,20 +35,24 @@ export default function LinkedInCallback() {
         return;
       }
 
-      // Check if a corresponding profile row exists
+      // Check if this user already has a profile in the "profiles" table
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (profileError) {
+      // If there's a real DB error (other than "row not found")
+      if (profileError && !profileError.message.includes('row not found')) {
         console.error('Profile error:', profileError);
       }
 
-      // If no profile found, create one
       if (!existingProfile) {
-        const fullName = user.user_metadata?.full_name || user.user_metadata?.name || null;
+        // This is a brand-new user; create a row in "profiles"
+        const fullName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          null;
 
         const { error: insertError } = await supabase.from('profiles').insert({
           id: user.id,
@@ -61,10 +63,13 @@ export default function LinkedInCallback() {
         if (insertError) {
           console.error('Error creating profile:', insertError);
         }
-      }
 
-      // If everything is good, redirect user to the dashboard (or wherever)
-      navigate('/dashboard');
+        // Redirect brand-new user to onboarding
+        navigate('/onboarding');
+      } else {
+        // Existing user – send to dashboard
+        navigate('/dashboard');
+      }
     };
 
     handleOAuthResponse();
