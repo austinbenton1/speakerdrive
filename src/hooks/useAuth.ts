@@ -1,50 +1,56 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../lib/store';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
+  const { user, isAuthenticated, setUser } = useAuthStore();
 
   useEffect(() => {
-    let mounted = true;
-
-    // Get initial session
-    const initializeAuth = async () => {
+    // Check active session
+    const checkUser = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
         
-        if (mounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-          setInitialized(true);
+        if (error) {
+          console.error('Error fetching session:', error);
+          setUser(null);
+          return;
+        }
+
+        if (session?.user) {
+          setUser(session.user);
+        } else {
+          setUser(null);
         }
       } catch (error) {
-        console.error('Error checking auth session:', error);
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-          setInitialized(true);
-        }
+        console.error('Error in auth check:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    initializeAuth();
+    // Initial check
+    checkUser();
 
-    // Listen for auth changes after initialization
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (mounted && initialized) {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      try {
         setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, [initialized]);
+  }, [setUser]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -63,32 +69,20 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut({ 
-        scope: 'global' 
-      });
-      
+      const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
-      // Clear any remaining auth data
-      window.localStorage.removeItem('supabase.auth.token');
-      window.localStorage.removeItem('supabase.auth.refreshToken');
-      
       setUser(null);
       return { error: null };
     } catch (error) {
       console.error('Logout error:', error);
       return { error };
-    } finally {
-      setLoading(false);
     }
   };
 
   return {
     user,
+    isAuthenticated,
     loading,
-    initialized,
-    isAuthenticated: !!user,
     login,
     logout,
   };

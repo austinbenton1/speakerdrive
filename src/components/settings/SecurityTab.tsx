@@ -143,22 +143,26 @@ export default function SecurityTab() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleLogoutAllDevices = async () => {
     try {
-      const { error } = await supabase.auth.signOut({ 
-        scope: 'global'
-      });
-      
+      setIsLoading(true);
+      setError(null);
+
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
 
-      // Clear any remaining auth data from localStorage
-      window.localStorage.removeItem('supabase.auth.token');
-      window.localStorage.removeItem('supabase.auth.refreshToken');
-      
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error signing out:', error);
-      setError('Failed to sign out. Please try again.');
+      setSuccess('Successfully logged out from all devices');
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+
+    } catch (err) {
+      console.error('Error logging out from all devices:', err);
+      setError(err instanceof Error ? err.message : 'Failed to logout from all devices');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -329,7 +333,7 @@ export default function SecurityTab() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Security Actions</h3>
             <button
-              onClick={handleSignOut}
+              onClick={handleLogoutAllDevices}
               disabled={isLoading}
               className="flex items-center px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >

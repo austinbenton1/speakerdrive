@@ -27,38 +27,6 @@ async function retryableRequest<T>(
   }
 }
 
-// Function to sync LinkedIn profile data
-async function syncLinkedInProfile(session: any) {
-  if (!session?.user?.user_metadata) return;
-
-  const metadata = session.user.user_metadata;
-  const userId = session.user.id;
-
-  // Extract LinkedIn data
-  const profileData = {
-    display_name: metadata.full_name || metadata.name,
-    avatar_url: metadata.avatar_url || metadata.picture,
-    email: metadata.email,
-    company: metadata.custom_claims?.company || metadata.company,
-    company_role: metadata.custom_claims?.title || metadata.job_title || metadata.position
-  };
-
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        ...profileData
-      }, {
-        onConflict: 'id'
-      });
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error syncing LinkedIn profile:', error);
-  }
-}
-
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
@@ -66,14 +34,7 @@ export const supabase = createClient<Database>(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'implicit',
-      storage: window.localStorage,
-      debug: import.meta.env.DEV,
-      onAuthStateChange: (event, session) => {
-        // This prevents the default behavior that might cause refresh loops
-        return;
-      }
+      detectSessionInUrl: true
     },
     global: {
       fetch: (...args) => {
@@ -97,14 +58,8 @@ export async function checkSupabaseConnection(): Promise<boolean> {
 }
 
 // Handle auth state changes
-supabase.auth.onAuthStateChange(async (event, session) => {
-  // Only handle profile sync for LinkedIn sign-in
-  if (event === 'SIGNED_IN' && session?.provider_token) {
-    await syncLinkedInProfile(session);
-    
-    // Close popup if it exists
-    if (window.opener) {
-      window.close();
-    }
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+    localStorage.removeItem('supabase.auth.token');
   }
 });
