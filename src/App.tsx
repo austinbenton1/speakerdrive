@@ -46,7 +46,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/chat/conversation" replace /> : <Login />
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
         } />
         <Route path="/signup" element={<Signup />} />
 
@@ -76,7 +76,7 @@ function App() {
 
         {/* Fallback route */}
         <Route path="*" element={
-          isAuthenticated ? <Navigate to="/chat/conversation" replace /> : <Navigate to="/login" replace />
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
         } />
       </Routes>
     </ErrorBoundary>

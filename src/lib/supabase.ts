@@ -27,6 +27,39 @@ async function retryableRequest<T>(
   }
 }
 
+// Function to sync LinkedIn profile data
+async function syncLinkedInProfile(session: any) {
+  if (!session?.user?.user_metadata) return;
+
+  const metadata = session.user.user_metadata;
+  const userId = session.user.id;
+
+  // Extract LinkedIn data
+  const profileData = {
+    display_name: metadata.full_name || metadata.name,
+    avatar_url: metadata.avatar_url || metadata.picture,
+    email: metadata.email,
+    company: metadata.custom_claims?.company || metadata.company,
+    company_role: metadata.custom_claims?.title || metadata.job_title || metadata.position,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        ...profileData
+      }, {
+        onConflict: 'id'
+      });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error syncing LinkedIn profile:', error);
+  }
+}
+
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
@@ -60,10 +93,15 @@ export async function checkSupabaseConnection(): Promise<boolean> {
 }
 
 // Handle auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-  // Only redirect if we're on the login page
+supabase.auth.onAuthStateChange(async (event, session) => {
+  // Sync LinkedIn profile data on sign in
+  if (event === 'SIGNED_IN' && session?.provider_token) {
+    await syncLinkedInProfile(session);
+  }
+
+  // Handle redirects
   if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-    window.location.href = '/chat/conversation';
+    window.location.href = '/dashboard';
   } else if (event === 'SIGNED_OUT' && window.location.pathname !== '/login') {
     window.location.href = '/login';
   }

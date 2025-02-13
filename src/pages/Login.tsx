@@ -36,7 +36,8 @@ export default function Login() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/chat/conversation`
+          redirectTo: `${window.location.origin}/dashboard`,
+          scopes: 'openid profile email'
         }
       });
 
