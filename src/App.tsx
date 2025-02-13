@@ -2,31 +2,22 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import Layout from './components/Layout';
 import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
-import UsersManagement from './pages/UsersManagement';
 import Leads from './pages/Leads';
 import LeadDetails from './pages/LeadDetails';
-import Layout from './components/Layout';
-import EmailFinder from './pages/ContactFinder';
+import EmailFinder from './pages/EmailFinder';
 import CompanyFinder from './pages/CompanyFinder';
 import MobileFinder from './pages/MobileFinder';
-import Onboarding from './pages/Onboarding';
-import EmailConnection from './pages/EmailConnection';
-import ProfileTest from './pages/ProfileTest';
 import InstantIntel from './pages/InstantIntel';
-import ChatConversation from './pages/ChatConversation';
 import SalesCoach from './pages/SalesCoach';
-import StoreImagePage from './pages/StoreImagePage';
+import ChatConversation from './pages/ChatConversation';
 import Settings from './pages/Settings';
-import DeduplicateLeads from './pages/DeduplicateLeads';
 import SecurityTab from './components/settings/SecurityTab';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import AdminRoute from './components/auth/AdminRoute';
-import { supabase } from './lib/supabase';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -63,120 +54,37 @@ function App() {
           path="/login" 
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
         />
-        <Route 
-          path="/signup" 
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
-        />
 
-        {/* Protected Routes */}
+        {/* Protected Routes - All wrapped in Layout */}
         <Route
-          path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <Layout />
             </PrivateRoute>
           }
-        />
-        <Route
-          path="/find-leads"
-          element={
-            <PrivateRoute>
-              <FindLeads />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/leads"
-          element={
-            <PrivateRoute>
-              <Leads />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/leads/:id"
-          element={
-            <PrivateRoute>
-              <LeadDetails />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/contact-finder"
-          element={
-            <PrivateRoute>
-              <EmailFinder />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/company-finder"
-          element={
-            <PrivateRoute>
-              <CompanyFinder />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/mobile-finder"
-          element={
-            <PrivateRoute>
-              <MobileFinder />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <Settings />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings/profile"
-          element={
-            <PrivateRoute>
-              <UserManagement />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings/security"
-          element={
-            <PrivateRoute>
-              <SecurityTab />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <PrivateRoute>
-              <InstantIntel />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat/sales-coach"
-          element={
-            <PrivateRoute>
-              <SalesCoach />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat/conversation"
-          element={
-            <PrivateRoute>
-              <ChatConversation />
-            </PrivateRoute>
-          }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/find-leads" element={<FindLeads />} />
+          <Route path="/leads" element={<Leads />} />
+          <Route path="/leads/:id" element={<LeadDetails />} />
+          <Route path="/contact-finder" element={<EmailFinder />} />
+          <Route path="/company-finder" element={<CompanyFinder />} />
+          <Route path="/mobile-finder" element={<MobileFinder />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/profile" element={<UserManagement />} />
+          <Route path="/settings/security" element={<SecurityTab />} />
+          <Route path="/chat" element={<InstantIntel />} />
+          <Route path="/chat/sales-coach" element={<SalesCoach />} />
+          <Route path="/chat/conversation" element={<ChatConversation />} />
+        </Route>
 
         {/* Default Route */}
         <Route 
           path="/" 
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+        />
+        <Route 
+          path="*" 
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
         />
       </Routes>

@@ -8,32 +8,40 @@ export function useAuth() {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        setUser(session?.user ?? null);
+        
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+          setInitialized(true);
+        }
       } catch (error) {
         console.error('Error checking auth session:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-        setInitialized(true);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
     initializeAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Only update user state if we've initialized
-      if (initialized) {
+    // Listen for auth changes after initialization
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted && initialized) {
         setUser(session?.user ?? null);
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [initialized]);
@@ -55,6 +63,7 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut({ 
         scope: 'global' 
       });
@@ -70,6 +79,8 @@ export function useAuth() {
     } catch (error) {
       console.error('Logout error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
