@@ -1,6 +1,6 @@
 // /home/project/src/pages/Login.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,18 +36,51 @@ export default function Login() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/linkedin-callback`
+          redirectTo: `${window.location.origin}/linkedin-callback`,
+          skipBrowserRedirect: true // Prevent automatic redirect
         }
       });
+      
       if (error) {
         console.error('LinkedIn login error:', error.message);
+        return;
       }
-      // User will be redirected to LinkedIn’s OAuth flow
+
+      if (data?.url) {
+        // Open LinkedIn auth in a popup window
+        const width = 600;
+        const height = 600;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        window.open(
+          data.url,
+          'linkedin-auth-window',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+      }
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
     }
   };
   // --- END LINKEDIN ADD ---
+
+  useEffect(() => {
+    const handleLinkedInAuthMessage = (event: MessageEvent) => {
+      // Verify the origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data.type === 'linkedin-auth-success') {
+        // Redirect to the appropriate page
+        navigate(event.data.redirectPath);
+      } else if (event.data.type === 'linkedin-auth-error') {
+        setError(event.data.error);
+      }
+    };
+
+    window.addEventListener('message', handleLinkedInAuthMessage);
+    return () => window.removeEventListener('message', handleLinkedInAuthMessage);
+  }, [navigate]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
