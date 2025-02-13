@@ -12,18 +12,7 @@ export function useAuth() {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        
-        if (session?.user) {
-          setUser(session.user);
-          // Check for redirect_to parameter
-          const params = new URLSearchParams(window.location.search);
-          const redirectTo = params.get('redirect_to');
-          if (redirectTo) {
-            window.location.href = redirectTo;
-          }
-        } else {
-          setUser(null);
-        }
+        setUser(session?.user ?? null);
       } catch (error) {
         console.error('Error checking auth session:', error);
         setUser(null);
@@ -35,21 +24,8 @@ export function useAuth() {
     initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      if (session?.user) {
-        setUser(session.user);
-        // Check for redirect_to parameter
-        const params = new URLSearchParams(window.location.search);
-        const redirectTo = params.get('redirect_to');
-        if (redirectTo) {
-          window.location.href = redirectTo;
-        }
-      } else {
-        setUser(null);
-      }
-      
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 

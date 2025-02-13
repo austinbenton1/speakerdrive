@@ -63,12 +63,14 @@ export async function checkSupabaseConnection(): Promise<boolean> {
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', { event, email: session?.user?.email });
 
-  if (event === 'SIGNED_IN') {
+  // Only redirect if we're on the login page
+  if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
     console.log('User signed in, redirecting to chat...');
     window.location.href = '/chat/conversation';
   } else if (event === 'SIGNED_OUT') {
     console.log('User signed out');
-    localStorage.removeItem('supabase.auth.token');
-    window.location.href = '/login';
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
   }
 });
