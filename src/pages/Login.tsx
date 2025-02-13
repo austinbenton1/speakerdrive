@@ -33,16 +33,24 @@ export default function Login() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
+      // Store the intended destination
+      localStorage.setItem('auth_redirect', '/chat/conversation');
+
+      console.log('Starting LinkedIn sign-in with PKCE...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/linkedin-callback`
+          redirectTo: `${window.location.origin}/callback`,
+          skipBrowserRedirect: false
         }
       });
+
       if (error) {
-        console.error('LinkedIn login error:', error.message);
+        console.error('LinkedIn sign-in error:', error.message);
+        return;
       }
-      // User will be redirected to LinkedIn’s OAuth flow
+
+      console.log('LinkedIn sign-in initiated, awaiting redirect...');
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
     }

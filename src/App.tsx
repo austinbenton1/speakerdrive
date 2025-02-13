@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8,7 +8,7 @@ import AdminRoute from './components/auth/AdminRoute';
 import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import LinkedInCallback from './pages/LinkedInCallback'; // <-- ADDED THIS IMPORT
+import Callback from './pages/Callback'; 
 import Dashboard from './pages/Dashboard';
 import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
@@ -28,9 +28,21 @@ import SalesCoach from './pages/SalesCoach';
 import StoreImagePage from './pages/StoreImagePage';
 import Settings from './pages/Settings';
 import DeduplicateLeads from './pages/DeduplicateLeads';
+import supabase from './supabase';
 
 function App() {
-  const { loading } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const handleAuthChanges = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && window.location.pathname === '/login') {
+        window.location.href = '/chat/conversation';
+      }
+    };
+
+    handleAuthChanges();
+  }, []);
 
   if (loading) {
     return (
@@ -45,10 +57,12 @@ function App() {
       <UploadStatusIndicator />
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/chat/conversation" replace /> : <Login />
+        } />
         <Route path="/signup" element={<Signup />} />
-        {/* IMPORTANT: Public route for LinkedIn callback */}
-        <Route path="/linkedin-callback" element={<LinkedInCallback />} />
+        {/* Auth callback route */}
+        <Route path="/callback" element={<Callback />} />
 
         {/* Protected Onboarding Routes */}
         <Route

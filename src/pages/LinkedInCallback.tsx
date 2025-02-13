@@ -8,102 +8,58 @@ export default function LinkedInCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleOAuthResponse = async () => {
-      console.log('LinkedIn callback reached with URL fragment:', window.location.hash);
+    const handleCallback = async () => {
+      try {
+        // Get the access token from the URL hash
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
 
-      // Example final URL might look like:
-      // https://app.speakerdrive.com/linkedin-callback#access_token=eyJhbGciOi...
-      const hash = window.location.hash; // The part after '#'
-      if (!hash) {
-        console.error('No hash fragment found in URL. Cannot parse LinkedIn token.');
-        navigate('/login');
-        return;
-      }
-
-      // Remove the leading '#' and parse the key/value pairs
-      const params = new URLSearchParams(hash.slice(1));
-
-      // LinkedIn might call this 'access_token' (often for implicit OIDC).
-      // If it's labeled something else (e.g. 'id_token'), change accordingly.
-      const accessToken = params.get('access_token');
-      if (!accessToken) {
-        console.error('No "access_token" found in hash:', hash);
-        navigate('/login');
-        return;
-      }
-
-      // Now we call Supabase to "exchange" this token for a session.
-      // Even though Supabase calls it "code", we're actually passing the
-      // access token from the implicit flow:
-      const { data, error } = await supabase.auth.exchangeCodeForSession({
-        code: accessToken,
-        // If LinkedIn requires the same redirect URI as part of the exchange:
-        // redirectUri: 'https://app.speakerdrive.com/linkedin-callback'
-      });
-
-      if (error) {
-        console.error('Error exchanging token with Supabase:', error);
-        navigate('/login');
-        return;
-      }
-
-      if (!data.session) {
-        console.error('No session returned from Supabase exchange.');
-        navigate('/login');
-        return;
-      }
-
-      // At this point, we have a valid Supabase session
-      const user = data.session.user;
-      if (!user) {
-        console.warn('No user found in session.');
-        navigate('/login');
-        return;
-      }
-
-      // Next: check if a "profiles" row exists or not
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError && !profileError.message.includes('row not found')) {
-        console.error('Profile error:', profileError);
-      }
-
-      if (!existingProfile) {
-        // Brand-new user => create a profile row
-        const fullName =
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          null;
-
-        const { error: insertError } = await supabase.from('profiles').insert({
-          id: user.id,
-          email: user.email,
-          display_name: fullName,
-        });
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
+        if (!accessToken) {
+          console.error('No access token found in URL');
+          navigate('/login');
+          return;
         }
 
-        console.log('New user. Redirecting to /onboarding.');
-        navigate('/onboarding');
-      } else {
-        // Existing user => redirect to dashboard
-        console.log('Existing user. Redirecting to /dashboard.');
-        navigate('/dashboard');
+        console.log('Found access token, setting session...');
+
+        // Set the session using the access token
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: null
+        });
+
+        if (error) {
+          console.error('Error setting session:', error);
+          navigate('/login');
+          return;
+        }
+
+        if (!data.session) {
+          console.error('No session data returned');
+          navigate('/login');
+          return;
+        }
+
+        console.log('Session established, redirecting...');
+        navigate('/chat/conversation', { replace: true });
+      } catch (error) {
+        console.error('Error in callback:', error);
+        navigate('/login');
       }
     };
 
-    handleOAuthResponse();
+    handleCallback();
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-gray-700">Processing LinkedIn login...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="p-8 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Completing Sign In</h2>
+          <p className="text-gray-600">Please wait while we finish setting up your session...</p>
+        </div>
+      </div>
     </div>
   );
 }

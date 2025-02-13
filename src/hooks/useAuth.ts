@@ -1,56 +1,62 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../lib/store';
 
 export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated, setUser } = useAuthStore();
 
   useEffect(() => {
-    // Check active session
-    const checkUser = async () => {
+    // Get initial session
+    const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
         
-        if (error) {
-          console.error('Error fetching session:', error);
-          setUser(null);
-          return;
-        }
-
         if (session?.user) {
           setUser(session.user);
+          // Check for redirect_to parameter
+          const params = new URLSearchParams(window.location.search);
+          const redirectTo = params.get('redirect_to');
+          if (redirectTo) {
+            window.location.href = redirectTo;
+          }
         } else {
           setUser(null);
         }
       } catch (error) {
-        console.error('Error in auth check:', error);
+        console.error('Error checking auth session:', error);
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    // Initial check
-    checkUser();
+    initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      try {
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Auth state change error:', error);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      if (session?.user) {
+        setUser(session.user);
+        // Check for redirect_to parameter
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('redirect_to');
+        if (redirectTo) {
+          window.location.href = redirectTo;
+        }
+      } else {
         setUser(null);
-      } finally {
-        setLoading(false);
       }
+      
+      setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [setUser]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -81,8 +87,8 @@ export function useAuth() {
 
   return {
     user,
-    isAuthenticated,
     loading,
+    isAuthenticated: !!user,
     login,
     logout,
   };

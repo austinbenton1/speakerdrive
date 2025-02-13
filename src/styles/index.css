@@ -1,14 +1,14 @@
-/* Base styles */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Import breakpoint-specific styles */
 @import './breakpoints/mobile.css';
 @import './breakpoints/tablet.css';
 @import './breakpoints/desktop.css';
 @import './breakpoints/large.css';
 @import './breakpoints/xlarge.css';
+
+/* Base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Global variables */
 :root {
