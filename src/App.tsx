@@ -30,7 +30,7 @@ import DeduplicateLeads from './pages/DeduplicateLeads';
 import { supabase } from './lib/supabase';
 
 function App() {
-  const { loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated, initialized } = useAuth();
 
   // Show loading spinner only if we're loading for more than 500ms
   const [showLoading, setShowLoading] = React.useState(false);
@@ -49,6 +49,16 @@ function App() {
     return () => clearTimeout(timer);
   }, [loading]);
 
+  // Don't render anything until we've initialized auth
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show loading spinner if needed
   if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

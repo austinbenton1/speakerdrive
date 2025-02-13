@@ -59,6 +59,11 @@ async function syncLinkedInProfile(session: any) {
   }
 }
 
+// Keep track of auth state to prevent duplicate handling
+let isHandlingAuthChange = false;
+let lastAuthEvent: string | null = null;
+let lastAuthTime = 0;
+
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
@@ -69,7 +74,6 @@ export const supabase = createClient<Database>(
       detectSessionInUrl: true,
       flowType: 'implicit',
       storage: window.localStorage,
-      // Add debug mode to help troubleshoot auth issues
       debug: import.meta.env.DEV
     },
     global: {
@@ -93,39 +97,44 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   });
 }
 
-let authChangeHandler: NodeJS.Timeout | null = null;
-
 // Handle auth state changes
 supabase.auth.onAuthStateChange(async (event, session) => {
-  // Clear any existing handler
-  if (authChangeHandler) {
-    clearTimeout(authChangeHandler);
-    authChangeHandler = null;
+  // Prevent duplicate handling
+  const now = Date.now();
+  if (
+    isHandlingAuthChange || 
+    (event === lastAuthEvent && now - lastAuthTime < 1000)
+  ) {
+    return;
   }
 
-  // Sync LinkedIn profile data on sign in
-  if (event === 'SIGNED_IN' && session?.provider_token) {
-    await syncLinkedInProfile(session);
-    
-    // Use setTimeout to prevent immediate redirect that might cause issues
-    authChangeHandler = setTimeout(() => {
-      // Close popup if it exists and redirect parent
+  isHandlingAuthChange = true;
+  lastAuthEvent = event;
+  lastAuthTime = now;
+
+  try {
+    // Sync LinkedIn profile data on sign in
+    if (event === 'SIGNED_IN' && session?.provider_token) {
+      await syncLinkedInProfile(session);
+      
+      // Handle popup and redirect
       if (window.opener) {
         window.opener.location.href = '/dashboard';
         window.close();
-      } else {
-        // Normal redirect if not in popup
+      } else if (window.location.pathname === '/login') {
         window.location.href = '/dashboard';
       }
-    }, 100);
-  } else if (event === 'SIGNED_OUT') {
-    // Clear any lingering auth data
-    window.localStorage.removeItem('supabase.auth.token');
-    window.localStorage.removeItem('supabase.auth.refreshToken');
-    
-    // Only redirect if not already on login page
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
+    } else if (event === 'SIGNED_OUT') {
+      // Clear any lingering auth data
+      window.localStorage.removeItem('supabase.auth.token');
+      window.localStorage.removeItem('supabase.auth.refreshToken');
+      
+      // Only redirect if not already on login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
+  } finally {
+    isHandlingAuthChange = false;
   }
 });

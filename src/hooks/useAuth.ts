@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -18,6 +19,7 @@ export function useAuth() {
         setUser(null);
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     };
 
@@ -25,14 +27,16 @@ export function useAuth() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      // Only update user state if we've initialized
+      if (initialized) {
+        setUser(session?.user ?? null);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -72,6 +76,7 @@ export function useAuth() {
   return {
     user,
     loading,
+    initialized,
     isAuthenticated: !!user,
     login,
     logout,
