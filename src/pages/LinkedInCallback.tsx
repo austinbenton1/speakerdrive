@@ -12,129 +12,52 @@ export default function LinkedInCallback() {
     const handleOAuthResponse = async () => {
       try {
         console.log('LinkedIn callback initiated');
-        console.log('Current URL:', window.location.href);
+        console.log('Full URL:', window.location.href);
+        console.log('Search params:', window.location.search);
+        console.log('Hash:', window.location.hash);
+
+        // Get the current session to check if we're already authenticated
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Get URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        const error = params.get('error');
-        const errorDescription = params.get('error_description');
-        const state = params.get('state');
-
-        console.log('URL parameters:', {
-          code: code ? 'present' : 'missing',
-          error,
-          errorDescription,
-          state: state ? 'present' : 'missing',
-          fullUrl: window.location.href
-        });
-
-        if (error || !code) {
-          const errorMsg = errorDescription || error || 'Authentication failed';
-          console.error('OAuth error:', { error, errorDescription });
-          setStatus(`Authentication error: ${errorMsg}`);
-          
-          if (window.opener) {
-            console.log('Sending error to parent window');
-            window.opener.postMessage({ 
-              type: 'linkedin-auth-error', 
-              error: errorMsg
-            }, window.location.origin);
-            window.close();
-          } else {
-            navigate('/login');
-          }
+        if (sessionError) {
+          console.error('Session check error:', sessionError);
+          setStatus('Error checking session status');
+          navigate('/login');
           return;
         }
 
-        console.log('Exchanging code for session...');
-        setStatus('Exchanging authentication code...');
-        
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (exchangeError) {
-          console.error('Session exchange error:', {
-            message: exchangeError.message,
-            status: exchangeError.status,
-            name: exchangeError.name
+        if (session?.user) {
+          console.log('User is authenticated:', {
+            id: session.user.id,
+            email: session.user.email
           });
-          
-          setStatus(`Session exchange error: ${exchangeError.message}`);
-          
-          if (window.opener) {
-            window.opener.postMessage({ 
-              type: 'linkedin-auth-error', 
-              error: exchangeError.message 
-            }, window.location.origin);
-            window.close();
-          } else {
-            navigate('/login');
+
+          // Check if profile exists
+          const { data: existingProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError && !profileError.message.includes('row not found')) {
+            console.error('Profile error:', profileError);
           }
-          return;
-        }
 
-        if (!data.session?.user) {
-          const errorMsg = 'No user data in session';
-          console.error(errorMsg);
-          setStatus(errorMsg);
-          
-          if (window.opener) {
-            window.opener.postMessage({ 
-              type: 'linkedin-auth-error', 
-              error: errorMsg
-            }, window.location.origin);
-            window.close();
-          } else {
-            navigate('/login');
-          }
-          return;
-        }
-
-        console.log('Session obtained successfully');
-        setStatus('Checking user profile...');
-
-        const { data: existingProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.session.user.id)
-          .single();
-
-        if (profileError && !profileError.message.includes('row not found')) {
-          console.error('Profile error:', profileError);
-        }
-
-        const redirectPath = !existingProfile ? '/onboarding' : '/dashboard';
-        console.log('Determined redirect path:', redirectPath);
-        setStatus(`Authentication successful. Redirecting to ${redirectPath}...`);
-
-        if (window.opener) {
-          console.log('Sending success message to parent window');
-          window.opener.postMessage(
-            { 
-              type: 'linkedin-auth-success',
-              redirectPath
-            },
-            window.location.origin
-          );
-          window.close();
-        } else {
+          const redirectPath = !existingProfile ? '/onboarding' : '/dashboard';
+          console.log('Redirecting to:', redirectPath);
           navigate(redirectPath);
+          return;
         }
+
+        // If we get here, something went wrong with the authentication
+        console.error('No session found after authentication');
+        setStatus('Authentication failed - No session found');
+        navigate('/login');
 
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Internal error';
         console.error('Callback error:', err);
-        setStatus(`An error occurred: ${errorMsg}`);
-        
-        if (window.opener) {
-          window.opener.postMessage({ 
-            type: 'linkedin-auth-error', 
-            error: errorMsg
-          }, window.location.origin);
-          window.close();
-        } else {
-          navigate('/login');
-        }
+        setStatus('An error occurred during authentication');
+        navigate('/login');
       }
     };
 
@@ -142,10 +65,10 @@ export default function LinkedInCallback() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <p className="text-gray-700 mb-4">{status}</p>
-      <div className="text-sm text-gray-500">
-        Window ID: linkedin-auth-window
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-center mb-4">LinkedIn Authentication</h2>
+        <p className="text-gray-700 text-center mb-4">{status}</p>
       </div>
     </div>
   );

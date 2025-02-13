@@ -39,8 +39,8 @@ export default function Login() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/linkedin-callback`,
-          skipBrowserRedirect: true
+          redirectTo: `${window.location.origin}/linkedin-callback`
+          // Using direct redirect instead of popup
         }
       });
       
@@ -55,39 +55,8 @@ export default function Login() {
         return;
       }
 
-      if (!data?.url) {
-        console.error('No authorization URL received from Supabase');
-        setError('Failed to initiate LinkedIn login - No authorization URL received');
-        return;
-      }
-
-      console.log('Received authorization URL:', data.url);
-      
-      // Open LinkedIn auth in a popup window
-      const width = 600;
-      const height = 800;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
-      
-      const authWindow = window.open(
-        data.url,
-        'linkedin-auth-window',
-        `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=1,status=1,scrollbars=1`
-      );
-
-      if (!authWindow) {
-        console.error('Popup window was blocked');
-        setError('Popup was blocked. Please allow popups for this site and try again.');
-        return;
-      }
-
-      // Set up a check to detect if popup is closed
-      const checkPopupClosed = setInterval(() => {
-        if (authWindow.closed) {
-          clearInterval(checkPopupClosed);
-          console.log('Auth window was closed');
-        }
-      }, 500);
+      // With direct redirect, we don't need to handle the URL opening
+      // as Supabase will handle the redirect automatically
 
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
@@ -115,7 +84,7 @@ export default function Login() {
         console.log('LinkedIn auth success, redirecting to:', event.data.redirectPath);
         navigate(event.data.redirectPath);
       } else if (event.data.type === 'linkedin-auth-error') {
-        console.error('LinkedIn auth error:', event.data.error);
+        console.error('LinkedIn auth error:', event.data.error, event.data.details || {});
         setError(event.data.error || 'Authentication failed');
       }
     };
