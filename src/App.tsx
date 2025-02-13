@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
