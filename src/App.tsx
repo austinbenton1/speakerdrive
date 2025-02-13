@@ -8,7 +8,6 @@ import AdminRoute from './components/auth/AdminRoute';
 import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Callback from './pages/Callback'; 
 import Dashboard from './pages/Dashboard';
 import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
@@ -28,7 +27,7 @@ import SalesCoach from './pages/SalesCoach';
 import StoreImagePage from './pages/StoreImagePage';
 import Settings from './pages/Settings';
 import DeduplicateLeads from './pages/DeduplicateLeads';
-import supabase from './supabase';
+import { supabase } from './lib/supabase';
 
 function App() {
   const { loading, isAuthenticated } = useAuth();
@@ -61,8 +60,6 @@ function App() {
           isAuthenticated ? <Navigate to="/chat/conversation" replace /> : <Login />
         } />
         <Route path="/signup" element={<Signup />} />
-        {/* Auth callback route */}
-        <Route path="/callback" element={<Callback />} />
 
         {/* Protected Onboarding Routes */}
         <Route

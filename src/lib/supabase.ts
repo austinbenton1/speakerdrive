@@ -35,8 +35,8 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce',
-      debug: true
+      flowType: 'implicit',
+      storage: window.localStorage
     },
     global: {
       fetch: (...args) => {
@@ -64,10 +64,8 @@ supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', { event, email: session?.user?.email });
 
   if (event === 'SIGNED_IN') {
-    // Get the intended destination from localStorage or default to chat
-    const destination = localStorage.getItem('auth_redirect') || '/chat/conversation';
-    localStorage.removeItem('auth_redirect'); // Clean up
-    window.location.href = destination;
+    console.log('User signed in, redirecting to chat...');
+    window.location.href = '/chat/conversation';
   } else if (event === 'SIGNED_OUT') {
     console.log('User signed out');
     localStorage.removeItem('supabase.auth.token');
