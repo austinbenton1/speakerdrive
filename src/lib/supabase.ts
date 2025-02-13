@@ -117,22 +117,14 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.provider_token) {
       await syncLinkedInProfile(session);
       
-      // Handle popup and redirect
+      // Close popup if it exists
       if (window.opener) {
-        window.opener.location.href = '/dashboard';
         window.close();
-      } else if (window.location.pathname === '/login') {
-        window.location.href = '/dashboard';
       }
     } else if (event === 'SIGNED_OUT') {
       // Clear any lingering auth data
       window.localStorage.removeItem('supabase.auth.token');
       window.localStorage.removeItem('supabase.auth.refreshToken');
-      
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
     }
   } finally {
     isHandlingAuthChange = false;

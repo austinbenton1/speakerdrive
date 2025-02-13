@@ -1,13 +1,9 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import SecurityTab from './components/settings/SecurityTab';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import AdminRoute from './components/auth/AdminRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import UploadStatusIndicator from './components/UploadStatusIndicator';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
@@ -27,30 +23,15 @@ import SalesCoach from './pages/SalesCoach';
 import StoreImagePage from './pages/StoreImagePage';
 import Settings from './pages/Settings';
 import DeduplicateLeads from './pages/DeduplicateLeads';
+import SecurityTab from './components/settings/SecurityTab';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import { supabase } from './lib/supabase';
 
-function App() {
-  const { loading, isAuthenticated, initialized } = useAuth();
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
 
-  // Show loading spinner only if we're loading for more than 500ms
-  const [showLoading, setShowLoading] = React.useState(false);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (loading) {
-        setShowLoading(true);
-      }
-    }, 500);
-
-    if (!loading) {
-      setShowLoading(false);
-    }
-
-    return () => clearTimeout(timer);
-  }, [loading]);
-
-  // Don't render anything until we've initialized auth
-  if (!initialized) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -58,8 +39,14 @@ function App() {
     );
   }
 
-  // Show loading spinner if needed
-  if (showLoading) {
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function App() {
+  const { loading, isAuthenticated, initialized } = useAuth();
+
+  // Don't render anything until we've initialized auth
+  if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -72,39 +59,126 @@ function App() {
       <UploadStatusIndicator />
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
-        } />
-        <Route path="/signup" element={<Signup />} />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+        />
+        <Route 
+          path="/signup" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+        />
 
-        {/* Protected App Routes */}
+        {/* Protected Routes */}
         <Route
+          path="/dashboard"
           element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
           }
-        >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/find-leads" element={<FindLeads />} />
-          <Route path="/leads" element={<Leads />} />
-          <Route path="/leads/:id" element={<LeadDetails />} />
-          <Route path="/contact-finder" element={<EmailFinder />} />
-          <Route path="/company-finder" element={<CompanyFinder />} />
-          <Route path="/mobile-finder" element={<MobileFinder />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/profile" element={<UserManagement />} />
-          <Route path="/settings/security" element={<SecurityTab />} />
-          <Route path="/chat" element={<InstantIntel />} />
-          <Route path="/chat/sales-coach" element={<SalesCoach />} />
-          <Route path="/chat/conversation" element={<ChatConversation />} />
-        </Route>
+        />
+        <Route
+          path="/find-leads"
+          element={
+            <PrivateRoute>
+              <FindLeads />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/leads"
+          element={
+            <PrivateRoute>
+              <Leads />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/leads/:id"
+          element={
+            <PrivateRoute>
+              <LeadDetails />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/contact-finder"
+          element={
+            <PrivateRoute>
+              <EmailFinder />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/company-finder"
+          element={
+            <PrivateRoute>
+              <CompanyFinder />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/mobile-finder"
+          element={
+            <PrivateRoute>
+              <MobileFinder />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Settings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings/profile"
+          element={
+            <PrivateRoute>
+              <UserManagement />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings/security"
+          element={
+            <PrivateRoute>
+              <SecurityTab />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <PrivateRoute>
+              <InstantIntel />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat/sales-coach"
+          element={
+            <PrivateRoute>
+              <SalesCoach />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat/conversation"
+          element={
+            <PrivateRoute>
+              <ChatConversation />
+            </PrivateRoute>
+          }
+        />
 
-        {/* Fallback route */}
-        <Route path="*" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-        } />
+        {/* Default Route */}
+        <Route 
+          path="/" 
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+        />
       </Routes>
     </ErrorBoundary>
   );
