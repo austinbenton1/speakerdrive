@@ -40,8 +40,7 @@ async function syncLinkedInProfile(session: any) {
     avatar_url: metadata.avatar_url || metadata.picture,
     email: metadata.email,
     company: metadata.custom_claims?.company || metadata.company,
-    company_role: metadata.custom_claims?.title || metadata.job_title || metadata.position,
-    updated_at: new Date().toISOString()
+    company_role: metadata.custom_claims?.title || metadata.job_title || metadata.position
   };
 
   try {
