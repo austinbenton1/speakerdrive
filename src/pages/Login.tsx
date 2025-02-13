@@ -33,11 +33,15 @@ export default function Login() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          scopes: 'openid profile email'
+          scopes: 'openid profile email',
+          skipBrowserRedirect: true,
+          queryParams: {
+            prompt: 'select_account'
+          }
         }
       });
 
@@ -45,8 +49,33 @@ export default function Login() {
         setError(error.message);
         return;
       }
+
+      // Open popup window for authentication
+      if (data?.url) {
+        const popup = window.open(
+          data.url,
+          'LinkedIn Login',
+          'width=600,height=700,left=400,top=100'
+        );
+
+        // Check if popup was blocked
+        if (!popup) {
+          setError('Please enable popups to sign in with LinkedIn');
+          return;
+        }
+
+        // Monitor popup closure
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            setIsLoading(false);
+          }
+        }, 500);
+      }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
   // --- END LINKEDIN ADD ---

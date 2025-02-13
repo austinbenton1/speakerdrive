@@ -96,11 +96,15 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   // Sync LinkedIn profile data on sign in
   if (event === 'SIGNED_IN' && session?.provider_token) {
     await syncLinkedInProfile(session);
-  }
-
-  // Handle redirects
-  if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-    window.location.href = '/dashboard';
+    
+    // Close popup if it exists and redirect parent
+    if (window.opener) {
+      window.opener.location.href = '/dashboard';
+      window.close();
+    } else {
+      // Normal redirect if not in popup
+      window.location.href = '/dashboard';
+    }
   } else if (event === 'SIGNED_OUT' && window.location.pathname !== '/login') {
     window.location.href = '/login';
   }
