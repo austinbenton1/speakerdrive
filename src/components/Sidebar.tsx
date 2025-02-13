@@ -285,7 +285,14 @@ export default function Sidebar() {
           {!isCollapsed && <span className="ml-2.5">Settings</span>}
         </button>
         <button
-          onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
+          onClick={async () => {
+            try {
+              await supabase.auth.signOut({ scope: 'global' });
+              navigate('/login');
+            } catch (error) {
+              console.error('Error signing out:', error);
+            }
+          }}
           className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />

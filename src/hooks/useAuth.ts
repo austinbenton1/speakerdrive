@@ -51,8 +51,16 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ 
+        scope: 'global' 
+      });
+      
       if (error) throw error;
+
+      // Clear any remaining auth data
+      window.localStorage.removeItem('supabase.auth.token');
+      window.localStorage.removeItem('supabase.auth.refreshToken');
+      
       setUser(null);
       return { error: null };
     } catch (error) {
