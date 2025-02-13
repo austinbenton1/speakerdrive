@@ -33,6 +33,7 @@ export default function Login() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
+      console.log('Initiating LinkedIn sign-in...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
@@ -43,43 +44,61 @@ export default function Login() {
       
       if (error) {
         console.error('LinkedIn login error:', error.message);
+        setError(error.message);
         return;
       }
 
       if (data?.url) {
+        console.log('Opening LinkedIn auth window...');
         // Open LinkedIn auth in a popup window
         const width = 600;
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
         
-        window.open(
+        const authWindow = window.open(
           data.url,
           'linkedin-auth-window',
-          `width=${width},height=${height},left=${left},top=${top}`
+          `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0,status=0`
         );
+
+        // Check if popup was blocked
+        if (!authWindow) {
+          setError('Popup was blocked. Please allow popups for this site.');
+        }
       }
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
+      setError('Failed to initiate LinkedIn login');
     }
   };
   // --- END LINKEDIN ADD ---
 
   useEffect(() => {
     const handleLinkedInAuthMessage = (event: MessageEvent) => {
+      console.log('Received message:', event.data);
+      
       // Verify the origin
-      if (event.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin) {
+        console.log('Ignoring message from unknown origin:', event.origin);
+        return;
+      }
 
       if (event.data.type === 'linkedin-auth-success') {
-        // Redirect to the appropriate page
+        console.log('LinkedIn auth success, redirecting to:', event.data.redirectPath);
         navigate(event.data.redirectPath);
       } else if (event.data.type === 'linkedin-auth-error') {
-        setError(event.data.error);
+        console.error('LinkedIn auth error:', event.data.error);
+        setError(event.data.error || 'Authentication failed');
       }
     };
 
+    console.log('Setting up LinkedIn auth message listener');
     window.addEventListener('message', handleLinkedInAuthMessage);
-    return () => window.removeEventListener('message', handleLinkedInAuthMessage);
+    return () => {
+      console.log('Removing LinkedIn auth message listener');
+      window.removeEventListener('message', handleLinkedInAuthMessage);
+    };
   }, [navigate]);
 
   const onSubmit = async (data: LoginFormData) => {
