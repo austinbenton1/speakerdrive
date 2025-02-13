@@ -32,7 +32,24 @@ import { supabase } from './lib/supabase';
 function App() {
   const { loading, isAuthenticated } = useAuth();
 
-  if (loading) {
+  // Show loading spinner only if we're loading for more than 500ms
+  const [showLoading, setShowLoading] = React.useState(false);
+  
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading) {
+        setShowLoading(true);
+      }
+    }, 500);
+
+    if (!loading) {
+      setShowLoading(false);
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

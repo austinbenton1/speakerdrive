@@ -68,7 +68,9 @@ export const supabase = createClient<Database>(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'implicit',
-      storage: window.localStorage
+      storage: window.localStorage,
+      // Add debug mode to help troubleshoot auth issues
+      debug: import.meta.env.DEV
     },
     global: {
       fetch: (...args) => {
@@ -91,21 +93,39 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   });
 }
 
+let authChangeHandler: NodeJS.Timeout | null = null;
+
 // Handle auth state changes
 supabase.auth.onAuthStateChange(async (event, session) => {
+  // Clear any existing handler
+  if (authChangeHandler) {
+    clearTimeout(authChangeHandler);
+    authChangeHandler = null;
+  }
+
   // Sync LinkedIn profile data on sign in
   if (event === 'SIGNED_IN' && session?.provider_token) {
     await syncLinkedInProfile(session);
     
-    // Close popup if it exists and redirect parent
-    if (window.opener) {
-      window.opener.location.href = '/dashboard';
-      window.close();
-    } else {
-      // Normal redirect if not in popup
-      window.location.href = '/dashboard';
+    // Use setTimeout to prevent immediate redirect that might cause issues
+    authChangeHandler = setTimeout(() => {
+      // Close popup if it exists and redirect parent
+      if (window.opener) {
+        window.opener.location.href = '/dashboard';
+        window.close();
+      } else {
+        // Normal redirect if not in popup
+        window.location.href = '/dashboard';
+      }
+    }, 100);
+  } else if (event === 'SIGNED_OUT') {
+    // Clear any lingering auth data
+    window.localStorage.removeItem('supabase.auth.token');
+    window.localStorage.removeItem('supabase.auth.refreshToken');
+    
+    // Only redirect if not already on login page
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
     }
-  } else if (event === 'SIGNED_OUT' && window.location.pathname !== '/login') {
-    window.location.href = '/login';
   }
 });
