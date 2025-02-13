@@ -34,49 +34,76 @@ export default function Login() {
   const handleLinkedInSignIn = async () => {
     try {
       console.log('Initiating LinkedIn sign-in...');
+      console.log('Current origin:', window.location.origin);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
           redirectTo: `${window.location.origin}/linkedin-callback`,
-          skipBrowserRedirect: true // Prevent automatic redirect
+          skipBrowserRedirect: true
         }
       });
       
       if (error) {
-        console.error('LinkedIn login error:', error.message);
-        setError(error.message);
+        console.error('LinkedIn login error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          stack: error.stack
+        });
+        setError(`LinkedIn login failed: ${error.message}`);
         return;
       }
 
-      if (data?.url) {
-        console.log('Opening LinkedIn auth window...');
-        // Open LinkedIn auth in a popup window
-        const width = 600;
-        const height = 600;
-        const left = window.screen.width / 2 - width / 2;
-        const top = window.screen.height / 2 - height / 2;
-        
-        const authWindow = window.open(
-          data.url,
-          'linkedin-auth-window',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0,status=0`
-        );
-
-        // Check if popup was blocked
-        if (!authWindow) {
-          setError('Popup was blocked. Please allow popups for this site.');
-        }
+      if (!data?.url) {
+        console.error('No authorization URL received from Supabase');
+        setError('Failed to initiate LinkedIn login - No authorization URL received');
+        return;
       }
+
+      console.log('Received authorization URL:', data.url);
+      
+      // Open LinkedIn auth in a popup window
+      const width = 600;
+      const height = 800;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      const authWindow = window.open(
+        data.url,
+        'linkedin-auth-window',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=1,status=1,scrollbars=1`
+      );
+
+      if (!authWindow) {
+        console.error('Popup window was blocked');
+        setError('Popup was blocked. Please allow popups for this site and try again.');
+        return;
+      }
+
+      // Set up a check to detect if popup is closed
+      const checkPopupClosed = setInterval(() => {
+        if (authWindow.closed) {
+          clearInterval(checkPopupClosed);
+          console.log('Auth window was closed');
+        }
+      }, 500);
+
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
-      setError('Failed to initiate LinkedIn login');
+      setError(err instanceof Error ? err.message : 'Failed to initiate LinkedIn login');
     }
   };
   // --- END LINKEDIN ADD ---
 
   useEffect(() => {
     const handleLinkedInAuthMessage = (event: MessageEvent) => {
-      console.log('Received message:', event.data);
+      console.log('Received message:', {
+        type: event.data.type,
+        origin: event.origin,
+        expectedOrigin: window.location.origin,
+        data: event.data
+      });
       
       // Verify the origin
       if (event.origin !== window.location.origin) {
