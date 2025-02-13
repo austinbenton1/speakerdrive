@@ -10,7 +10,7 @@ import FindLeads from './pages/FindLeads';
 import UserManagement from './pages/UserManagement';
 import Leads from './pages/Leads';
 import LeadDetails from './pages/LeadDetails';
-import EmailFinder from './pages/EmailFinder';
+import EmailFinder from './pages/ContactFinder';
 import CompanyFinder from './pages/CompanyFinder';
 import MobileFinder from './pages/MobileFinder';
 import InstantIntel from './pages/InstantIntel';
