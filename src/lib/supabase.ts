@@ -59,18 +59,12 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   });
 }
 
-// Debug auth state changes
+// Handle auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', { event, email: session?.user?.email });
-
   // Only redirect if we're on the login page
   if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-    console.log('User signed in, redirecting to chat...');
     window.location.href = '/chat/conversation';
-  } else if (event === 'SIGNED_OUT') {
-    console.log('User signed out');
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
+  } else if (event === 'SIGNED_OUT' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
   }
 });

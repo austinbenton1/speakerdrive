@@ -33,7 +33,6 @@ export default function Login() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
-      console.log('Starting LinkedIn sign-in...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
@@ -42,13 +41,11 @@ export default function Login() {
       });
 
       if (error) {
-        console.error('LinkedIn sign-in error:', error.message);
+        setError(error.message);
         return;
       }
-
-      console.log('LinkedIn sign-in initiated...');
     } catch (err) {
-      console.error('LinkedIn OAuth exception:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
   // --- END LINKEDIN ADD ---
