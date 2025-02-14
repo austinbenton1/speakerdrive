@@ -1,7 +1,11 @@
 import React from 'react';
-import { 
-  Presentation, School, Target, Briefcase, 
-  Users, Plus 
+import {
+  Presentation,
+  School,
+  Target,
+  Briefcase,
+  Users,
+  Plus,
 } from 'lucide-react';
 import { services } from '../../utils/constants';
 
@@ -20,39 +24,66 @@ const iconComponents = {
   Target,
   Briefcase,
   Users,
-  Plus
+  Plus,
 };
 
-export default function ServiceSelector({ 
-  selectedService, 
-  onChange, 
-  error, 
+export default function ServiceSelector({
+  selectedService,
+  onChange,
+  error,
   disabled = false,
-  hideLabel = false
+  hideLabel = false,
 }: ServiceSelectorProps) {
+  /**
+   * Determine if a given service is "selected," including the case
+   * where a user has typed "other:Some Custom Text."
+   */
+  const isServiceSelected = (serviceId: string) => {
+    if (serviceId === 'other') {
+      return (
+        selectedService === 'other' ||
+        selectedService.startsWith('other:')
+      );
+    }
+    return selectedService === serviceId;
+  };
+
   const handleServiceClick = (serviceId: string) => {
     if (!disabled) {
-      onChange(serviceId);
+      // If the user clicks "Other," just store 'other' until they type
+      // a custom value. Otherwise, store the normal service id.
+      if (serviceId === 'other') {
+        onChange('other');
+      } else {
+        onChange(serviceId);
+      }
     }
   };
 
+  /**
+   * Parse the parent value for "other:xxx" and extract xxx for the input
+   */
+  const otherValue = selectedService.startsWith('other:')
+    ? selectedService.replace(/^other:/, '')
+    : '';
+
   return (
     <div>
+      {/* Updated Label Section */}
       {!hideLabel && (
-        <div className="space-y-1 mb-3">
-          <label className="text-[15px] font-medium text-gray-900">
-            Primary Service
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700">
+            Primary Service: Choose your main focus. You can change this later.
           </label>
-          <p className="text-[13px] text-gray-500">
-            Choose your main focus
-          </p>
         </div>
       )}
-      <div className="space-y-2">
+
+      {/* Pill-style buttons */}
+      <div className="flex flex-wrap gap-2">
         {services.map((service) => {
-          const isSelected = selectedService === service.id;
           const Icon = iconComponents[service.icon as keyof typeof iconComponents];
-          
+          const selected = isServiceSelected(service.id);
+
           return (
             <button
               key={service.id}
@@ -60,34 +91,52 @@ export default function ServiceSelector({
               onClick={() => handleServiceClick(service.id)}
               disabled={disabled}
               className={`
-                w-full flex items-center justify-between px-4 py-3 border rounded-lg
-                transition-colors
-                ${disabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
-                ${isSelected
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                inline-flex items-center rounded-full border
+                px-4 py-2 text-sm font-medium
+                focus:outline-none transition-colors
+                ${
+                  selected
+                    ? 'bg-blue-100 border-blue-300 text-blue-700'
+                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                 }
+                ${disabled ? 'cursor-not-allowed opacity-50' : ''}
               `}
             >
-              <div className="flex items-center">
-                {Icon && (
-                  <Icon className={`w-5 h-5 mr-3 ${
-                    isSelected ? 'text-blue-500' : 'text-gray-400'
-                  }`} />
-                )}
-                <span className="text-sm font-medium">{service.label}</span>
-              </div>
-              {isSelected && (
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white" />
-                </div>
+              {Icon && (
+                <Icon
+                  className={`w-4 h-4 mr-2 ${
+                    selected ? 'text-blue-500' : 'text-gray-400'
+                  }`}
+                />
               )}
+              {service.label}
             </button>
           );
         })}
       </div>
+
+      {/* Text input for custom "Other" service */}
+      {isServiceSelected('other') && (
+        <div className="mt-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Please specify:
+          </label>
+          <input
+            type="text"
+            value={otherValue}
+            onChange={(e) => onChange(`other:${e.target.value}`)}
+            disabled={disabled}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Enter custom service"
+          />
+        </div>
+      )}
+
+      {/* Error Message */}
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600">
+          {error}
+        </p>
       )}
     </div>
   );

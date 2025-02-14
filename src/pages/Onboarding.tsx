@@ -2,23 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User as UserIcon, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  User as UserIcon,
+  AlertCircle,
+  Loader2,
+  Building,
+  Briefcase,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
 import ServiceSelector from '../components/onboarding/ServiceSelector';
 import WebsiteInput from '../components/onboarding/WebsiteInput';
-import { onboardingSchema, type OnboardingFormData } from '../types/auth';
+import {
+  onboardingSchema,
+  type OnboardingFormData,
+} from '../types/auth';
 
-/** Simple sleep utility for exponential backoff */
+/** Small sleep utility for retries */
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * sendOnboardingWebhook
- * Fires only the `/webhook/onboarding` endpoint with retries.
+ * Sends the onboarding webhook with retries
  */
 async function sendOnboardingWebhook(
   urlOnboarding: string,
@@ -27,38 +35,26 @@ async function sendOnboardingWebhook(
   delay = 1000
 ): Promise<boolean> {
   for (let attempt = 0; attempt < retries; attempt++) {
-    console.log(`[Onboarding Debug] Sending onboarding webhook - Attempt #${attempt + 1}`);
     try {
       const response = await fetch(urlOnboarding, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      if (response.ok) {
-        console.log('[Onboarding Debug] Onboarding webhook succeeded!');
-        return true;
-      }
-
-      console.log('[Onboarding Debug] Onboarding webhook failed. Response status:', response.status);
+      if (response.ok) return true;
 
       if (attempt < retries - 1) {
-        console.log('[Onboarding Debug] Retrying in exponential backoff...');
         await sleep(delay * Math.pow(2, attempt));
       }
     } catch (error) {
-      console.error('[Onboarding Debug] Error sending onboarding webhook:', error);
       if (attempt === retries - 1) throw error;
       await sleep(delay * Math.pow(2, attempt));
     }
   }
-
-  console.log('[Onboarding Debug] Onboarding webhook did not succeed within max retries.');
   return false;
 }
 
 export default function Onboarding() {
-  console.log('[Onboarding Debug] Component mounted...');
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -66,8 +62,11 @@ export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // Step flow: 1 or 2
+  const [currentStep, setCurrentStep] = useState(1);
+
   useEffect(() => {
-    console.log('[Onboarding Debug] useEffect => Checking if user is logged in...');
+    // Check if user is logged in
     const checkUser = async () => {
       try {
         const {
@@ -75,101 +74,106 @@ export default function Onboarding() {
           error: sessionError,
         } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
+
         if (!session?.user) {
-          console.log('[Onboarding Debug] No user session found, redirecting to /login');
           await supabase.auth.signOut();
           navigate('/login');
           return;
         }
-        console.log('[Onboarding Debug] User session found:', session.user);
         setUser(session.user);
       } catch (err) {
-        console.error('[Onboarding Debug] Error checking user:', err);
+        console.error('[Onboarding Debug] Auth check error:', err);
         await supabase.auth.signOut();
         navigate('/login');
       } finally {
         setIsLoading(false);
       }
     };
-
     checkUser();
   }, [navigate]);
 
+  // React Hook Form
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
     setValue,
+    trigger,
   } = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       fullName: '',
       services: '',
+      account_type: 'direct',
+      company: '',
+      company_role: '',
+      profile_url_type: 'website', // hidden from user
       website: '',
     },
   });
 
-  const selectedService = watch('services', '');
-  const website = watch('website', '');
+  const accountType = watch('account_type'); // "direct" or "partner"
+  const selectedService = watch('services');
+  const websiteValue = watch('website');
 
-  const handleServiceChange = (value: string) => {
-    console.log('[Onboarding Debug] Service changed =>', value);
-    setValue('services', value, { shouldValidate: true });
+  /**
+   * Step 1 => "Continue"
+   */
+  const handleContinue = async () => {
+    // Validate only fullName for step 1
+    const valid = await trigger(['fullName']);
+    if (valid) {
+      setCurrentStep(2);
+    }
   };
 
   /**
-   * Handle form submission
+   * Final "Complete Setup" => step 2
    */
   const onSubmit = async (data: OnboardingFormData) => {
-    console.log('[Onboarding Debug] onSubmit fired => Data:', data);
-    if (!user) {
-      console.log('[Onboarding Debug] No user found. Aborting.');
-      return;
-    }
+    if (!user) return;
 
     try {
       setError(null);
       setIsSubmitting(true);
       setProgress(20);
 
-      console.log('[Onboarding Debug] Updating user metadata in Supabase...');
+      // 1) Update user
       const { error: updateUserError } = await supabase.auth.updateUser({
-        data: {
-          display_name: data.fullName,
-        },
+        data: { display_name: data.fullName },
       });
-      if (updateUserError) {
-        console.error('[Onboarding Debug] Failed to update user metadata:', updateUserError);
-        throw updateUserError;
-      }
+      if (updateUserError) throw updateUserError;
       setProgress(40);
 
-      console.log('[Onboarding Debug] Upserting user profile in Supabase...');
+      // 2) Upsert profile
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
           display_name: data.fullName,
           services: data.services,
+          account_type: data.account_type,
+          company: data.company || null,
+          company_role: data.company_role || null,
+          profile_url_type: data.profile_url_type, // default to website
           website: data.website || null,
         });
-      if (profileError) {
-        console.error('[Onboarding Debug] Failed to upsert profile:', profileError);
-        throw profileError;
-      }
+      if (profileError) throw profileError;
       setProgress(60);
 
-      // Fire only the /webhook/onboarding endpoint here
+      // 3) Webhook
       const webhookBody = {
         message: 'onboarding_init',
         email: user.email,
         display_name: data.fullName,
         services: data.services,
+        account_type: data.account_type,
+        company: data.company || null,
+        company_role: data.company_role || null,
+        profile_url_type: data.profile_url_type,
         website: data.website || null,
       };
-
-      console.log('[Onboarding Debug] Sending ONLY onboarding webhook...');
       const onboardingOk = await sendOnboardingWebhook(
         'https://n8n.speakerdrive.com/webhook/onboarding',
         webhookBody
@@ -177,15 +181,12 @@ export default function Onboarding() {
       if (!onboardingOk) {
         throw new Error('Failed to send onboarding webhook after multiple attempts');
       }
-
       setProgress(100);
-      console.log('[Onboarding Debug] Onboarding webhook succeeded, navigating to /chat...');
 
-      // 4) Navigate to chat with onboarding parameters
-      navigate('/chat/conversation?source=onboarding&trigger=auto');
+      navigate('/dashboard');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to complete onboarding';
-      console.error('[Onboarding Debug] Error during onboarding:', msg);
+      console.error('[Onboarding Debug] Final submission error:', msg);
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -194,13 +195,10 @@ export default function Onboarding() {
 
   if (isLoading) {
     return (
-      <AuthLayout
-        title="Complete Your Profile"
-        subtitle="Help us personalize your experience"
-      >
+      <AuthLayout title="Complete Your Profile" subtitle="Help us personalize your experience">
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#00A3FF]" />
             <p className="text-sm text-gray-600">Loading your profile...</p>
           </div>
         </div>
@@ -209,70 +207,206 @@ export default function Onboarding() {
   }
 
   return (
+    // Use "wide" so we get a max-w-xl container instead of the narrower max-w-md
     <AuthLayout
       title="Complete Your Profile"
       subtitle="Help us personalize your experience"
+      wide
     >
-      <div className="max-w-lg mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <div className="p-3 rounded-lg bg-red-50 flex items-center gap-2 text-red-700">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm">{error}</p>
+      <div className="space-y-6">
+        {error && (
+          <div className="p-3 rounded-md bg-red-50 flex items-center gap-2 text-red-700">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* STEP 1 */}
+          {currentStep === 1 && (
+            <div className="space-y-8">
+              {/* Full Name */}
+              <section className="space-y-2 max-w-md">
+                <label className="block text-sm font-medium text-gray-700">Your Name</label>
+                <Input
+                  label=""
+                  type="text"
+                  icon={UserIcon}
+                  {...register('fullName')}
+                  disabled={isSubmitting}
+                  error={errors.fullName?.message}
+                  className="
+                    w-full
+                    transition-shadow 
+                    focus:shadow-sm 
+                    focus:ring-2 
+                    focus:ring-[#00A3FF]
+                    focus:outline-none
+                  "
+                />
+              </section>
+
+              {/* Speaker vs Support => Pill style */}
+              <section className="space-y-2">
+                <div className="flex gap-3 mt-2 flex-wrap">
+                  {/* DIRECT Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setValue('account_type', 'direct', { shouldValidate: true })}
+                    className={`
+                      inline-block px-5 py-3 text-sm font-medium rounded-full border transition-colors
+                      ${
+                        accountType === 'direct'
+                          ? 'bg-[#00A3FF] text-white border-[#00A3FF]'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    I&apos;m a Speaker, Coach, or Expert
+                  </button>
+
+                  {/* PARTNER Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setValue('account_type', 'partner', { shouldValidate: true })}
+                    className={`
+                      inline-block px-5 py-3 text-sm font-medium rounded-full border transition-colors
+                      ${
+                        accountType === 'partner'
+                          ? 'bg-[#00A3FF] text-white border-[#00A3FF]'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    I Support or Represent Speakers or Experts
+                  </button>
+                </div>
+              </section>
+
+              {/* If partner => Company & Role */}
+              {accountType === 'partner' && (
+                <section className="space-y-4">
+                  <div className="max-w-md">
+                    <Input
+                      label="Company"
+                      type="text"
+                      icon={Building}
+                      disabled={isSubmitting}
+                      {...register('company')}
+                      error={errors.company?.message}
+                      className="
+                        w-full
+                        transition-shadow 
+                        focus:shadow-sm 
+                        focus:ring-2 
+                        focus:ring-[#00A3FF]
+                      "
+                    />
+                  </div>
+                  <div className="max-w-md">
+                    <Input
+                      label="Company Role"
+                      type="text"
+                      icon={Briefcase}
+                      disabled={isSubmitting}
+                      {...register('company_role')}
+                      error={errors.company_role?.message}
+                      className="
+                        w-full
+                        transition-shadow 
+                        focus:shadow-sm 
+                        focus:ring-2 
+                        focus:ring-[#00A3FF]
+                      "
+                    />
+                  </div>
+                </section>
+              )}
+
+              {/* Step 1 => Continue */}
+              <div>
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={isSubmitting}
+                  className={`
+                    inline-flex items-center gap-2 px-4 py-2 rounded-md
+                    text-white font-medium
+                    transition-all duration-150
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00A3FF]
+                    ${
+                      isSubmitting
+                        ? 'bg-[#00A3FF]/70 cursor-not-allowed'
+                        : 'bg-[#00A3FF] hover:bg-[#0095e6] active:scale-[0.98]'
+                    }
+                  `}
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
 
-          <div>
-            <Input
-              label="Full Name"
-              type="text"
-              {...register('fullName')}
-              error={errors.fullName?.message}
-              disabled={isSubmitting}
-              icon={UserIcon}
-            />
-          </div>
+          {/* STEP 2 */}
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              {/* Primary Service */}
+              <section className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-800">Primary Service</h3>
+                <ServiceSelector
+                  selectedService={selectedService}
+                  onChange={(val) => setValue('services', val, { shouldValidate: true })}
+                  disabled={isSubmitting}
+                  error={errors.services?.message}
+                />
+              </section>
 
-          <div>
-            <ServiceSelector
-              selectedService={selectedService}
-              onChange={handleServiceChange}
-              error={errors.services?.message}
-              disabled={isSubmitting}
-            />
-          </div>
+              {/* Website */}
+              <section className="space-y-2">
+                <h3 className="text-xl font-semibold text-gray-800">Website or Profile URL</h3>
+                <div className="max-w-md">
+                  <WebsiteInput
+                    value={websiteValue}
+                    onChange={(e) => setValue('website', e.target.value, { shouldValidate: true })}
+                    disabled={isSubmitting}
+                    error={errors.website?.message}
+                    className="w-full"
+                  />
+                </div>
+              </section>
 
-          <WebsiteInput
-            value={website}
-            onChange={(e) => setValue('website', e.target.value, { shouldValidate: true })}
-            error={errors.website?.message}
-            disabled={isSubmitting}
-          />
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`
-              w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg
-              text-white font-medium transition-colors
-              ${isSubmitting
-                ? 'bg-blue-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-              }
-            `}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Setting Up... {progress}%
-              </>
-            ) : (
-              <>
-                <UserIcon className="w-5 h-5" />
-                Complete Setup
-              </>
-            )}
-          </button>
+              {/* Final Submit */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`
+                    w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md
+                    text-white font-medium
+                    transition-all duration-150
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00A3FF]
+                    ${
+                      isSubmitting
+                        ? 'bg-[#00A3FF]/70 cursor-not-allowed'
+                        : 'bg-[#00A3FF] hover:bg-[#0095e6] active:scale-[0.98]'
+                    }
+                  `}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Setting Up... {progress}%
+                    </>
+                  ) : (
+                    <>
+                      <UserIcon className="w-5 h-5" />
+                      Complete Setup
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </AuthLayout>
