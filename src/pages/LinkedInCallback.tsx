@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { getLinkedInProfileData, updateProfileWithLinkedInData } from '../services/linkedin/profileService';
+import { updateProfileWithLinkedInData } from '../services/linkedin/profileService';
 
 export default function LinkedInCallback() {
   const navigate = useNavigate();
@@ -13,9 +13,6 @@ export default function LinkedInCallback() {
     const handleOAuthResponse = async () => {
       try {
         console.log('LinkedIn callback initiated');
-        console.log('Full URL:', window.location.href);
-        console.log('Search params:', window.location.search);
-        console.log('Hash:', window.location.hash);
 
         // Get the current session to check if we're already authenticated
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -34,19 +31,10 @@ export default function LinkedInCallback() {
           });
 
           try {
-            // Get LinkedIn access token from the session
-            const provider = session.user.app_metadata.provider;
-            const accessToken = session.provider_token;
-
-            if (provider === 'linkedin_oidc' && accessToken) {
-              // Fetch LinkedIn profile data
-              const linkedInData = await getLinkedInProfileData(accessToken);
-              
-              // Update profile with LinkedIn data
-              await updateProfileWithLinkedInData(session.user.id, linkedInData);
-            }
+            // Update profile with LinkedIn data from user metadata
+            await updateProfileWithLinkedInData(session.user);
           } catch (error) {
-            console.error('Error fetching/updating LinkedIn data:', error);
+            console.error('Error updating profile with LinkedIn data:', error);
           }
 
           // Check if profile exists

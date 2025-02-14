@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 interface LinkedInProfileData {
   name?: string;
@@ -7,18 +8,44 @@ interface LinkedInProfileData {
   profilePicture?: string;
 }
 
-export async function updateProfileWithLinkedInData(userId: string, linkedInData: LinkedInProfileData) {
+export async function updateProfileWithLinkedInData(user: User) {
   try {
+    if (!user.user_metadata) {
+      throw new Error('No user metadata available');
+    }
+
+    // First update with basic metadata
+    const basicUpdate = {
+      display_name: user.user_metadata.name,
+      avatar_url: user.user_metadata.picture,
+      updated_at: new Date().toISOString()
+    };
+
+    // If we have a provider token, fetch additional data from LinkedIn
+    if (user.app_metadata?.provider === 'linkedin_oidc') {
+      try {
+        const { data: linkedInData, error } = await supabase.functions.invoke('linkedin-profile', {
+          body: { accessToken: user.app_metadata.provider_token }
+        });
+
+        if (!error && linkedInData) {
+          // Merge LinkedIn data with basic update
+          Object.assign(basicUpdate, {
+            company_role: linkedInData.headline,
+            company: linkedInData.company
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching additional LinkedIn data:', error);
+        // Continue with basic update even if LinkedIn API call fails
+      }
+    }
+
+    // Update profile in Supabase
     const { error } = await supabase
       .from('profiles')
-      .update({
-        display_name: linkedInData.name,
-        company_role: linkedInData.headline,
-        company: linkedInData.company,
-        avatar_url: linkedInData.profilePicture,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId);
+      .update(basicUpdate)
+      .eq('id', user.id);
 
     if (error) throw error;
     return { success: true };
@@ -33,39 +60,12 @@ export async function updateProfileWithLinkedInData(userId: string, linkedInData
 
 export async function getLinkedInProfileData(accessToken: string): Promise<LinkedInProfileData> {
   try {
-    // Fetch basic profile information
-    const response = await fetch('https://api.linkedin.com/v2/me', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'cache-control': 'no-cache',
-        'X-Restli-Protocol-Version': '2.0.0'
-      }
+    const { data, error } = await supabase.functions.invoke('linkedin-profile', {
+      body: { accessToken }
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch LinkedIn profile data');
-    }
-
-    const data = await response.json();
-    
-    // Fetch profile picture
-    const pictureResponse = await fetch('https://api.linkedin.com/v2/me?projection=(profilePicture(displayImage~:playableStreams))', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'cache-control': 'no-cache',
-        'X-Restli-Protocol-Version': '2.0.0'
-      }
-    });
-
-    const pictureData = await pictureResponse.json();
-    const profilePicture = pictureData?.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier;
-
-    return {
-      name: `${data.localizedFirstName} ${data.localizedLastName}`,
-      headline: data.headline,
-      company: data.positions?.values?.[0]?.company?.name,
-      profilePicture
-    };
+    if (error) throw error;
+    return data as LinkedInProfileData;
   } catch (error) {
     console.error('Error fetching LinkedIn profile data:', error);
     throw error;
