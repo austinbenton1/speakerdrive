@@ -65,48 +65,6 @@ export default function Onboarding() {
   // Step flow: 1 or 2
   const [currentStep, setCurrentStep] = useState(1);
 
-  useEffect(() => {
-    // Check if user is logged in
-    const checkUser = async () => {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-
-        if (!session?.user) {
-          await supabase.auth.signOut();
-          navigate('/login');
-          return;
-        }
-        setUser(session.user);
-
-        // Fetch user's profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('[Onboarding Debug] Profile fetch error:', profileError);
-        } else if (profile?.display_name) {
-          // Set the display name in the form if it exists
-          setValue('fullName', profile.display_name);
-        }
-
-      } catch (err) {
-        console.error('[Onboarding Debug] Auth check error:', err);
-        await supabase.auth.signOut();
-        navigate('/login');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkUser();
-  }, [navigate, setValue]);
-
   // React Hook Form
   const {
     register,
@@ -131,6 +89,61 @@ export default function Onboarding() {
   const accountType = watch('account_type'); // "direct" or "partner"
   const selectedService = watch('services');
   const websiteValue = watch('website');
+
+  // Check if user is logged in and fetch profile
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkUserAndProfile = async () => {
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (!session?.user) {
+          await supabase.auth.signOut();
+          navigate('/login');
+          return;
+        }
+
+        if (isMounted) {
+          setUser(session.user);
+
+          // Fetch user's profile
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('[Onboarding Debug] Profile fetch error:', profileError);
+          } else if (profile?.display_name && isMounted) {
+            setValue('fullName', profile.display_name);
+          }
+        }
+      } catch (err) {
+        console.error('[Onboarding Debug] Auth check error:', err);
+        if (isMounted) {
+          await supabase.auth.signOut();
+          navigate('/login');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkUserAndProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, setValue]);
 
   /**
    * Step 1 => "Continue"
