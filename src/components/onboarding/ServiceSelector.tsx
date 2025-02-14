@@ -52,10 +52,16 @@ export default function ServiceSelector({
   const handleServiceClick = (serviceId: string) => {
     if (disabled) return;
     
-    // Find the service to get its label
+    // For the "other" option, set the value with empty custom text
+    if (serviceId === 'other') {
+      onChange('other:');
+      return;
+    }
+    
+    // For regular services, use the label
     const service = services.find(s => s.id === serviceId);
     if (service) {
-      onChange(service.label);  // Pass the label (e.g., "Keynote Speaking") instead of the id
+      onChange(service.label);
     }
   };
 
@@ -128,8 +134,18 @@ export default function ServiceSelector({
             value={otherValue}
             onChange={handleCustomServiceChange}
             disabled={disabled}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            placeholder="Enter custom service"
+            className={`
+              block w-full min-w-0
+              pl-4 pr-4 py-2
+              border rounded-lg bg-white
+              border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:ring-blue-500/10 focus:ring-2
+              placeholder:text-gray-400
+              focus:outline-none focus:ring-opacity-20
+              focus:bg-gray-50/75
+              disabled:bg-gray-50/75 disabled:text-gray-500
+              text-[15px]
+            `}
+            placeholder="Enter your custom service"
             aria-label="Custom service"
           />
         </div>

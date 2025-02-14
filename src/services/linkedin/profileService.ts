@@ -20,10 +20,6 @@ export async function updateProfileWithLinkedInData(user: User) {
     if (error) throw error;
     return { success: true };
   } catch (error) {
-    console.error('Error updating profile with LinkedIn data:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to update profile'
-    };
+    throw new Error('Failed to update profile with LinkedIn data');
   }
 }

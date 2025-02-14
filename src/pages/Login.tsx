@@ -33,7 +33,6 @@ export default function Login() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
-      console.log('Initiating LinkedIn sign-in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
@@ -45,48 +44,26 @@ export default function Login() {
       });
 
       if (error) {
-        console.error('LinkedIn login error:', {
-          message: error.message,
-          status: error.status
-        });
-        setError(`LinkedIn login failed: ${error.message}`);
+        setError(`Authentication failed: ${error.message}`);
       }
     } catch (err) {
-      console.error('LinkedIn OAuth exception:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initiate LinkedIn login');
+      setError(err instanceof Error ? err.message : 'Failed to initiate authentication');
     }
   };
   // --- END LINKEDIN ADD ---
 
   useEffect(() => {
-    const handleLinkedInAuthMessage = (event: MessageEvent) => {
-      console.log('Received message:', {
-        type: event.data.type,
-        origin: event.origin,
-        expectedOrigin: window.location.origin,
-        data: event.data
-      });
-      
-      // Verify the origin
-      if (event.origin !== window.location.origin) {
-        console.log('Ignoring message from unknown origin:', event.origin);
-        return;
-      }
-
+    const handleAuthMessage = (event: MessageEvent) => {
       if (event.data.type === 'linkedin-auth-success') {
-        console.log('LinkedIn auth success, redirecting to:', event.data.redirectPath);
         navigate(event.data.redirectPath);
       } else if (event.data.type === 'linkedin-auth-error') {
-        console.error('LinkedIn auth error:', event.data.error, event.data.details || {});
-        setError(event.data.error || 'Authentication failed');
+        setError(event.data.error);
       }
     };
 
-    console.log('Setting up LinkedIn auth message listener');
-    window.addEventListener('message', handleLinkedInAuthMessage);
+    window.addEventListener('message', handleAuthMessage);
     return () => {
-      console.log('Removing LinkedIn auth message listener');
-      window.removeEventListener('message', handleLinkedInAuthMessage);
+      window.removeEventListener('message', handleAuthMessage);
     };
   }, [navigate]);
 

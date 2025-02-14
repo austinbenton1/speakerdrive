@@ -40,12 +40,10 @@ export default function Signup() {
       });
 
       if (error) {
-        console.error('LinkedIn sign-in error:', error.message);
-        setError(error.message);
+        setError(`Authentication failed: ${error.message}`);
       }
     } catch (err) {
-      console.error('LinkedIn OAuth exception:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initiate LinkedIn sign-up');
+      setError(err instanceof Error ? err.message : 'Failed to initiate authentication');
     }
   };
   // --- END LINKEDIN ADD ---
@@ -83,7 +81,6 @@ export default function Signup() {
         state: { fromSignup: true }
       });
     } catch (error) {
-      console.error('Signup error:', error);
       setError('root', { 
         message: 'An unexpected error occurred. Please try again.' 
       });
