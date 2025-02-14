@@ -12,8 +12,6 @@ export default function LinkedInCallback() {
   useEffect(() => {
     const handleOAuthResponse = async () => {
       try {
-        console.log('LinkedIn callback initiated');
-
         // Get the current session to check if we're already authenticated
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
