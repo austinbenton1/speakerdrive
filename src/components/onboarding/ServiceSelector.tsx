@@ -39,37 +39,42 @@ export default function ServiceSelector({
    * where a user has typed "other:Some Custom Text."
    */
   const isServiceSelected = (serviceId: string) => {
+    // For 'other' option
     if (serviceId === 'other') {
-      return (
-        selectedService === 'other' ||
-        selectedService.startsWith('other:')
-      );
+      return selectedService.startsWith('other:');
     }
-    return selectedService === serviceId;
+    
+    // For regular services, compare with the full label
+    const service = services.find(s => s.id === serviceId);
+    return service?.label === selectedService;
   };
 
   const handleServiceClick = (serviceId: string) => {
-    if (!disabled) {
-      // If the user clicks "Other," just store 'other' until they type
-      // a custom value. Otherwise, store the normal service id.
-      if (serviceId === 'other') {
-        onChange('other');
-      } else {
-        onChange(serviceId);
-      }
+    if (disabled) return;
+    
+    // Find the service to get its label
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      onChange(service.label);  // Pass the label (e.g., "Keynote Speaking") instead of the id
     }
   };
 
+  const handleCustomServiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    onChange(`other:${e.target.value}`);
+  };
+
   /**
-   * Parse the parent value for "other:xxx" and extract xxx for the input
+   * If the user has selected "other" and typed a custom value,
+   * extract just the custom text to show in the input.
    */
   const otherValue = selectedService.startsWith('other:')
-    ? selectedService.replace(/^other:/, '')
+    ? selectedService.substring(6)
     : '';
 
   return (
     <div>
-      {/* Updated Label Section */}
+      {/* Label Section */}
       {!hideLabel && (
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700">
@@ -115,24 +120,22 @@ export default function ServiceSelector({
         })}
       </div>
 
-      {/* Text input for custom "Other" service */}
+      {/* Custom service input */}
       {isServiceSelected('other') && (
         <div className="mt-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Please specify:
-          </label>
           <input
             type="text"
             value={otherValue}
-            onChange={(e) => onChange(`other:${e.target.value}`)}
+            onChange={handleCustomServiceChange}
             disabled={disabled}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="Enter custom service"
+            aria-label="Custom service"
           />
         </div>
       )}
 
-      {/* Error Message */}
+      {/* Error message */}
       {error && (
         <p className="mt-2 text-sm text-red-600">
           {error}

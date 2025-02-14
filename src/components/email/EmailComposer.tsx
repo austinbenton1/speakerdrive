@@ -313,7 +313,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   // Toggles
   const [showAdvanced] = useState(true);
   const [isPitching, setIsPitching] = useState(true);
-  const [selectedService, setSelectedService] = useState<string>('');
+  const [selectedService, setSelectedService] = useState<string>(profile?.services || '');
   const [showMyContext, setShowMyContext] = useState(true);
   const [showCustomization, setShowCustomization] = useState(false);
   const [customizationText, setCustomizationText] = useState('');
@@ -372,6 +372,13 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
       }
     } else if (services.length > 0) {
       setSelectedService(services[0].id);
+    }
+  }, [profile?.services]);
+
+  useEffect(() => {
+    if (profile?.services) {
+      setSelectedService(profile.services);
+      setIsPitching(true); // Also enable pitching when we have a service
     }
   }, [profile?.services]);
 

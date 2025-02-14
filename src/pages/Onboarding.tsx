@@ -152,11 +152,11 @@ export default function Onboarding() {
         .upsert({
           id: user.id,
           display_name: data.fullName,
-          services: data.services,
+          services: data.services, // This will now be the full label (e.g., "Keynote Speaking")
           account_type: data.account_type,
           company: data.company || null,
           company_role: data.company_role || null,
-          profile_url_type: data.profile_url_type, // default to website
+          profile_url_type: data.profile_url_type,
           website: data.website || null,
         });
       if (profileError) throw profileError;
@@ -167,7 +167,7 @@ export default function Onboarding() {
         message: 'onboarding_init',
         email: user.email,
         display_name: data.fullName,
-        services: data.services,
+        services: data.services, // This will now be the full label
         account_type: data.account_type,
         company: data.company || null,
         company_role: data.company_role || null,

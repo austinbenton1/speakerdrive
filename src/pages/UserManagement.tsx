@@ -19,11 +19,7 @@ export default function UserManagement() {
   const [activeSection, setActiveSection] = useState<'personal' | 'professional' | null>(null);
   const [formState, setFormState] = useState({
     fullName: profile?.display_name || '',
-    services: Array.isArray(profile?.services) 
-      ? profile.services 
-      : profile?.services 
-        ? [profile.services]
-        : [],
+    services: profile?.services || '',  
     industries: profile?.industries || [],
     offering: profile?.offering || '',
     website: profile?.website || ''
@@ -34,11 +30,7 @@ export default function UserManagement() {
     if (profile) {
       setFormState({
         fullName: profile.display_name || '',
-        services: Array.isArray(profile.services)
-          ? profile.services
-          : profile.services
-            ? [profile.services]
-            : [],
+        services: profile.services || '',  
         industries: profile.industries || [],
         offering: profile.offering || '',
         website: profile.website || ''
@@ -69,7 +61,7 @@ export default function UserManagement() {
 
   const handleProfileSubmit = async (formData: { 
     fullName: string; 
-    services: string[]; 
+    services: string; 
     industries: string[]; 
     offering: string;
     website: string;
@@ -84,7 +76,7 @@ export default function UserManagement() {
 
       const result = await updateProfile(profile.id, {
         display_name: formData.fullName,
-        services: formData.services,
+        services: formData.services,  
         industries: formData.industries,
         offering: formData.offering,
         website: formData.website
@@ -104,7 +96,7 @@ export default function UserManagement() {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
-      setError(errorMessage);
+      console.error(errorMessage);
     } finally {
     }
   };
@@ -113,15 +105,30 @@ export default function UserManagement() {
     // Reset form to original values
     setFormState({
       fullName: profile.display_name || '',
-      services: profile.services || [],
+      services: profile.services || '',  
       industries: profile.industries || [],
       offering: profile.offering || '',
       website: profile.website || ''
     });
   };
 
-  const handleSubmit = () => {
-    handleProfileSubmit(formState);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    setSuccess(false);
+
+    try {
+      await updateProfile({
+        display_name: formState.fullName,
+        services: formState.services,  
+        offering: formState.offering || null,
+        website: formState.website || null
+      });
+      setSuccess(true);
+      setActiveSection(null);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
   };
 
   return (

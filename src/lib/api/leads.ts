@@ -1,8 +1,12 @@
 import { supabase } from '../supabase';
 import type { SpeakerLead } from '../../types';
+import { useAuthStore } from '../store';
 
 export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
   try {
+    const { user } = useAuthStore.getState();
+    if (!user) return null;
+
     console.log('Fetching lead by ID:', id);
 
     // First get the lead data
@@ -57,6 +61,9 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       .from('unlocked_leads')
       .select('id, pitch')
       .eq('lead_id', id)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (unlockedError && unlockedError.code !== 'PGRST116') { // Ignore "no rows returned" error

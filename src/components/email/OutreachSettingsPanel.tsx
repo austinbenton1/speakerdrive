@@ -63,6 +63,9 @@ export default function OutreachSettingsPanel({
   // If user turned off advanced, skip entirely
   if (!showAdvanced) return null;
 
+  // Get the user's primary service from profileServicesString
+  const primaryService = profileServicesString || '';
+
   const profileServices = parseProfileServices(profileServicesString || '');
   const truncatedContext = truncateContextSingleLine(profileOffering || '');
 
@@ -99,8 +102,8 @@ export default function OutreachSettingsPanel({
                   Plus,
                 }[service.icon];
 
-                const isInProfile = profileServices.includes(service.id);
-                const isSelected = selectedService === service.id;
+                const isSelected = selectedService === service.label;
+                const isPrimaryService = service.label === primaryService;
 
                 const buttonClasses = [
                   'relative flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
@@ -113,18 +116,18 @@ export default function OutreachSettingsPanel({
                 return (
                   <button
                     key={service.id}
-                    onClick={() => setSelectedService(service.id)}
+                    onClick={() => setSelectedService(service.label)}
                     className={buttonClasses}
                   >
                     {Icon && (
                       <Icon
-                        className={
-                          isSelected ? 'w-3 h-3 text-white' : 'w-3 h-3 text-gray-500'
-                        }
+                        className={`w-3.5 h-3.5 ${
+                          isSelected ? 'text-white' : 'text-gray-500'
+                        }`}
                       />
                     )}
-                    {service.label}
-                    {isInProfile && (
+                    <span>{service.label}</span>
+                    {isPrimaryService && !isSelected && (
                       <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500" />
                     )}
                   </button>

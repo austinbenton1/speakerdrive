@@ -44,12 +44,17 @@ export default function UserProfileForm({
     }));
   };
 
-  const handleServiceChange = (serviceId: string) => {
-    console.log('UserProfileForm - Service changed to:', serviceId);
+  const handleServiceChange = (serviceLabel: string) => {
+    console.log('UserProfileForm - Service changed to:', serviceLabel);
     setFormValues(prev => ({
       ...prev,
-      services: serviceId
+      services: serviceLabel
     }));
+    
+    // Notify parent of changes
+    onProfileChange({
+      services: serviceLabel
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

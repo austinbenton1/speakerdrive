@@ -77,10 +77,11 @@ export function useProfileUpdate() {
         fetch('https://n8n.speakerdrive.com/webhook/supa-profile', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(webhookPayload)
         }).catch(err => {
+          // Log error but don't block the update
           console.error('Webhook error:', err);
         });
       }

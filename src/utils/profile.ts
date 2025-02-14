@@ -1,4 +1,4 @@
-import { industries, services } from './constants';
+import { industries } from './constants';
 
 export function validateIndustries(selectedIndustries: string[]): boolean {
   if (!Array.isArray(selectedIndustries)) return false;
@@ -7,21 +7,20 @@ export function validateIndustries(selectedIndustries: string[]): boolean {
   );
 }
 
-export function validateServices(selectedServices: string[]): boolean {
-  if (!Array.isArray(selectedServices)) return false;
-  return selectedServices.every(service => 
-    services.some(valid => valid.id === service)
-  );
+export function validateService(selectedService: string): boolean {
+  if (!selectedService) return false;
+  
+  if (selectedService.startsWith('other:')) {
+    return selectedService.length > 6; // Must have text after "other:"
+  }
+  
+  const validServices = ['Keynote Speaking', 'Workshops', 'Coaching', 'Consulting', 'Facilitation'];
+  return validServices.includes(selectedService);
 }
 
 export function formatIndustryName(industryId: string): string {
   const industry = industries.find(i => i.id === industryId);
   return industry?.label || industryId;
-}
-
-export function formatServiceName(serviceId: string): string {
-  const service = services.find(s => s.id === serviceId);
-  return service?.label || serviceId;
 }
 
 export function getAvailableIndustries(selectedIndustries: string[] = []) {
@@ -31,9 +30,17 @@ export function getAvailableIndustries(selectedIndustries: string[] = []) {
   }));
 }
 
-export function getAvailableServices(selectedServices: string[] = []) {
+export function getAvailableService(currentService: string = '') {
+  const services = [
+    { id: 'keynote', label: 'Keynote Speaking' },
+    { id: 'workshops', label: 'Workshops' },
+    { id: 'coaching', label: 'Coaching' },
+    { id: 'consulting', label: 'Consulting' },
+    { id: 'facilitation', label: 'Facilitation' }
+  ];
+
   return services.map(service => ({
     ...service,
-    isSelected: selectedServices.includes(service.id)
+    isSelected: service.label === currentService
   }));
 }

@@ -9,7 +9,7 @@ import Website from './Website';
 
 interface ProfileFormData {
   fullName: string;
-  services: string[];
+  services: string;
   industries: string[];
   offering: string;
   website: string;
@@ -37,7 +37,7 @@ export default function ProfileForm({
 }: ProfileFormProps) {
   const [formData, setFormData] = React.useState<ProfileFormData>({
     fullName: initialData?.fullName || '',
-    services: initialData?.services || [],
+    services: initialData?.services || '',
     industries: initialData?.industries || [],
     offering: initialData?.offering || '',
     website: initialData?.website || '',
@@ -49,7 +49,7 @@ export default function ProfileForm({
     if (initialData) {
       setFormData({
         fullName: initialData.fullName || '',
-        services: initialData.services || [],
+        services: initialData.services || '',
         industries: initialData.industries || [],
         offering: initialData.offering || '',
         website: initialData.website || '',
@@ -61,7 +61,7 @@ export default function ProfileForm({
   const handleServiceChange = (serviceId: string) => {
     setFormData(prev => ({
       ...prev,
-      services: [serviceId] // Store as single-item array
+      services: serviceId
     }));
   };
 
@@ -69,7 +69,7 @@ export default function ProfileForm({
     setActiveSection(null);
     setFormData({
       fullName: initialData?.fullName || '',
-      services: initialData?.services || [],
+      services: initialData?.services || '',
       industries: initialData?.industries || [],
       offering: initialData?.offering || '',
       website: initialData?.website || '',
@@ -110,16 +110,18 @@ export default function ProfileForm({
   };
 
   // Helper function to get service icon
-  const getServiceIcon = (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    const IconComponent = service?.icon === 'Presentation' ? Presentation
-      : service?.icon === 'School' ? School
-      : service?.icon === 'Target' ? Target
-      : service?.icon === 'Briefcase' ? Briefcase
-      : service?.icon === 'Users' ? Users
-      : Plus;
+  const getServiceIcon = (serviceLabel: string) => {
+    const service = services.find(s => s.label === serviceLabel);
+    if (!service) return null;
     
-    return <IconComponent className="w-4 h-4 text-blue-500" />;
+    const IconComponent = service.icon === 'Presentation' ? Presentation
+      : service.icon === 'School' ? School
+      : service.icon === 'Target' ? Target
+      : service.icon === 'Briefcase' ? Briefcase
+      : service.icon === 'Users' ? Users
+      : null;
+    
+    return IconComponent ? <IconComponent className="w-4 h-4 text-blue-500" /> : null;
   };
 
   if (!activeSection) {
@@ -216,10 +218,10 @@ export default function ProfileForm({
             <div>
               <h3 className="text-sm font-medium text-gray-500">Primary Service</h3>
               <div className="mt-2">
-                {formData.services[0] ? (
+                {formData.services ? (
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium bg-white border border-blue-200 text-blue-700">
-                    {getServiceIcon(formData.services[0])}
-                    {getServiceLabel(formData.services[0])}
+                    {getServiceIcon(formData.services)}
+                    {formData.services}
                   </div>
                 ) : (
                   <p className="text-base text-gray-400">Not set</p>
@@ -305,7 +307,7 @@ export default function ProfileForm({
           <div className="p-8 space-y-10">
             <div className="pb-10 border-b border-gray-100">
               <ServiceSelector
-                selectedService={formData.services[0] || ''}
+                selectedService={formData.services || ''}
                 onServiceChange={handleServiceChange}
                 isEditing={true}
                 disabled={isSubmitting}

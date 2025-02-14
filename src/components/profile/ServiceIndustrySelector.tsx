@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Mic2, Users, GitCommit, Presentation, Lightbulb,
   Monitor, GraduationCap, Briefcase, LineChart, School,
-  Target, Heart, Store, Stethoscope, Leaf, Plus
+  Target, Heart, Store, Stethoscope, Leaf, Plus, Check
 } from 'lucide-react';
 import { services } from '../../utils/constants';
 import { useProfile } from '../../hooks/useProfile';
@@ -10,7 +10,7 @@ import { useProfile } from '../../hooks/useProfile';
 interface ServiceSelectorProps {
   selectedService: string;
   disabled?: boolean;
-  onServiceChange: (serviceId: string) => void;
+  onServiceChange: (serviceLabel: string) => void;
 }
 
 const iconMap = {
@@ -42,7 +42,6 @@ export default function ServiceSelector({
   // Parse service value from array or string
   const parseServiceValue = (value: any): string => {
     if (!value) return '';
-    if (Array.isArray(value)) return value[0] || '';
     return value;
   };
 
@@ -52,56 +51,62 @@ export default function ServiceSelector({
     return initialService;
   });
 
-  // Update local state when profile or props change
+  // Update local state when prop changes
   React.useEffect(() => {
     const newService = parseServiceValue(selectedService || profile?.services);
     setLocalService(newService);
   }, [selectedService, profile?.services]);
 
   const handleServiceClick = (serviceId: string) => {
-    if (!disabled) {
-      setLocalService(serviceId);
-      onServiceChange(serviceId);
+    if (disabled) return;
+    
+    // Find the service to get its label
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      const newService = service.label;  // Use the full label
+      setLocalService(newService);
+      onServiceChange(newService);
     }
   };
 
   return (
-    <div>
+    <div className="space-y-4">
       <h3 className="text-[15px] font-medium text-gray-900 mb-3">Primary Service Offering</h3>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-4">
         {loading ? (
           <div className="col-span-3 text-center py-4 text-gray-500">Loading...</div>
         ) : (
           services.map((service) => {
-            const isSelected = service.id === localService;
             const Icon = iconMap[service.icon as keyof typeof iconMap];
+            const isSelected = localService === service.label;  // Compare with label directly
+            
             return (
               <button
                 key={service.id}
                 type="button"
                 onClick={() => handleServiceClick(service.id)}
                 disabled={disabled}
-                className={`
-                  group relative flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium
-                  transition-all duration-200
-                  border
-                  ${isSelected 
-                    ? 'bg-white border-blue-500 text-blue-700 shadow-sm' 
-                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:shadow-sm'
-                  }
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                className={`relative flex items-center space-x-3 rounded-lg border p-4 hover:border-gray-400 ${
+                  isSelected 
+                    ? 'border-blue-500 ring-1 ring-blue-500'
+                    : 'border-gray-300'
+                }`}
               >
-                {Icon && (
-                  <Icon className={`
-                    w-4 h-4 flex-shrink-0
-                    ${isSelected 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 group-hover:text-gray-500'
-                    }
-                  `} />
+                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
+                  isSelected ? 'bg-blue-500' : 'bg-gray-100'
+                }`}>
+                  <Icon className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium ${isSelected ? 'text-blue-600' : 'text-gray-900'}`}>
+                    {service.label}
+                  </p>
+                </div>
+                {isSelected && (
+                  <div className="absolute -top-px -right-px">
+                    <Check className="h-5 w-5 text-blue-500" />
+                  </div>
                 )}
-                <span>{service.label}</span>
               </button>
             );
           })
