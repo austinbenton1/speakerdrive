@@ -46,7 +46,21 @@ export default function LinkedInCallback() {
             console.error('Profile error:', profileError);
           }
 
-          const redirectPath = !existingProfile ? '/onboarding' : '/dashboard';
+          // Get the origin from URL parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          const origin = urlParams.get('origin');
+
+          // Determine redirect path based on origin and profile existence
+          let redirectPath = '/dashboard'; // default path
+          
+          if (!existingProfile) {
+            redirectPath = '/onboarding';
+          } else if (origin === 'signup') {
+            redirectPath = '/chat/conversation';
+          } else if (origin === 'login') {
+            redirectPath = '/dashboard';
+          }
+
           console.log('Redirecting to:', redirectPath);
           navigate(redirectPath);
           return;

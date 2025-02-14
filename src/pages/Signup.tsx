@@ -29,20 +29,23 @@ export default function Signup() {
   // --- LINKEDIN ADDED ---
   const handleLinkedInSignIn = async () => {
     try {
-      // This will redirect the user to LinkedIn’s OAuth screen.
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          // Replace with your actual LinkedIn callback URL
-          redirectTo: `${window.location.origin}/linkedin-callback`
+          redirectTo: `${window.location.origin}/linkedin-callback`,
+          queryParams: {
+            origin: 'signup'
+          }
         }
       });
+
       if (error) {
         console.error('LinkedIn sign-in error:', error.message);
+        setError(error.message);
       }
-      // No further action needed here; user is redirected.
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
+      setError(err instanceof Error ? err.message : 'Failed to initiate LinkedIn sign-up');
     }
   };
   // --- END LINKEDIN ADD ---

@@ -34,30 +34,23 @@ export default function Login() {
   const handleLinkedInSignIn = async () => {
     try {
       console.log('Initiating LinkedIn sign-in...');
-      console.log('Current origin:', window.location.origin);
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/linkedin-callback`
-          // Using direct redirect instead of popup
+          redirectTo: `${window.location.origin}/linkedin-callback`,
+          queryParams: {
+            origin: 'login'
+          }
         }
       });
-      
+
       if (error) {
         console.error('LinkedIn login error:', {
           message: error.message,
-          status: error.status,
-          name: error.name,
-          stack: error.stack
+          status: error.status
         });
         setError(`LinkedIn login failed: ${error.message}`);
-        return;
       }
-
-      // With direct redirect, we don't need to handle the URL opening
-      // as Supabase will handle the redirect automatically
-
     } catch (err) {
       console.error('LinkedIn OAuth exception:', err);
       setError(err instanceof Error ? err.message : 'Failed to initiate LinkedIn login');
