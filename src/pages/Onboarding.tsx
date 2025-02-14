@@ -81,6 +81,21 @@ export default function Onboarding() {
           return;
         }
         setUser(session.user);
+
+        // Fetch user's profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('[Onboarding Debug] Profile fetch error:', profileError);
+        } else if (profile?.display_name) {
+          // Set the display name in the form if it exists
+          setValue('fullName', profile.display_name);
+        }
+
       } catch (err) {
         console.error('[Onboarding Debug] Auth check error:', err);
         await supabase.auth.signOut();
@@ -90,7 +105,7 @@ export default function Onboarding() {
       }
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, setValue]);
 
   // React Hook Form
   const {
