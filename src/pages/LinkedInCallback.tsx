@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { getLinkedInProfileData, updateProfileWithLinkedInData } from '../services/linkedin/profileService';
 
 export default function LinkedInCallback() {
   const navigate = useNavigate();
@@ -31,6 +32,22 @@ export default function LinkedInCallback() {
             id: session.user.id,
             email: session.user.email
           });
+
+          try {
+            // Get LinkedIn access token from the session
+            const provider = session.user.app_metadata.provider;
+            const accessToken = session.provider_token;
+
+            if (provider === 'linkedin_oidc' && accessToken) {
+              // Fetch LinkedIn profile data
+              const linkedInData = await getLinkedInProfileData(accessToken);
+              
+              // Update profile with LinkedIn data
+              await updateProfileWithLinkedInData(session.user.id, linkedInData);
+            }
+          } catch (error) {
+            console.error('Error fetching/updating LinkedIn data:', error);
+          }
 
           // Check if profile exists
           const { data: existingProfile, error: profileError } = await supabase
