@@ -12,7 +12,8 @@ export async function updateProfileWithLinkedInData(user: User) {
       .update({
         display_name: user.user_metadata.name,
         avatar_url: user.user_metadata.picture,
-        updated_at: new Date().toISOString()
+        company_role: user.user_metadata.headline || null,
+        company: user.user_metadata.company || null
       })
       .eq('id', user.id);
 
