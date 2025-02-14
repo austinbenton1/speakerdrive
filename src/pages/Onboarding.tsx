@@ -211,7 +211,8 @@ export default function Onboarding() {
       }
       setProgress(100);
 
-      navigate('/dashboard');
+      // Redirect to chat/conversation instead of dashboard
+      navigate('/chat/conversation');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to complete onboarding';
       console.error('[Onboarding Debug] Final submission error:', msg);
