@@ -57,10 +57,10 @@ export default function Layout() {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       <div className="hidden sm:block">
-        <Sidebar />
+        <Sidebar profile={profile} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6">
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6 relative z-20">
           {/* Mobile Menu Button */}
           <button 
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -143,20 +143,24 @@ export default function Layout() {
 
         {/* Mobile Menu Overlay */}
         <div 
-          className={`fixed inset-0 z-40 transition-opacity duration-300 ease-in-out ${
-            showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`fixed inset-0 z-30 ${
+            showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'
           }`}
         >
+          {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-gray-600 opacity-50" 
+            className={`absolute inset-0 bg-gray-600 transition-opacity duration-300 ${
+              showMobileMenu ? 'opacity-50' : 'opacity-0'
+            }`}
             onClick={() => setShowMobileMenu(false)}
           />
+          {/* Sidebar Container */}
           <div 
-            className={`absolute inset-y-0 left-0 w-52 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+            className={`absolute inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
               showMobileMenu ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            <Sidebar />
+            <Sidebar profile={profile} isMobile={true} onNavigate={() => setShowMobileMenu(false)} />
           </div>
         </div>
 

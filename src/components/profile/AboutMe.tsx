@@ -95,13 +95,12 @@ export default function AboutMe({
             disabled={disabled}
             placeholder="Award-winning keynote speaker specializing in leadership and transformation..."
             className={`
-              w-full min-h-[200px] p-4 border rounded-lg resize-none
+              w-full min-h-[300px] p-4 border rounded-lg resize-none
               text-base leading-relaxed
               ${disabled 
                 ? 'bg-gray-50 cursor-not-allowed opacity-75' 
-                : 'bg-white hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                : 'bg-white hover:border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
               }
-              placeholder:text-gray-400
             `}
           />
           <div className={`

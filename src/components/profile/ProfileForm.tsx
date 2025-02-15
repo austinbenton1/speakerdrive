@@ -129,7 +129,7 @@ export default function ProfileForm({
       <div className="space-y-6">
         {/* Personal Information Section */}
         <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1">
                 <User className="w-4 h-4 text-gray-400" />
@@ -138,7 +138,7 @@ export default function ProfileForm({
               <button
                 type="button"
                 onClick={() => setActiveSection('personal')}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
@@ -146,7 +146,7 @@ export default function ProfileForm({
             </div>
           </div>
           <div className="p-8">
-            <div className="grid grid-cols-[160px_1fr] gap-10">
+            <div className="grid grid-cols-[160px_1fr] gap-6">
               {/* Photo */}
               <div className="w-[160px]">
                 {avatarUrl ? (
@@ -198,7 +198,7 @@ export default function ProfileForm({
 
         {/* Professional Details Section */}
         <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1">
                 <Briefcase className="w-4 h-4 text-gray-400" />
@@ -207,7 +207,7 @@ export default function ProfileForm({
               <button
                 type="button"
                 onClick={() => setActiveSection('professional')}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Details
@@ -245,7 +245,7 @@ export default function ProfileForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {activeSection === 'personal' && (
         <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-400" />
               <h2 className="text-[15px] font-medium text-gray-900">Personal Information</h2>
@@ -298,7 +298,7 @@ export default function ProfileForm({
 
       {activeSection === 'professional' && (
         <div className="bg-white rounded-xl border border-gray-200/75 shadow-sm">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80">
             <div className="flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-gray-400" />
               <h2 className="text-[15px] font-medium text-gray-900">Professional Details</h2>

@@ -18,7 +18,7 @@ export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
       onClick={() => navigate(`/leads/${lead.lead_id}`)}
       className="flex items-stretch gap-3 hover:bg-gray-50 cursor-pointer transition-colors rounded-lg px-3 group"
     >
-      <div className="flex-shrink-0 py-2">
+      <div className="flex-shrink-0 pt-4 pb-3">
         {lead.image_url ? (
           <img
             src={lead.image_url}

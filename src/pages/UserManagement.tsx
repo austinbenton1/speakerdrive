@@ -133,7 +133,7 @@ export default function UserManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-50 rounded-lg">
