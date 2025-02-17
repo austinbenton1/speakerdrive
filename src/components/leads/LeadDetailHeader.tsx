@@ -62,67 +62,47 @@ export default function LeadDetailHeader({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-4">
           {/* Navigation Controls Container - Same width as Event Snapshot */}
-          <div className="max-w-3xl">
-            <div className="flex justify-between items-center">
-              {/* Back Button */}
-              <button 
-                onClick={handleBack}
+          <div className="max-w-3xl flex items-center justify-between mb-6">
+            {/* Back Button */}
+            <button 
+              onClick={handleBack}
+              className={`group flex items-center text-sm font-medium text-gray-500 ${
+                lead.leadType === 'Contact'
+                  ? 'hover:text-blue-600'
+                  : 'hover:text-emerald-600'
+              } transition-colors`}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back
+            </button>
+
+            {/* Previous/Next Navigation */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onPrevious}
+                disabled={!hasPrevious}
                 className={`group flex items-center text-sm font-medium text-gray-500 ${
                   lead.leadType === 'Contact'
                     ? 'hover:text-blue-600'
                     : 'hover:text-emerald-600'
-                } transition-colors`}
+                } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Back
+                Previous
               </button>
-
-              {/* Unlock Type Pill - Mobile Only */}
-              <div className="block md:hidden">
-                <span className={`
-                  inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                  ${lead.leadType === 'Contact'
-                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                    : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                  }
-                `}>
-                  {lead.leadType === 'Contact' ? (
-                    <Mail className="w-3 h-3 mr-1" />
-                  ) : (
-                    <Link className="w-3 h-3 mr-1" />
-                  )}
-                  {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
-                </span>
-              </div>
-
-              {/* Previous/Next Navigation */}
-              <div className="flex space-x-4 items-center">
-                <button
-                  onClick={onPrevious}
-                  disabled={!hasPrevious}
-                  className={`group flex items-center text-sm font-medium text-gray-500 ${
-                    lead.leadType === 'Contact'
-                      ? 'hover:text-blue-600'
-                      : 'hover:text-emerald-600'
-                  } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                  Previous
-                </button>
-                <div className="w-px h-4 bg-gray-300"></div>
-                <button
-                  onClick={onNext}
-                  disabled={!hasNext}
-                  className={`group flex items-center text-sm font-medium text-gray-500 ${
-                    lead.leadType === 'Contact'
-                      ? 'hover:text-blue-600'
-                      : 'hover:text-emerald-600'
-                  } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  Next
-                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
+              <div className="w-px h-4 bg-gray-300"></div>
+              <button
+                onClick={onNext}
+                disabled={!hasNext}
+                className={`group flex items-center text-sm font-medium text-gray-500 ${
+                  lead.leadType === 'Contact'
+                    ? 'hover:text-blue-600'
+                    : 'hover:text-emerald-600'
+                } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                Next
+                <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           </div>
 
@@ -152,7 +132,7 @@ export default function LeadDetailHeader({
                     </h1>
                     <div className="mt-3">
                       <span className="text-xl text-gray-600 leading-normal line-clamp-2">
-                        {lead.focus || 'No focus specified'}{' '}
+                        {lead.focus || 'No focus specified'}
                         <span className={`
                           hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium align-middle ml-2
                           ${lead.leadType === 'Contact'
@@ -168,6 +148,23 @@ export default function LeadDetailHeader({
                           {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
                         </span>
                       </span>
+                      {/* Mobile-only centered pill */}
+                      <div className="flex justify-center mt-4 md:hidden">
+                        <span className={`
+                          inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                          ${lead.leadType === 'Contact'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                            : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          }
+                        `}>
+                          {lead.leadType === 'Contact' ? (
+                            <Mail className="w-3 h-3 mr-1" />
+                          ) : (
+                            <Link className="w-3 h-3 mr-1" />
+                          )}
+                          {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
