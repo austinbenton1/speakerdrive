@@ -7,6 +7,7 @@ import {
   Headphones, Sparkles, LineChart, Briefcase
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import minimalLogo from '../assets/speakerdrive-mini-v2.png';
 
 interface Profile {
   id: string;
@@ -41,14 +42,24 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
   const [isAiToolsOpen, setIsAiToolsOpen] = useState(false);
   const [isContactToolsOpen, setIsContactToolsOpen] = useState(false);
 
-  const handleMouseEnter = () => {
+  // Start minimized on Find Leads page
+  const [isMinimized, setIsMinimized] = useState(location.pathname === '/find-leads');
+
+  // Update minimized state when location changes
+  useEffect(() => {
     if (!isMobile) {
+      setIsMinimized(location.pathname === '/find-leads');
+    }
+  }, [location.pathname, isMobile]);
+
+  const handleMouseEnter = () => {
+    if (!isMobile && isMinimized) {
       setIsHovered(true);
     }
   };
 
   const handleMouseLeave = () => {
-    if (!isMobile) {
+    if (!isMobile && isMinimized) {
       setIsHovered(false);
     }
   };
@@ -59,19 +70,27 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
   };
 
   return (
-    <div 
-      className={`
-        h-full bg-white border-r border-gray-200 flex flex-col overflow-y-auto
-      `}
+    <div
+      className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 ease-in-out ${
+        isMobile ? 'w-64' : isMinimized && !isHovered ? 'w-16' : 'w-64'
+      }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <div className="py-5 px-4">
-        <img 
-          src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
-          alt="SpeakerDrive" 
-          className="h-6 w-auto transition-all duration-300 ml-2"
-        />
+        {!isMobile && isMinimized && !isHovered ? (
+          <img 
+            src={minimalLogo}
+            alt="SpeakerDrive"
+            className="h-8 w-8 mx-auto transition-all duration-300"
+          />
+        ) : (
+          <img 
+            src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
+            alt="SpeakerDrive" 
+            className="h-6 w-auto ml-2 transition-all duration-300"
+          />
+        )}
       </div>
       
       <div className={`flex-1 px-2.5 py-2 flex flex-col ${isMobile ? 'space-y-2' : 'space-y-8'}`}>
@@ -87,17 +106,18 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }
+                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
               `}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
-              <span className="ml-2.5">{item.label}</span>
+              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
             </button>
           ))}
         </div>
 
         {/* Find New Leads Section */}
         <div>
-          <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? '' : 'py-3'}`}>
+          <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? '' : 'py-3'} ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
             Find New Leads
           </div>
           <button
@@ -108,16 +128,17 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 ? 'bg-blue-50 text-blue-700'
                 : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }
+              ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
             `}
           >
             <Search className="w-4 h-4 flex-shrink-0" />
-            <span className="ml-2.5">Find Leads</span>
+            <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Find Leads</span>
           </button>
         </div>
 
         {/* Tools Section */}
         <div>
-          <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? '' : 'py-3'}`}>
+          <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? '' : 'py-3'} ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
             Tools
           </div>
           
@@ -128,14 +149,15 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               className={`
                 flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
                 ${isAiToolsOpen ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}
+                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
               `}
             >
-              <div className="flex items-center justify-between w-full">
+              <div className={`flex items-center ${!isMobile && isMinimized && !isHovered ? 'w-auto' : 'w-full'}`}>
                 <div className="flex items-center">
                   <Sparkles className="w-4 h-4 flex-shrink-0" />
-                  <span className="ml-2.5">AI Tools</span>
+                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>AI Tools</span>
                 </div>
-                <div className="ml-auto">
+                <div className={`ml-auto ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
                   {isAiToolsOpen ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -156,10 +178,11 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                       ? 'text-blue-700 font-semibold'
                       : 'text-gray-600 hover:text-gray-900'
                     }
+                    ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                   `}
                 >
-                  <MessageSquare className="w-4 h-4 flex-shrink-0 mr-2.5" />
-                  <span className="font-semibold">Ask SpeakerDrive</span>
+                  <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Ask SpeakerDrive</span>
                 </button>
 
                 {/* Indented items with vertical line */}
@@ -178,10 +201,11 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                           ? 'text-blue-700 font-medium'
                           : 'text-gray-600 hover:text-gray-900'
                         }
+                        ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                       `}
                     >
-                      <LineChart className="w-4 h-4 flex-shrink-0 mr-2.5" />
-                      <span>Instant Intel</span>
+                      <LineChart className="w-4 h-4 flex-shrink-0" />
+                      <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Instant Intel</span>
                     </button>
 
                     {/* Sales Coach */}
@@ -193,10 +217,11 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                           ? 'text-blue-700 font-medium'
                           : 'text-gray-600 hover:text-gray-900'
                         }
+                        ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                       `}
                     >
-                      <Headphones className="w-4 h-4 flex-shrink-0 mr-2.5" />
-                      <span>Sales Coach</span>
+                      <Headphones className="w-4 h-4 flex-shrink-0" />
+                      <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Sales Coach</span>
                     </button>
                   </div>
                 </div>
@@ -211,14 +236,15 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               className={`
                 flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
                 ${isContactToolsOpen ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}
+                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
               `}
             >
-              <div className="flex items-center justify-between w-full">
+              <div className={`flex items-center ${!isMobile && isMinimized && !isHovered ? 'w-auto' : 'w-full'}`}>
                 <div className="flex items-center">
                   <Wrench className="w-4 h-4 flex-shrink-0" />
-                  <span className="ml-2.5">Contact Tools</span>
+                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Contact Tools</span>
                 </div>
-                <div className="ml-auto">
+                <div className={`ml-auto ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
                   {isContactToolsOpen ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -240,10 +266,11 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                         ? 'text-blue-700 font-medium'
                         : 'text-gray-600 hover:text-gray-900'
                       }
+                      ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                     `}
                   >
-                    <item.icon className="w-4 h-4 flex-shrink-0 mr-2.5" />
-                    <span>{item.label}</span>
+                    <item.icon className="w-4 h-4 flex-shrink-0" />
+                    <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
                   </button>
                 ))}
               </div>
@@ -261,10 +288,11 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 ? 'bg-blue-50 text-blue-700'
                 : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }
+              ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
             `}
           >
             <Briefcase className="w-4 h-4 flex-shrink-0" />
-            <span className="ml-2.5">Unlocked Leads</span>
+            <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
           </button>
         </div>
 
@@ -280,17 +308,18 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }
+                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
               `}
             >
               <Settings className="w-4 h-4 flex-shrink-0" />
-              <span className="ml-2.5">Settings</span>
+              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
             </button>
             <button
               onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
               className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
             >
               <LogOut className="w-4 h-4 flex-shrink-0" />
-              <span className="ml-2.5">Logout</span>
+              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
             </button>
           </div>
         </div>

@@ -4,11 +4,23 @@ import UserTableRow from './UserTableRow';
 
 interface UserTableProps {
   users: UserProfile[];
+  totalUsers: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   onBan: (userId: string) => Promise<void>;
   onUnban: (userId: string) => Promise<void>;
 }
 
-export default function UserTable({ users, onBan, onUnban }: UserTableProps) {
+export default function UserTable({ 
+  users, 
+  totalUsers,
+  currentPage, 
+  totalPages,
+  onPageChange,
+  onBan, 
+  onUnban 
+}: UserTableProps) {
   return (
     <div className="flex flex-col">
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -45,6 +57,121 @@ export default function UserTable({ users, onBan, onUnban }: UserTableProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="flex-1 flex justify-between sm:hidden">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing{' '}
+              <span className="font-medium">{(currentPage - 1) * 25 + 1}</span>
+              {' '}-{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * 25, totalUsers)}
+              </span>
+              {' '}of{' '}
+              <span className="font-medium">{totalUsers}</span>
+              {' '}users
+            </p>
+          </div>
+          <div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                  currentPage === 1
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Previous</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+              {/* Page Numbers */}
+              {[...Array(totalPages)].map((_, idx) => {
+                const pageNumber = idx + 1;
+                const isCurrentPage = pageNumber === currentPage;
+
+                // Show current page, first page, last page, and pages around current
+                const shouldShow = 
+                  pageNumber === 1 || 
+                  pageNumber === totalPages ||
+                  Math.abs(pageNumber - currentPage) <= 1;
+
+                if (!shouldShow) {
+                  // Show ellipsis for skipped pages
+                  if (pageNumber === 2 || pageNumber === totalPages - 1) {
+                    return (
+                      <span
+                        key={`ellipsis-${pageNumber}`}
+                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={pageNumber}
+                    onClick={() => onPageChange(pageNumber)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      isCurrentPage
+                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Next</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </nav>
           </div>
         </div>
       </div>
