@@ -77,6 +77,24 @@ export default function LeadDetailHeader({
                 Back
               </button>
 
+              {/* Unlock Type Pill - Mobile Only */}
+              <div className="block md:hidden">
+                <span className={`
+                  inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                  ${lead.leadType === 'Contact'
+                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                    : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                  }
+                `}>
+                  {lead.leadType === 'Contact' ? (
+                    <Mail className="w-3 h-3 mr-1" />
+                  ) : (
+                    <Link className="w-3 h-3 mr-1" />
+                  )}
+                  {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
+                </span>
+              </div>
+
               {/* Previous/Next Navigation */}
               <div className="flex space-x-4 items-center">
                 <button
@@ -136,7 +154,7 @@ export default function LeadDetailHeader({
                       <span className="text-xl text-gray-600 leading-normal line-clamp-2">
                         {lead.focus || 'No focus specified'}{' '}
                         <span className={`
-                          inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium align-middle ml-2
+                          hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium align-middle ml-2
                           ${lead.leadType === 'Contact'
                             ? 'bg-blue-50 text-blue-600 border border-blue-200'
                             : 'bg-emerald-50 text-emerald-600 border border-emerald-200'

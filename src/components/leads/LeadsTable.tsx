@@ -99,13 +99,19 @@ export default function LeadsTable({
     if (!session?.user) return;
 
     // Record the visit
-    const { error } = await supabase.rpc('record_visit', {
-      var_lead: leadId,
-      var_user: session.user.id
-    });
+    try {
+      const { error } = await supabase.rpc('record_visit', {
+        var_lead: leadId,
+        var_user: session.user.id
+      });
 
-    if (error) {
-      console.error('Error recording visit:', error);
+      if (error) {
+        // Handle error silently
+        return;
+      }
+    } catch (error) {
+      // Handle error silently
+      return;
     }
 
     // Get all lead IDs for navigation

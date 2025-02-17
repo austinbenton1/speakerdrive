@@ -7,8 +7,6 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
     const { user } = useAuthStore.getState();
     if (!user) return null;
 
-    console.log('Fetching lead by ID:', id);
-
     // First get the lead data
     const { data: leadData, error: leadError } = await supabase
       .from('leads')
@@ -49,12 +47,6 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
 
     if (leadError) throw leadError;
     if (!leadData) return null;
-
-    console.log('Raw lead data from database:', {
-      id: leadData.id,
-      event_info: leadData.event_info,
-      detailed_info: leadData.detailed_info
-    });
 
     // Then get the unlocked lead data if it exists
     const { data: unlockedData, error: unlockedError } = await supabase
@@ -107,15 +99,9 @@ export async function fetchLeadById(id: string): Promise<SpeakerLead | null> {
       city: leadData.city
     };
 
-    console.log('Transformed lead data:', {
-      id: transformedLead.id,
-      eventInfo: transformedLead.eventInfo,
-      detailedInfo: transformedLead.detailedInfo
-    });
-
     return transformedLead;
   } catch (error) {
-    console.error('Error fetching lead by ID:', error);
-    throw error;
+    // Silently handle error and return null
+    return null;
   }
 }

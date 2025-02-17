@@ -26,17 +26,6 @@ export async function sendChatMessage(
 
     const url = 'https://n8n.speakerdrive.com/webhook/ai-data';
 
-    console.log('[Chatbot] Sending message to:', url);
-    console.log(
-      JSON.stringify({
-        message,
-        email,
-        display_name,
-        services,
-        website,
-      })
-    );
-
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -53,11 +42,6 @@ export async function sendChatMessage(
     });
 
     if (!response.ok) {
-      console.error('[Chatbot] Error response:', {
-        status: response.status,
-        statusText: response.statusText,
-      });
-
       // Try to get error details from response
       let errorDetails = '';
       try {
@@ -75,7 +59,6 @@ export async function sendChatMessage(
     }
 
     const data = await response.json();
-    console.log('[Chatbot] Response received:', data);
 
     // Validate response format
     if (!data?.body) {
@@ -120,7 +103,6 @@ export async function sendChatMessage(
       status: response.status,
     };
   } catch (error) {
-    console.error('[Chatbot] Error sending message:', error);
     throw error;
   }
 }

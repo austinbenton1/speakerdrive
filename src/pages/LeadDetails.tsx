@@ -103,6 +103,8 @@ export default function LeadDetails() {
     }
   };
 
+  const unlockLead = handleUnlock;
+
   if (isAuthLoading || isLeadLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
@@ -154,7 +156,7 @@ export default function LeadDetails() {
       <div className="min-h-screen" style={{ background: '#EDEEF0' }}>
         <LeadDetailHeader
           lead={lead}
-          onUnlock={handleUnlock}
+          onUnlock={unlockLead}
           isUnlocking={isUnlocking}
           isUnlocked={isUnlocked}
           unlockValue={unlockValue}
@@ -165,11 +167,11 @@ export default function LeadDetails() {
         />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex gap-8">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="w-full md:flex-1">
               <LeadDetailContent lead={lead} />
             </div>
-            <div className="w-80">
+            <div className="w-full md:w-80">
               <LeadDetailSidebar lead={lead} />
             </div>
           </div>

@@ -181,8 +181,8 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
         fullUrl: urlToFormat
       };
     } catch (error) {
-      console.error('Invalid URL:', url);
-      return null;
+      // Return original string if URL is invalid
+      return { hostname: url, fullUrl: url };
     }
   };
 
