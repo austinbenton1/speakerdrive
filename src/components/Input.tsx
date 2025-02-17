@@ -13,17 +13,17 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ 
-    label, 
-    error, 
-    icon: Icon, 
+  ({
+    label,
+    error,
+    icon: Icon,
     helperText,
     showValidation = false,
     isValid = false,
-    className = '', 
-    value, 
-    onChange, 
-    ...props 
+    className = '',
+    value,
+    onChange,
+    ...props
   }, ref) => {
     return (
       <div>
@@ -33,7 +33,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="mt-1 relative">
           {Icon && (
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
-              <Icon className={`h-5 w-5 ${error ? 'text-red-400' : isValid ? 'text-emerald-500' : 'text-gray-400/75'}`} />
+              <Icon
+                className={`h-5 w-5 ${
+                  error
+                    ? 'text-red-400'
+                    : isValid
+                    ? 'text-emerald-500'
+                    : 'text-gray-400/75'
+                }`}
+              />
             </div>
           )}
           {showValidation && isValid && !error && (
@@ -53,11 +61,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onChange={onChange}
             className={`
               block w-full min-w-0
-              ${Icon ? 'pl-10' : 'pl-4'} ${(isValid || error) ? 'pr-10' : 'pr-4'} py-2
+              ${Icon ? 'pl-10' : 'pl-4'} ${
+              isValid || error ? 'pr-10' : 'pr-4'
+            } py-2
               border rounded-lg bg-white
-              ${error 
-                ? 'border-red-300 focus:ring-red-500/10 focus:border-red-500' 
-                : isValid
+              ${
+                error
+                  ? 'border-red-300 focus:ring-red-500/10 focus:border-red-500'
+                  : isValid
                   ? 'border-emerald-300 focus:ring-emerald-500/10 focus:border-emerald-500'
                   : 'border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:ring-blue-500/10 focus:ring-2'
               }

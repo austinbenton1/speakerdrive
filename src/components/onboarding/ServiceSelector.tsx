@@ -35,61 +35,53 @@ export default function ServiceSelector({
   hideLabel = false,
 }: ServiceSelectorProps) {
   /**
-   * Determine if a given service is "selected," including the case
-   * where a user has typed "other:Some Custom Text."
+   * Check if a service is "selected," including "other:..."
    */
   const isServiceSelected = (serviceId: string) => {
-    // For 'other' option
     if (serviceId === 'other') {
       return selectedService.startsWith('other:');
     }
-    
-    // For regular services, compare with the full label
-    const service = services.find(s => s.id === serviceId);
+    const service = services.find((s) => s.id === serviceId);
     return service?.label === selectedService;
   };
 
   const handleServiceClick = (serviceId: string) => {
     if (disabled) return;
-    
-    // For the "other" option, set the value with empty custom text
+    // If user clicks "Other", store "other:" to signal custom text
     if (serviceId === 'other') {
       onChange('other:');
       return;
     }
-    
-    // For regular services, use the label
-    const service = services.find(s => s.id === serviceId);
+    // Otherwise, find the matching label
+    const service = services.find((s) => s.id === serviceId);
     if (service) {
       onChange(service.label);
     }
   };
 
-  const handleCustomServiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomServiceChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (disabled) return;
     onChange(`other:${e.target.value}`);
   };
 
-  /**
-   * If the user has selected "other" and typed a custom value,
-   * extract just the custom text to show in the input.
-   */
+  // Extract the custom text after "other:"
   const otherValue = selectedService.startsWith('other:')
     ? selectedService.substring(6)
     : '';
 
   return (
     <div>
-      {/* Label Section */}
       {!hideLabel && (
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700">
-            Primary Service: Choose your main focus. You can change this later.
+            Choose your main focus. You can change this later.
           </label>
         </div>
       )}
 
-      {/* Pill-style buttons */}
+      {/* Pill buttons for standard services */}
       <div className="flex flex-wrap gap-2">
         {services.map((service) => {
           const Icon = iconComponents[service.icon as keyof typeof iconComponents];
@@ -107,7 +99,7 @@ export default function ServiceSelector({
                 focus:outline-none transition-colors
                 ${
                   selected
-                    ? 'bg-blue-100 border-blue-300 text-blue-700'
+                    ? 'bg-[#2864ec] text-white border-[#2864ec]'
                     : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                 }
                 ${disabled ? 'cursor-not-allowed opacity-50' : ''}
@@ -116,7 +108,7 @@ export default function ServiceSelector({
               {Icon && (
                 <Icon
                   className={`w-4 h-4 mr-2 ${
-                    selected ? 'text-blue-500' : 'text-gray-400'
+                    selected ? 'text-white' : 'text-gray-400'
                   }`}
                 />
               )}
@@ -126,19 +118,21 @@ export default function ServiceSelector({
         })}
       </div>
 
-      {/* Custom service input */}
+      {/* Custom service input if "Other" is selected */}
       {isServiceSelected('other') && (
-        <div className="mt-3">
+        <div className="max-w-md mt-3">
           <input
             type="text"
             value={otherValue}
             onChange={handleCustomServiceChange}
             disabled={disabled}
+            maxLength={20}
             className={`
-              block w-full min-w-0
+              block w-full 
               pl-4 pr-4 py-2
               border rounded-lg bg-white
-              border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:ring-blue-500/10 focus:ring-2
+              border-gray-200 hover:border-gray-300 
+              focus:border-[#2864ec] focus:ring-[#2864ec]/10 focus:ring-2
               placeholder:text-gray-400
               focus:outline-none focus:ring-opacity-20
               focus:bg-gray-50/75
@@ -148,10 +142,13 @@ export default function ServiceSelector({
             placeholder="Enter your custom service"
             aria-label="Custom service"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            {otherValue.length}/20
+          </p>
         </div>
       )}
 
-      {/* Error message */}
+      {/* Validation error */}
       {error && (
         <p className="mt-2 text-sm text-red-600">
           {error}

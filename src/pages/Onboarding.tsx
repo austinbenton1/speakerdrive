@@ -8,6 +8,9 @@ import {
   Loader2,
   Building,
   Briefcase,
+  Mic,
+  Users,
+  CheckSquare,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -18,7 +21,7 @@ import WebsiteInput from '../components/onboarding/WebsiteInput';
 import {
   onboardingSchema,
   type OnboardingFormData,
-} from '../types/auth';
+} from '../lib/auth';
 
 /** Small sleep utility for retries */
 function sleep(ms: number) {
@@ -56,16 +59,29 @@ async function sendOnboardingWebhook(
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Step flow: 1 or 2
+  // Single top-level error message
+  const [stepError, setStepError] = useState<string | null>(null);
+
+  /**
+   * Onboarding has 4 states:
+   * 1) Speaker vs. Partner
+   * 2) Partner => Company & Role
+   * 3) Partner => "See SpeakerDrive in Action..."
+   * 4) Everyone => Name, Primary Service, Website
+   */
   const [currentStep, setCurrentStep] = useState(1);
 
-  // React Hook Form
+  // Step 3 checkbox
+  const [acknowledge, setAcknowledge] = useState(false);
+  // If the user chooses "Other" role
+  const [isOtherRoleSelected, setIsOtherRoleSelected] = useState(false);
+
+  // react-hook-form
   const {
     register,
     handleSubmit,
@@ -78,96 +94,94 @@ export default function Onboarding() {
     defaultValues: {
       fullName: '',
       services: '',
-      account_type: 'direct',
+      account_type: '',
       company: '',
       company_role: '',
-      profile_url_type: 'website', // hidden from user
+      profile_url_type: 'website',
       website: '',
     },
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
   });
 
-  const accountType = watch('account_type'); // "direct" or "partner"
+  // Observed fields
+  const accountType = watch('account_type');
+  const companyValue = watch('company');
+  const companyRoleValue = watch('company_role');
   const selectedService = watch('services');
   const websiteValue = watch('website');
 
-  // Check if user is logged in and fetch profile
-  useEffect(() => {
-    let isMounted = true;
+  // Partner roles
+  const partnerRoles = [
+    'Owner or Executive',
+    'Team Member',
+    'Independent Consultant',
+    'Event Organizer',
+  ];
 
-    const checkUserAndProfile = async () => {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
+  function handleRoleClick(role: string) {
+    if (role === 'Other') {
+      setIsOtherRoleSelected(true);
+      setValue('company_role', '');
+    } else {
+      setIsOtherRoleSelected(false);
+      setValue('company_role', role);
+    }
+  }
 
-        if (!session?.user) {
-          await supabase.auth.signOut();
-          navigate('/login');
-          return;
-        }
+  // Next button logic – if validation fails, show one message
+  const handleNext = async () => {
+    setStepError(null);
+    let fieldsToValidate: Array<keyof OnboardingFormData> = [];
 
-        if (isMounted) {
-          setUser(session.user);
-
-          // Fetch user's profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) {
-            console.error('[Onboarding Debug] Profile fetch error:', profileError);
-          } else if (profile?.display_name && isMounted) {
-            setValue('fullName', profile.display_name);
-          }
-        }
-      } catch (err) {
-        console.error('[Onboarding Debug] Auth check error:', err);
-        if (isMounted) {
-          await supabase.auth.signOut();
-          navigate('/login');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+    if (currentStep === 1) {
+      // Step 1 => check for account_type
+      fieldsToValidate = ['account_type'];
+    } else if (currentStep === 2) {
+      // Step 2 => company & role
+      fieldsToValidate = ['company', 'company_role'];
+    } else if (currentStep === 3) {
+      // Step 3 => must check the "acknowledge" checkbox
+      if (!acknowledge) {
+        setStepError('Please fill out all required fields to continue.');
+        return;
       }
-    };
+      setCurrentStep(4);
+      return;
+    }
 
-    checkUserAndProfile();
+    // run react-hook-form validation
+    const ok = await trigger(fieldsToValidate);
+    if (!ok) {
+      setStepError('Please fill out all required fields to continue.');
+      return;
+    }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate, setValue]);
-
-  /**
-   * Step 1 => "Continue"
-   */
-  const handleContinue = async () => {
-    // Validate only fullName for step 1
-    const valid = await trigger(['fullName']);
-    if (valid) {
-      setCurrentStep(2);
+    // If user picks "direct" on step 1 => jump straight to step 4
+    if (currentStep === 1 && accountType === 'direct') {
+      setCurrentStep(4);
+    } else {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  /**
-   * Final "Complete Setup" => step 2
-   */
+  // Final submission
   const onSubmit = async (data: OnboardingFormData) => {
-    if (!user) return;
+    // Validate fields in final step
+    const ok = await trigger(['fullName', 'services', 'website']);
+    if (!ok) {
+      setStepError('Please fill out all required fields to continue.');
+      return;
+    }
+
+    if (!user) return; // sanity check
 
     try {
-      setError(null);
       setIsSubmitting(true);
+      setStepError(null);
       setProgress(20);
 
-      // 1) Update user
+      // 1) Update user in supabase
       const { error: updateUserError } = await supabase.auth.updateUser({
         data: { display_name: data.fullName },
       });
@@ -180,7 +194,7 @@ export default function Onboarding() {
         .upsert({
           id: user.id,
           display_name: data.fullName,
-          services: data.services, // This will now be the full label (e.g., "Keynote Speaking")
+          services: data.services,
           account_type: data.account_type,
           company: data.company || null,
           company_role: data.company_role || null,
@@ -190,44 +204,97 @@ export default function Onboarding() {
       if (profileError) throw profileError;
       setProgress(60);
 
-      // 3) Webhook
-      const webhookBody = {
-        message: 'onboarding_init',
-        email: user.email,
-        display_name: data.fullName,
-        services: data.services, // This will now be the full label
-        account_type: data.account_type,
-        company: data.company || null,
-        company_role: data.company_role || null,
-        profile_url_type: data.profile_url_type,
-        website: data.website || null,
-      };
+      // 3) Webhook (this is where we do 1 call)
       const onboardingOk = await sendOnboardingWebhook(
         'https://n8n.speakerdrive.com/webhook/onboarding',
-        webhookBody
+        {
+          message: 'onboarding_init',
+          email: user.email,
+          display_name: data.fullName,
+          services: data.services,
+          account_type: data.account_type,
+          company: data.company || null,
+          company_role: data.company_role || null,
+          profile_url_type: data.profile_url_type,
+          website: data.website || null,
+        }
       );
       if (!onboardingOk) {
         throw new Error('Failed to send onboarding webhook after multiple attempts');
       }
       setProgress(100);
 
-      // Redirect to chat/conversation with onboarding parameters
+      // 4) Redirect to "Ask SpeakerDrive" page
+      // (If you see 2 webhooks, there's likely a second webhook call in some other code.)
       navigate('/chat/conversation?source=onboarding&trigger=auto');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to complete onboarding';
-      console.error('[Onboarding Debug] Final submission error:', msg);
-      setError(msg);
+      console.error('[Onboarding Error]', msg);
+      setStepError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Check user session + fetch profile
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkUserAndProfile = async () => {
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+        if (!session?.user) {
+          await supabase.auth.signOut();
+          navigate('/login');
+          return;
+        }
+
+        if (isMounted) {
+          setUser(session.user);
+          // If they already had a display_name, prefill
+          const { data: profile, error: profErr } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', session.user.id)
+            .single();
+          if (!profErr && profile?.display_name && isMounted) {
+            setValue('fullName', profile.display_name);
+          }
+        }
+      } catch (err) {
+        console.error('[Onboarding Auth Check Error]', err);
+        if (isMounted) {
+          await supabase.auth.signOut();
+          navigate('/login');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkUserAndProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, setValue]);
+
+  // If loading user data
   if (isLoading) {
     return (
-      <AuthLayout title="Complete Your Profile" subtitle="Help us personalize your experience">
+      <AuthLayout
+        title="Welcome!"
+        subtitle="Let's get started using SpeakerDrive"
+      >
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-[#00A3FF]" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#2864ec]" />
             <p className="text-sm text-gray-600">Loading your profile...</p>
           </div>
         </div>
@@ -235,138 +302,82 @@ export default function Onboarding() {
     );
   }
 
+  // Render
   return (
-    // Use "wide" so we get a max-w-xl container instead of the narrower max-w-md
     <AuthLayout
-      title="Complete Your Profile"
-      subtitle="Help us personalize your experience"
+      title="Welcome!"
+      subtitle="Let's get started using SpeakerDrive"
       wide
     >
       <div className="space-y-6">
-        {error && (
+        {/* Single top-level error display */}
+        {stepError && (
           <div className="p-3 rounded-md bg-red-50 flex items-center gap-2 text-red-700">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{stepError}</p>
           </div>
         )}
 
+        {/* The main onboarding form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* STEP 1 */}
           {currentStep === 1 && (
-            <div className="space-y-8">
-              {/* Full Name */}
-              <section className="space-y-2 max-w-md">
-                <label className="block text-sm font-medium text-gray-700">Your Name</label>
-                <Input
-                  label=""
-                  type="text"
-                  icon={UserIcon}
-                  {...register('fullName')}
-                  disabled={isSubmitting}
-                  error={errors.fullName?.message}
-                  className="
-                    w-full
-                    transition-shadow 
-                    focus:shadow-sm 
-                    focus:ring-2 
-                    focus:ring-[#00A3FF]
-                    focus:outline-none
-                  "
-                />
-              </section>
+            <div className="space-y-6">
+              <label className="block text-lg font-semibold text-gray-800">
+                Which best describes you?
+              </label>
+              <div className="flex gap-3 mt-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('account_type', 'direct');
+                  }}
+                  className={`
+                    inline-flex items-center px-5 py-3 text-sm font-medium rounded-full border transition-colors
+                    ${
+                      accountType === 'direct'
+                        ? 'bg-[#2864ec] text-white border-[#2864ec]'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <Mic className="inline-block w-4 h-4 mr-2" />
+                  I&apos;m a Speaker, Coach, or Expert
+                </button>
 
-              {/* Speaker vs Support => Pill style */}
-              <section className="space-y-2">
-                <div className="flex gap-3 mt-2 flex-wrap">
-                  {/* DIRECT Pill */}
-                  <button
-                    type="button"
-                    onClick={() => setValue('account_type', 'direct', { shouldValidate: true })}
-                    className={`
-                      inline-block px-5 py-3 text-sm font-medium rounded-full border transition-colors
-                      ${
-                        accountType === 'direct'
-                          ? 'bg-[#00A3FF] text-white border-[#00A3FF]'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }
-                    `}
-                  >
-                    I&apos;m a Speaker, Coach, or Expert
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('account_type', 'partner');
+                  }}
+                  className={`
+                    inline-flex items-center px-5 py-3 text-sm font-medium rounded-full border transition-colors
+                    ${
+                      accountType === 'partner'
+                        ? 'bg-[#2864ec] text-white border-[#2864ec]'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <Users className="inline-block w-4 h-4 mr-2" />
+                  I Support or Represent Speakers or Experts
+                </button>
+              </div>
 
-                  {/* PARTNER Pill */}
-                  <button
-                    type="button"
-                    onClick={() => setValue('account_type', 'partner', { shouldValidate: true })}
-                    className={`
-                      inline-block px-5 py-3 text-sm font-medium rounded-full border transition-colors
-                      ${
-                        accountType === 'partner'
-                          ? 'bg-[#00A3FF] text-white border-[#00A3FF]'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }
-                    `}
-                  >
-                    I Support or Represent Speakers or Experts
-                  </button>
-                </div>
-              </section>
-
-              {/* If partner => Company & Role */}
-              {accountType === 'partner' && (
-                <section className="space-y-4">
-                  <div className="max-w-md">
-                    <Input
-                      label="Company"
-                      type="text"
-                      icon={Building}
-                      disabled={isSubmitting}
-                      {...register('company')}
-                      error={errors.company?.message}
-                      className="
-                        w-full
-                        transition-shadow 
-                        focus:shadow-sm 
-                        focus:ring-2 
-                        focus:ring-[#00A3FF]
-                      "
-                    />
-                  </div>
-                  <div className="max-w-md">
-                    <Input
-                      label="Company Role"
-                      type="text"
-                      icon={Briefcase}
-                      disabled={isSubmitting}
-                      {...register('company_role')}
-                      error={errors.company_role?.message}
-                      className="
-                        w-full
-                        transition-shadow 
-                        focus:shadow-sm 
-                        focus:ring-2 
-                        focus:ring-[#00A3FF]
-                      "
-                    />
-                  </div>
-                </section>
-              )}
-
-              {/* Step 1 => Continue */}
               <div>
                 <button
                   type="button"
-                  onClick={handleContinue}
+                  onClick={handleNext}
                   disabled={isSubmitting}
                   className={`
                     inline-flex items-center gap-2 px-4 py-2 rounded-md
                     text-white font-medium
                     transition-all duration-150
-                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00A3FF]
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2864ec]
                     ${
                       isSubmitting
-                        ? 'bg-[#00A3FF]/70 cursor-not-allowed'
-                        : 'bg-[#00A3FF] hover:bg-[#0095e6] active:scale-[0.98]'
+                        ? 'bg-[#2864ec]/70 cursor-not-allowed'
+                        : 'bg-[#2864ec] hover:bg-[#1f58d6] active:scale-[0.98]'
                     }
                   `}
                 >
@@ -379,45 +390,245 @@ export default function Onboarding() {
           {/* STEP 2 */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              {/* Primary Service */}
-              <section className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800">Primary Service</h3>
+              <div>
+                <p className="text-lg font-semibold text-gray-800 mb-1">
+                  Excited to have you as an Industry Partner!
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  We love working with agencies and service providers.
+                  <br />
+                  Let&apos;s get to know you better.
+                </p>
+              </div>
+
+              {/* Company Name */}
+              <div className="max-w-md">
+                <Input
+                  label="Company Name"
+                  type="text"
+                  icon={Building}
+                  disabled={isSubmitting}
+                  {...register('company')}
+                />
+              </div>
+
+              {/* Role */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Your Role
+                </label>
+                <div className="flex gap-3 mt-2 flex-wrap">
+                  {partnerRoles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => handleRoleClick(role)}
+                      className={`
+                        inline-block px-4 py-2 text-sm font-medium rounded-full border transition-colors
+                        ${
+                          companyRoleValue === role
+                            ? 'bg-[#2864ec] text-white border-[#2864ec]'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      {role}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => handleRoleClick('Other')}
+                    className={`
+                      inline-block px-4 py-2 text-sm font-medium rounded-full border transition-colors
+                      ${
+                        isOtherRoleSelected
+                          ? 'bg-[#2864ec] text-white border-[#2864ec]'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    Other
+                  </button>
+                </div>
+
+                {isOtherRoleSelected && (
+                  <div className="max-w-md mt-3">
+                    <Input
+                      label=""
+                      type="text"
+                      icon={Briefcase}
+                      maxLength={20}
+                      placeholder="Type your role..."
+                      disabled={isSubmitting}
+                      {...register('company_role')}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={isSubmitting}
+                  className={`
+                    inline-flex items-center gap-2 px-4 py-2 rounded-md
+                    text-white font-medium
+                    transition-all duration-150
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2864ec]
+                    ${
+                      isSubmitting
+                        ? 'bg-[#2864ec]/70 cursor-not-allowed'
+                        : 'bg-[#2864ec] hover:bg-[#1f58d6] active:scale-[0.98]'
+                    }
+                  `}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {currentStep === 3 && (
+            <div className="space-y-8">
+              <div>
+                <p className="text-xl font-semibold text-gray-800 mb-1">
+                  See SpeakerDrive in Action
+                </p>
+                <p className="text-sm text-gray-600 mb-3">
+                  Experience the Platform as Your Client
+                </p>
+                <p className="text-base text-gray-600 mb-3">
+                  To get the most out of SpeakerDrive, we recommend setting up a profile <em>as if you were</em> one of your clients. This allows you to experience the benefits of the platform first-hand.
+                </p>
+
+                <ul className="list-none space-y-3 text-base text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <CheckSquare className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <strong>Private:</strong> Your client profile is only visible to you.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckSquare className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <strong>Secure:</strong> We never contact your clients.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckSquare className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <strong>Coming Soon:</strong> Agency Mode to manage multiple clients seamlessly.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!acknowledge || isSubmitting}
+                  className={`
+                    inline-flex items-center gap-2 px-4 py-2 rounded-md
+                    text-white font-medium
+                    transition-all duration-150
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2864ec]
+                    ${
+                      isSubmitting
+                        ? 'bg-[#2864ec]/70 cursor-not-allowed'
+                        : !acknowledge
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-[#2864ec] hover:bg-[#1f58d6] active:scale-[0.98]'
+                    }
+                  `}
+                >
+                  Got it!
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="acknowledge"
+                  checked={acknowledge}
+                  onChange={(e) => setAcknowledge(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#2864ec]"
+                />
+                <label
+                  htmlFor="acknowledge"
+                  className="text-sm text-gray-700 select-none"
+                >
+                  I understand on the next page, I will be <strong>entering my client&apos;s information, not my own</strong>.
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4 */}
+          {currentStep === 4 && (
+            <div className="space-y-6">
+              <section className="space-y-2 max-w-md">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Your Name
+                </h3>
+                <Input
+                  label=""
+                  type="text"
+                  icon={UserIcon}
+                  disabled={isSubmitting}
+                  {...register('fullName')}
+                  className="
+                    w-full
+                    transition-shadow
+                    focus:shadow-sm
+                    focus:ring-2
+                    focus:ring-[#2864ec]
+                    focus:outline-none
+                  "
+                />
+              </section>
+
+              <section className="space-y-2 max-w-md">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Primary Service
+                </h3>
                 <ServiceSelector
                   selectedService={selectedService}
-                  onChange={(val) => setValue('services', val, { shouldValidate: true })}
+                  onChange={(val) => setValue('services', val)}
                   disabled={isSubmitting}
                   error={errors.services?.message}
                 />
               </section>
 
-              {/* Website */}
-              <section className="space-y-2">
-                <h3 className="text-xl font-semibold text-gray-800">Website or Profile URL</h3>
-                <div className="max-w-md">
-                  <WebsiteInput
-                    value={websiteValue}
-                    onChange={(e) => setValue('website', e.target.value, { shouldValidate: true })}
-                    disabled={isSubmitting}
-                    error={errors.website?.message}
-                    className="w-full"
-                  />
-                </div>
+              <section className="space-y-2 max-w-md">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Website
+                </h3>
+                <WebsiteInput
+                  value={websiteValue}
+                  onChange={(e) => setValue('website', e.target.value)}
+                  disabled={isSubmitting}
+                  profile_url_type="website"
+                  error={errors.website?.message}
+                />
               </section>
 
-              {/* Final Submit */}
               <div className="pt-4">
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className={`
-                    w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md
+                    inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md
                     text-white font-medium
                     transition-all duration-150
-                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00A3FF]
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2864ec]
                     ${
                       isSubmitting
-                        ? 'bg-[#00A3FF]/70 cursor-not-allowed'
-                        : 'bg-[#00A3FF] hover:bg-[#0095e6] active:scale-[0.98]'
+                        ? 'bg-[#2864ec]/70 cursor-not-allowed'
+                        : 'bg-[#2864ec] hover:bg-[#1f58d6] active:scale-[0.98]'
                     }
                   `}
                 >

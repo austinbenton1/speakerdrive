@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+// /home/project/src/components/onboarding/WebsiteInput.tsx
+
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertCircle, Check, Globe } from 'lucide-react';
 import { isValidUrl } from '../../utils/validation';
 
 interface WebsiteInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** New Prop: 'website', 'bureau', 'company', 'other' **/
   profile_url_type: 'website' | 'bureau' | 'company' | 'other';
+  // We are no longer showing a separate error text. The main Onboarding page handles the single error message.
   error?: string;
   disabled?: boolean;
 }
@@ -18,148 +20,144 @@ export default function WebsiteInput({
   error,
   disabled = false,
 }: WebsiteInputProps) {
-  const [noWebsite, setNoWebsite] = useState(false);
+  // Show/hide the “Don’t have one?” tooltip
+  const [showTooltip, setShowTooltip] = useState(false);
 
-  // Conditionally show helper text based on profile_url_type
-  const helperTextMap: Record<WebsiteInputProps['profile_url_type'], string> = {
-    website: 'Your personal brand website',
-    bureau: 'Your speaker bureau profile URL',
-    company: 'Your company/organization page',
-    other: 'Your professional profile URL',
-  };
+  // Ref to the container so we can do "click outside to close"
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Remove http:// or https:// and www. from display value
+  // If user clicks outside container, hide tooltip
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowTooltip(false);
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Tab' || e.key === 'Escape') {
+        // Hide tooltip on tab or escape
+        setShowTooltip(false);
+      }
+    }
+
+    if (showTooltip) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showTooltip]);
+
+  // For user input, strip out "https://www." so they see just the domain
   const displayValue = value.replace(/^https?:\/\/(www\.)?/, '');
 
-  // Add https://www. when saving if not present
+  // Re‐add the prefix on change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
-    let newValue = e.target.value;
-    // Remove any existing protocol and www
-    newValue = newValue.replace(/^https?:\/\/(www\.)?/, '');
-    // Add https://www. if value is not empty
-    if (newValue) {
+
+    let newValue = e.target.value.replace(/^https?:\/\/(www\.)?/, '');
+    if (newValue.trim()) {
       newValue = `https://www.${newValue}`;
+    } else {
+      newValue = '';
     }
     onChange({
       ...e,
-      target: {
-        ...e.target,
-        value: newValue,
-      },
+      target: { ...e.target, value: newValue },
     });
   };
 
-  const handleNoWebsiteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNoWebsite(e.target.checked);
-    if (e.target.checked) {
-      // Clear website value when checkbox is checked
-      onChange({
-        ...e,
-        target: {
-          ...e.target,
-          value: '',
-        },
-      });
-    }
-  };
-
+  // Show validation icons if there's any input
+  const showValidation = displayValue.trim().length > 0 || value.trim().length > 0;
   const isValid = value ? isValidUrl(value) : false;
-  const showValidation = value.length > 0;
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-2">
-        <label className="text-[15px] font-medium text-gray-900">
-          Website
-        </label>
-        <label className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors group">
-          <input
-            type="checkbox"
-            checked={noWebsite}
-            onChange={handleNoWebsiteChange}
-            disabled={disabled}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 group-hover:border-gray-400 transition-colors"
-          />
-          <span>I don't have one</span>
-        </label>
+    <div ref={containerRef} className="relative">
+      {/* Label row */}
+      <div className="flex items-center gap-2 flex-wrap mb-2 text-sm relative">
+        <Globe className="w-4 h-4 text-gray-500" />
+        <span className="text-gray-700">Your personal brand website</span>
+
+        {/* "Don't have one?" link */}
+        <button
+          type="button"
+          className="text-blue-600 hover:underline focus:outline-none"
+          onClick={() => setShowTooltip(!showTooltip)}
+        >
+          Don&apos;t have one?
+        </button>
+
+        {/* Tooltip, if showTooltip == true */}
+        {showTooltip && (
+          <div
+            className="absolute bottom-full left-0 mb-2 w-72 p-4 rounded shadow-lg border border-gray-200 bg-white text-gray-800 text-sm z-20"
+            style={{ lineHeight: '1.4' }}
+          >
+            Don’t have a personal website? Then add any webpage that features you
+            (company page, news article, etc.) to help personalize your account.
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        {/* Input Field */}
+      {/* Actual input field with forced prefix */}
+      <div className="relative transition-all duration-200">
         <div
           className={`
-            relative transition-all duration-200
-            ${noWebsite ? 'opacity-40 pointer-events-none' : ''}
+            flex items-center w-full rounded-lg border shadow-sm bg-white overflow-hidden
+            transition-all duration-200
+            ${
+              disabled
+                ? 'bg-gray-50/75 border-gray-200'
+                : showValidation && !isValid
+                ? 'border-red-400'
+                : 'border-gray-200 hover:border-gray-300'
+            }
           `}
         >
-          <div
-            className={`
-              flex items-center w-full rounded-lg border shadow-sm transition-all duration-200 bg-white overflow-hidden
-              ${
-                disabled
-                  ? 'bg-gray-50/75 border-gray-200'
-                  : isValid
-                  ? 'border-emerald-300'
-                  : 'border-gray-200 hover:border-gray-300'
-              }
-            `}
-          >
-            {/* Prefix Container */}
-            <div className="flex items-center h-10 bg-gray-50 border-r border-gray-200">
-              <span
-                className={`
-                  text-sm font-medium px-3
-                  ${disabled ? 'text-gray-400' : 'text-gray-500'}
-                `}
-              >
-                https://www.
-              </span>
-            </div>
-
-            {/* Actual Input */}
-            <input
-              type="text"
-              value={displayValue}
-              onChange={handleChange}
-              disabled={disabled || noWebsite}
-              placeholder="example.com"
+          {/* prefix label */}
+          <div className="flex items-center h-10 bg-gray-50 border-r border-gray-200 px-3">
+            <span
               className={`
-                flex-1 w-full h-10 pl-2 pr-3
-                text-sm bg-transparent
-                placeholder:text-gray-400
-                focus:outline-none focus:ring-0
-                disabled:cursor-not-allowed
-                ${disabled || noWebsite ? 'text-gray-500' : 'text-gray-900'}
+                text-sm font-medium
+                ${disabled ? 'text-gray-400' : 'text-gray-500'}
               `}
-            />
-
-            {/* Validation Icon */}
-            {showValidation && (
-              <div className="px-3 flex items-center">
-                {isValid ? (
-                  <Check className="h-4 w-4 text-emerald-500" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                )}
-              </div>
-            )}
+            >
+              https://www.
+            </span>
           </div>
+
+          <input
+            type="text"
+            value={displayValue}
+            onChange={handleChange}
+            disabled={disabled}
+            placeholder="example.com"
+            className={`
+              flex-1 w-full h-10 pl-3 pr-3
+              text-sm bg-transparent
+              placeholder:text-gray-400
+              focus:outline-none focus:ring-0
+              disabled:cursor-not-allowed
+              ${disabled ? 'text-gray-500' : 'text-gray-900'}
+            `}
+          />
+
+          {/* Validation icon on right side if user typed something */}
+          {showValidation && (
+            <div className="px-3 flex items-center">
+              {isValid ? (
+                <Check className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-red-500" />
+              )}
+            </div>
+          )}
         </div>
-
-        {/* Helper Text (depends on profile_url_type) */}
-        <p className="text-[13px] text-gray-500 flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5" />
-          {helperTextMap[profile_url_type]}
-        </p>
       </div>
-
-      {error && !noWebsite && (
-        <p className="mt-2 text-sm text-red-600 flex items-center gap-1.5">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </p>
-      )}
     </div>
   );
 }

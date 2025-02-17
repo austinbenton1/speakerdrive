@@ -1,3 +1,5 @@
+// /home/project/src/lib/auth.ts
+
 import { z } from 'zod';
 
 const passwordSchema = z
@@ -19,25 +21,31 @@ export const signupSchema = z.object({
 });
 
 /**
+ * fullName must have at least two space-separated parts,
+ * each >= 2 characters, e.g. "John Smith"
+ */
+const fullNameSchema = z
+  .string()
+  .min(2, 'Full name must be at least 2 characters')
+  .refine((value) => {
+    const parts = value.trim().split(/\s+/);
+    if (parts.length < 2) return false;
+    if (parts[0].length < 2 || parts[1].length < 2) return false;
+    return true;
+  }, {
+    message: 'Please enter at least a first and last name, each with 2+ letters.',
+  });
+
+/**
  * onboardingSchema
- * - fullName
- * - services: must be one of:
- *    - "keynote", "workshops", "coaching", "consulting", "facilitation"
- *    - or "other:customValue" with text after the colon
- * - account_type: 'direct' or 'partner'
- * - company: required if account_type = 'partner'
- * - company_role: required if account_type = 'partner'
- * - profile_url_type: one of: 'website', 'linkedin', 'bureau', 'company', 'other'
- * - website: optional
  */
 export const onboardingSchema = z
   .object({
-    fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    fullName: fullNameSchema,
 
-    // Updated `services`:
+    // services can be either one of the known enums or "other:..."
     services: z.union([
       z.enum(['keynote', 'workshops', 'coaching', 'consulting', 'facilitation']),
-      // Matches "other:..." with at least one character after the colon
       z.string().regex(/^other:.+$/, {
         message: 'If selecting Other, you must specify a custom service name.',
       }),
@@ -46,12 +54,13 @@ export const onboardingSchema = z
     account_type: z.enum(['direct', 'partner']),
     company: z.string().optional(),
     company_role: z.string().optional(),
-
     profile_url_type: z.enum(['website', 'bureau', 'company', 'other']),
-    website: z.string().optional(),
+
+    // Website is now required:
+    website: z.string().min(2, 'Please enter a link or webpage'),
   })
   .superRefine(({ account_type, company, company_role }, ctx) => {
-    // Conditionally require `company` and `company_role` if account_type is 'partner'
+    // For partner => require company & role
     if (account_type === 'partner') {
       if (!company || company.trim().length === 0) {
         ctx.addIssue({
