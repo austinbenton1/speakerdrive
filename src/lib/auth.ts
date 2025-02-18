@@ -43,9 +43,15 @@ export const onboardingSchema = z
   .object({
     fullName: fullNameSchema,
 
-    // services can be either one of the known enums or "other:..."
+    // If you want to store "Keynote Speaking" in the DB, here is the updated enum:
     services: z.union([
-      z.enum(['keynote', 'workshops', 'coaching', 'consulting', 'facilitation']),
+      z.enum([
+        'Keynote Speaking',
+        'Workshops',
+        'Coaching',
+        'Consulting',
+        'Facilitation',
+      ]),
       z.string().regex(/^other:.+$/, {
         message: 'If selecting Other, you must specify a custom service name.',
       }),

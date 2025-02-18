@@ -138,8 +138,7 @@ export default function ChatConversation() {
             },
           ]);
         } else {
-          // Normal chat visit (optional):
-          // console.log('[ChatConversation Debug] Normal chat visit - no auto message');
+          // Normal chat visit - do nothing automatically
         }
       } catch (error) {
         console.error('[ChatConversation Debug] Failed to initialize chat:', error);
@@ -277,14 +276,27 @@ export default function ChatConversation() {
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-2xl">
-        {/* If no messages, show welcome text */}
+        {/* 
+          If there are no messages yet:
+            - If from onboarding => show "Welcome to the platform, {Name}"
+            - Else => show "Ask SpeakerDrive"
+        */}
         {messages.length === 0 && (
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">
-              <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
-                Ask SpeakerDrive
-              </span>
-            </h1>
+            {isOnboarding ? (
+              <h1 className="text-4xl font-bold">
+                <span>Welcome to the platform, </span>
+                <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
+                  {userDisplayName || 'New User'}
+                </span>
+              </h1>
+            ) : (
+              <h1 className="text-4xl font-bold">
+                <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
+                  Ask SpeakerDrive
+                </span>
+              </h1>
+            )}
           </div>
         )}
 
@@ -348,10 +360,28 @@ export default function ChatConversation() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-lg">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="flex flex-col items-start gap-1 px-4 py-2 bg-gray-100 rounded-lg">
+              {/* bouncing dots */}
+              <div className="flex gap-1">
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
+              </div>
+              {/* Extra text if brand-new user from onboarding */}
+              {isOnboarding && messages.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Processing your account, stay on the page while we load your chat...
+                </p>
+              )}
             </div>
           </div>
         )}

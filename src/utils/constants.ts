@@ -20,11 +20,11 @@ export const industries = [
 ];
 
 export const services = [
-  { id: 'keynote', label: 'Keynote Speaking', icon: 'Presentation' },
-  { id: 'workshops', label: 'Workshops', icon: 'School' },
-  { id: 'coaching', label: 'Coaching', icon: 'Target' },
-  { id: 'consulting', label: 'Consulting', icon: 'Briefcase' },
-  { id: 'facilitation', label: 'Facilitation', icon: 'Users' },
+  { id: 'Keynote Speaking', label: 'Keynote Speaking', icon: 'Presentation' },
+  { id: 'Workshops', label: 'Workshops', icon: 'School' },
+  { id: 'Coaching', label: 'Coaching', icon: 'Target' },
+  { id: 'Consulting', label: 'Consulting', icon: 'Briefcase' },
+  { id: 'Facilitation', label: 'Facilitation', icon: 'Users' },
   { id: 'other', label: 'Other', icon: 'Plus' }
 ];
 
