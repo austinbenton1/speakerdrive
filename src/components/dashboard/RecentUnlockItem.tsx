@@ -8,6 +8,8 @@ interface RecentUnlockItemProps {
   lead: RecordedLead;
 }
 
+const minimalLogo = '/path/to/minimal/logo'; // replace with actual path
+
 export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
   const navigate = useNavigate();
 
@@ -22,8 +24,13 @@ export default function RecentUnlockItem({ lead }: RecentUnlockItemProps) {
         {lead.image_url ? (
           <img
             src={lead.image_url}
-            alt={lead.event_name}
-            className="w-14 h-14 rounded-md object-cover border border-gray-200"
+            alt={lead.lead_name || 'Lead'}
+            className="h-10 w-10 rounded-full object-cover bg-white"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = minimalLogo;
+            }}
           />
         ) : (
           <div className="w-14 h-14 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center">

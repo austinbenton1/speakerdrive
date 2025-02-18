@@ -105,8 +105,13 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                   {lead.image ? (
                     <img
                       src={lead.image}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
+                      alt={lead.lead_name || 'Lead'}
+                      className="h-10 w-10 rounded-full object-cover bg-white"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = minimalLogo;
+                      }}
                     />
                   ) : (
                     <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">

@@ -53,6 +53,8 @@ export default function LeadDetailHeader({
     }
   };
 
+  const minimalLogo = '/path/to/minimal/logo'; // replace with actual path
+
   return (
     <div className={`bg-gradient-to-b ${
       lead.leadType === 'Contact' 
@@ -115,12 +117,13 @@ export default function LeadDetailHeader({
                   <div className="flex-shrink-0">
                     <img
                       src={lead.image}
-                      alt={lead.eventName || lead.name}
-                      className={`h-32 w-32 rounded-xl object-cover shadow-sm ${
-                        lead.leadType === 'Contact'
-                          ? 'ring-2 ring-blue-100'
-                          : 'ring-2 ring-emerald-100'
-                      }`}
+                      alt={lead.lead_name || 'Lead'}
+                      className="h-16 w-16 rounded-full object-cover bg-white shadow-sm"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = minimalLogo;
+                      }}
                     />
                   </div>
                   <div className="min-w-0 flex-1">

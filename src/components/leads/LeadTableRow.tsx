@@ -4,6 +4,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { supabase } from '../../lib/supabase';
 import type { Lead } from '../../types';
 import { useUnlockedLeadsData } from '../../hooks/useUnlockedLeadsData';
+import LeadImage from '../common/LeadImage';
 
 interface LeadTableRowProps {
   lead: Lead;
@@ -188,6 +189,8 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
 
   const urlData = getFormattedUrl(lead.event_url);
 
+  const minimalLogo = 'https://example.com/minimal-logo.png'; // Replace with your minimal logo URL
+
   return (
     <div className={`contents group ${isUnlocked ? 'unlocked-row' : ''}`}>
       {/* Main Content */}
@@ -217,10 +220,10 @@ export default function LeadTableRow({ lead, onRowClick }: LeadTableRowProps) {
           <div className="flex gap-3 min-w-0">
             {/* Image */}
             <div className="flex-shrink-0 mt-[5px]">
-              <img 
-                src={lead.image_url} 
-                alt={lead.lead_name}
-                className="h-11 w-11 rounded-full object-cover"
+              <LeadImage 
+                src={lead.image_url}
+                alt={lead.lead_name || 'Lead'}
+                size="md"
               />
             </div>
             
