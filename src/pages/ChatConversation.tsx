@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
 import { Loader2, AlertCircle, User } from 'lucide-react';
@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown';
 
 interface Message {
   content: string;
-  isBot: boolean;
+  role: 'user' | 'bot';
   timestamp: Date;
   status?: 'sending' | 'sent' | 'error';
   error?: string;
@@ -132,7 +132,7 @@ export default function ChatConversation() {
           setMessages([
             {
               content: response.response,
-              isBot: true,
+              role: 'bot',
               timestamp: new Date(),
               status: 'sent',
             },
@@ -187,7 +187,7 @@ export default function ChatConversation() {
         setMessages((prev) => {
           // Update the last user message from "sending" → "sent"
           const updated = [...prev];
-          const userMsgIndex = updated.findIndex((m) => !m.isBot && m.status === 'sending');
+          const userMsgIndex = updated.findIndex((m) => m.role === 'user' && m.status === 'sending');
           if (userMsgIndex !== -1) {
             updated[userMsgIndex] = { ...updated[userMsgIndex], status: 'sent' };
           }
@@ -195,7 +195,7 @@ export default function ChatConversation() {
             ...updated,
             {
               content: response.response,
-              isBot: true,
+              role: 'bot',
               timestamp: new Date(),
               status: 'sent',
             },
@@ -205,7 +205,7 @@ export default function ChatConversation() {
         console.error('[ChatConversation Debug] Error sending message:', error);
         setMessages((prev) => {
           const updated = [...prev];
-          const userMsgIndex = updated.findIndex((m) => !m.isBot && m.status === 'sending');
+          const userMsgIndex = updated.findIndex((m) => m.role === 'user' && m.status === 'sending');
           if (userMsgIndex !== -1) {
             updated[userMsgIndex] = {
               ...updated[userMsgIndex],
@@ -231,7 +231,7 @@ export default function ChatConversation() {
 
     const userMsg: Message = {
       content: message.trim(),
-      isBot: false,
+      role: 'user',
       timestamp: new Date(),
       status: 'sending',
     };
@@ -276,133 +276,142 @@ export default function ChatConversation() {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 flex justify-center">
-      <div className="w-full max-w-2xl">
-        {/* If no messages, show welcome text */}
-        {messages.length === 0 && (
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold">
+      <div className="w-full max-w-2xl flex flex-col">
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-grow">
+          {/* Header */}
+          <div className="flex-shrink-0 mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight text-center">
               <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
                 Ask SpeakerDrive
               </span>
             </h1>
           </div>
-        )}
 
-        {/* Chat Messages */}
-        <div className="mt-6 mb-6 flex flex-col gap-6">
-          {messages.map((msg, index) => (
-            <div key={index} className="flex items-start gap-4 w-fit max-w-full">
-              <div className="flex-shrink-0">
-                {msg.isBot ? (
-                  <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                    <img
-                      src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                      alt="AI"
-                      className="w-7 h-7"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt="User"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                        }}
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                )}
+          {/* Settings Warning */}
+          {messages.length === 0 && (
+            <div className="settings-link block lg:hidden bg-orange-50 border-y border-orange-100 flex-shrink-0 mb-4">
+              <div className="text-[9px] text-orange-700 flex items-center justify-center gap-1.5 px-2 py-0.5">
+                <svg 
+                  className="w-2.5 h-2.5 text-orange-700 flex-shrink-0"
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span className="text-center">
+                  Update your <a href="/settings/profile" className="text-inherit">settings</a> to keep our conversations tailored to you
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em] whitespace-pre-wrap">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+            </div>
+          )}
+
+          {/* Chat Messages */}
+          <div className="chat-messages-container">
+            <div className="flex flex-col gap-6 overflow-y-auto px-2">
+              {messages.map((msg, index) => (
+                <div key={index} className={`flex items-start gap-4 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex items-start gap-4 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className="flex-shrink-0">
+                      {msg.role === 'user' ? (
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                          <User className="w-5 h-5" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          <img src="/logo.svg" alt="SpeakerDrive" className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`prose prose-sm max-w-[600px] text-[15px] leading-relaxed text-gray-900 break-words font-[400] tracking-[-0.01em] whitespace-pre-wrap ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                      {msg.status === 'error' && msg.error && (
+                        <div className="mt-2 text-red-500 text-sm flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          {msg.error}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                {msg.status === 'error' && msg.error && (
-                  <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
-                    <AlertCircle className="w-4 h-4" />
-                    <p>{msg.error}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Thinking indicator */}
-        {isThinking && (
-          <div className="flex items-start gap-4 w-fit max-w-full mb-6">
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                <img
-                  src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                  alt="AI"
-                  className="w-7 h-7"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-lg">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              ))}
             </div>
           </div>
-        )}
 
-        {/* Message input */}
-        <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden">
-          <div className="p-6 pb-8">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Try asking: 'What strategies can help me win more client projects?'"
-              className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-              disabled={isLoading || isUserDataLoading}
-            />
-          </div>
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="flex items-start gap-4 w-fit max-w-full mb-6">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                  <img
+                    src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                    alt="AI"
+                    className="w-7 h-7"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-lg">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
 
-          <div className="border-t border-gray-100">
-            <div className="px-6 py-3 flex justify-end items-center">
-              <button
+          {/* Message input */}
+          <div className="relative flex-shrink-0">
+            <div className="flex flex-col">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Compose your message..."
+                className="w-full h-[70px] p-4 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+              <div className="absolute bottom-3 left-3 flex items-center gap-3 text-gray-400">
+                <button className="hover:text-gray-600 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-3.646 5.854a.5.5 0 00.792.001l.647-.902a.75.75 0 00-.156-1.048 4.002 4.002 0 00-4.682 0 .75.75 0 00-.156 1.048l.647.902a.5.5 0 00.792-.001z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <button className="hover:text-gray-600 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a3 3 0 00-3-3H8zm6 7a3 3 0 01-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a1 1 0 012 0v4z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              <button 
                 onClick={handleSend}
                 disabled={!message.trim() || isLoading}
-                className={`
-                  px-4 py-2 rounded-lg text-sm font-medium
-                  ${!message.trim() || isLoading
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-[#00B341] text-white hover:bg-[#009E3A] transition-colors'
-                  }
-                `}
+                className="absolute right-3 bottom-3 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Sending...' : 'Send'}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
               </button>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 text-[#64748B] text-xs mt-8 pl-2">
-          <svg
-            className="w-3.5 h-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-          <Link to="/settings" className="underline hover:text-[#00B341] transition-colors">
-            Update your settings
-          </Link>
-          <span className="text-[#64748B]">to keep our conversations tailored to you</span>
+          <div className="flex items-center gap-2 text-[#64748B] text-xs mt-8 pl-2">
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <a href="/settings" className="underline hover:text-[#00B341] transition-colors">
+              Update your settings
+            </a>
+            <span className="text-[#64748B]">to keep our conversations tailored to you</span>
+          </div>
         </div>
       </div>
     </div>
