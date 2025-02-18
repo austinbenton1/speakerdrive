@@ -6,6 +6,7 @@ import { useProfile } from '../hooks/useProfile';
 import { useAvatarStore } from '../lib/store';
 import { useAdminRole } from '../hooks/useAdminRole';
 import LoadingSpinner from './common/LoadingSpinner';
+import minimalLogo from '../assets/speakerdrive-mini-v2.png';
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -126,11 +127,11 @@ export default function Layout() {
               <img
                 src={globalAvatarUrl || profile.avatar_url}
                 alt={displayName.full}
-                className="h-8 w-8 rounded-full border border-gray-200 shadow-sm object-cover"
+                className="h-8 w-8 rounded-full border border-gray-200 shadow-sm object-cover bg-white"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;
-                  target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                  target.src = minimalLogo;
                 }}
               />
               <div className="flex flex-col">

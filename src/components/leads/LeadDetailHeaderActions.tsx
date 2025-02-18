@@ -150,11 +150,13 @@ export default function LeadDetailHeaderActions({
           onClick={() => setShowEmailComposer(true)}
           disabled={!isUnlocked}
           title={!isUnlocked ? "Unlock Lead To Generate Outreach" : undefined}
-          className="w-full h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium 
+          className={`w-full h-10 px-4 inline-flex items-center justify-center rounded-lg text-sm font-medium 
             transition-all duration-200 shadow-sm
-            bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 
-            hover:bg-[#00B341]/20 hover:shadow 
-            disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            ${isUnlocked 
+              ? 'bg-[#00B341] text-white border border-[#00B341] hover:bg-[#009E3A] hover:shadow-md' 
+              : 'bg-[#00B341]/10 text-[#00B341] border border-[#00B341]/20 hover:bg-[#00B341]/20'
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
         >
           <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
           {isUnlocked && lead.pitch ? 'View Saved Outreach' : 'Generate Outreach'}

@@ -7,9 +7,10 @@ import type { LucideIcon } from 'lucide-react';
 export interface DashboardStat {
   name: string;
   value: string;
-  change: string;
-  trend: 'up' | 'down';
+  change?: string;
+  trend?: 'up' | 'down';
   icon: LucideIcon;
+  type?: 'event' | 'contact';
 }
 
 export function calculateMonthlyVisits(leads: RecordedLead[]): number {
@@ -58,16 +59,14 @@ export function calculateDashboardStats(leads: RecordedLead[]): DashboardStat[] 
     {
       name: 'Event Leads Unlocked',
       value: unlockedEventLeads.toString(),
-      change: '+8.2%',
-      trend: 'up',
       icon: Calendar,
+      type: 'event',
     },
     {
       name: 'Contact Leads Unlocked',
       value: unlockedContactLeads.toString(),
-      change: '+15.4%',
-      trend: 'up',
       icon: Users,
+      type: 'contact',
     }
   ];
 }

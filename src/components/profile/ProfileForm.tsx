@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Check, Globe, Briefcase, Presentation, School, Target, Users, Plus, Edit2 } from 'lucide-react';
 import { services } from '../../utils/constants';
 import Input from '../Input';
@@ -35,7 +35,7 @@ export default function ProfileForm({
   activeSection,
   setActiveSection
 }: ProfileFormProps) {
-  const [formData, setFormData] = React.useState<ProfileFormData>({
+  const [formData, setFormData] = useState<ProfileFormData>({
     fullName: initialData?.fullName || '',
     services: initialData?.services || '',
     industries: initialData?.industries || [],
@@ -43,9 +43,10 @@ export default function ProfileForm({
     website: initialData?.website || '',
     avatarUrl: initialData?.avatarUrl || null
   });
+  const bioRef = useRef<HTMLDivElement>(null);
 
   // Reset form data when initialData changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialData) {
       setFormData({
         fullName: initialData.fullName || '',
@@ -57,6 +58,17 @@ export default function ProfileForm({
       });
     }
   }, [initialData]);
+
+  useEffect(() => {
+    // Get the section from URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    
+    // If section is 'bio', scroll to the bio section
+    if (section === 'bio' && bioRef.current) {
+      bioRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
 
   const handleServiceChange = (serviceId: string) => {
     setFormData(prev => ({
@@ -230,7 +242,7 @@ export default function ProfileForm({
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Professional Bio</h3>
+              <h3 className="text-sm font-medium text-gray-500" ref={bioRef}>Professional Bio</h3>
               <p className="mt-2 text-base text-gray-900 whitespace-pre-wrap">
                 {formData.offering || 'No bio provided'}
               </p>

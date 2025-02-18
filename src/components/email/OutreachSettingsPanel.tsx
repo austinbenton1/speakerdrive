@@ -157,7 +157,7 @@ export default function OutreachSettingsPanel({
               <p className="text-sm text-gray-600 flex-1 min-w-0">
                 {truncatedContext || 'Award-winning keynote speaker...'}
                 <a
-                  href="/settings"
+                  href="/settings/profile?section=bio"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"

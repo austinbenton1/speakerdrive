@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Key, Shield, AlertCircle, Check, LogOut, Mail } from 'lucide-react';
+import { Key, Shield, AlertCircle, Check, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import Input from '../Input';
-import { validatePassword, validateEmail } from '../../utils/validation';
+import { validatePassword } from '../../utils/validation';
 
 interface PasswordFormData {
   currentPassword: string;
@@ -11,90 +11,16 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
-interface EmailChangeFormData {
-  currentPassword: string;
-  newEmail: string;
-}
-
 export default function SecurityTab() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [emailFormData, setEmailFormData] = useState<EmailChangeFormData>({
-    currentPassword: '',
-    newEmail: ''
-  });
   const [formData, setFormData] = useState<PasswordFormData>({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-
-  const handleEmailChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setIsLoading(true);
-      setError(null);
-      setSuccess(null);
-
-      // Validate email format
-      const emailError = validateEmail(emailFormData.newEmail);
-      if (emailError) {
-        setError(emailError);
-        return;
-      }
-
-      // Update email
-      const { error: updateError } = await supabase.auth.updateUser({
-        email: emailFormData.newEmail
-      });
-
-      if (updateError) throw updateError;
-
-      setSuccess('Email update initiated. Please check your new email for verification.');
-      setEmailFormData({
-        currentPassword: '',
-        newEmail: ''
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-
-    } catch (err) {
-      console.error('Error updating email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update email');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Password strength indicators
-  const getPasswordStrength = (password: string): {
-    score: number;
-    color: string;
-    text: string;
-  } => {
-    let score = 0;
-    let checks = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[^A-Za-z0-9]/.test(password)
-    };
-
-    score = Object.values(checks).filter(Boolean).length;
-
-    if (score === 0) return { score: 0, color: 'bg-gray-200', text: 'No password' };
-    if (score === 1) return { score: 1, color: 'bg-red-500', text: 'Very weak' };
-    if (score === 2) return { score: 2, color: 'bg-orange-500', text: 'Weak' };
-    if (score === 3) return { score: 3, color: 'bg-yellow-500', text: 'Fair' };
-    if (score === 4) return { score: 4, color: 'bg-blue-500', text: 'Good' };
-    return { score: 5, color: 'bg-green-500', text: 'Strong' };
-  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,6 +92,31 @@ export default function SecurityTab() {
     }
   };
 
+  // Password strength indicators
+  const getPasswordStrength = (password: string): {
+    score: number;
+    color: string;
+    text: string;
+  } => {
+    let score = 0;
+    let checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password)
+    };
+
+    score = Object.values(checks).filter(Boolean).length;
+
+    if (score === 0) return { score: 0, color: 'bg-gray-200', text: 'No password' };
+    if (score === 1) return { score: 1, color: 'bg-red-500', text: 'Very weak' };
+    if (score === 2) return { score: 2, color: 'bg-orange-500', text: 'Weak' };
+    if (score === 3) return { score: 3, color: 'bg-yellow-500', text: 'Fair' };
+    if (score === 4) return { score: 4, color: 'bg-blue-500', text: 'Good' };
+    return { score: 5, color: 'bg-green-500', text: 'Strong' };
+  };
+
   const passwordStrength = getPasswordStrength(formData.newPassword);
 
   return (
@@ -204,40 +155,6 @@ export default function SecurityTab() {
               </div>
             </div>
           )}
-
-          {/* Email Change Form */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Change Email Address</h3>
-            <form onSubmit={handleEmailChange} className="space-y-4">
-              <Input
-                label="Current Password"
-                type="password"
-                value={emailFormData.currentPassword}
-                onChange={(e) => setEmailFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                placeholder="Enter your current password"
-                disabled={isLoading}
-                icon={Key}
-              />
-
-              <Input
-                label="New Email Address"
-                type="email"
-                value={emailFormData.newEmail}
-                onChange={(e) => setEmailFormData(prev => ({ ...prev, newEmail: e.target.value }))}
-                placeholder="Enter your new email address"
-                disabled={isLoading}
-                icon={Mail}
-              />
-
-              <button
-                type="submit"
-                disabled={isLoading || !emailFormData.currentPassword || !emailFormData.newEmail}
-                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Updating...' : 'Update Email'}
-              </button>
-            </form>
-          </div>
 
           {/* Password Change Form */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

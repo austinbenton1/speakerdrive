@@ -31,7 +31,7 @@ export default function AboutMe({
   if (!isEditing) {
     return (
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-1">
+        <h3 className="text-sm font-medium text-gray-900 mb-1" id="bio">
           Professional Bio
           <span className="ml-2 text-sm font-normal text-gray-500">
             (Optional)

@@ -371,84 +371,20 @@ export default function ChatConversation() {
           </div>
 
           <div className="border-t border-gray-100">
-            <div className="px-6 py-3 flex justify-between items-center">
-              <div className="flex gap-8">
-                <button
-                  className="flex items-center gap-2 text-[#64748B] hover:text-[#00B341] transition-all duration-300 group text-sm"
-                  disabled={isLoading}
-                >
-                  <span
-                    style={{ color: '#00B341' }}
-                    className="text-xl group-hover:scale-110 transition-transform"
-                  >
-                    +
-                  </span>
-                  <span className="relative">
-                    Add Attachment
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00B341] group-hover:w-full transition-all duration-300" />
-                  </span>
-                </button>
-                <button
-                  className="flex items-center gap-2 text-[#64748B] hover:text-[#00B341] transition-all duration-300 group text-sm"
-                  disabled={isLoading}
-                >
-                  <svg
-                    className="w-5 h-5 group-hover:scale-110 transition-transform"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#00B341"
-                    strokeWidth="2"
-                  >
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22,4 -10,9 -10,-9" />
-                  </svg>
-                  <span className="relative">
-                    Email Transcript
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00B341] group-hover:w-full transition-all duration-300" />
-                  </span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <span
-                  className="transition-colors duration-300"
-                  style={{
-                    color:
-                      message.length === 0
-                        ? '#64748B'
-                        : message.length < 800
-                        ? '#00B341'
-                        : message.length < 900
-                        ? '#FF9800'
-                        : '#FF5252',
-                  }}
-                >
-                  {message.length}/1000
-                </span>
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || isLoading || isUserDataLoading}
-                  className={`
-                    text-white w-8 h-8 rounded-lg flex items-center justify-center
-                    transition-all duration-200
-                    ${
-                      isLoading || isUserDataLoading || !message.trim()
-                        ? 'bg-blue-400 cursor-not-allowed scale-95'
-                        : 'bg-[#0066FF] hover:bg-[#00B341] scale-100'
-                    }
-                  `}
-                >
-                  <svg
-                    className="w-4 h-4 transition-transform duration-300"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path d="M5 12h14m-5-5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
+            <div className="px-6 py-3 flex justify-end items-center">
+              <button
+                onClick={handleSend}
+                disabled={!message.trim() || isLoading}
+                className={`
+                  px-4 py-2 rounded-lg text-sm font-medium
+                  ${!message.trim() || isLoading
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#00B341] text-white hover:bg-[#009E3A] transition-colors'
+                  }
+                `}
+              >
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
             </div>
           </div>
         </div>
