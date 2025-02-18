@@ -64,3 +64,11 @@
     gap: 1rem;
   }
 }
+
+/* -------- OVERRIDE FOR IDEAS TOOLTIP ON TABLET -------- */
+@media screen and (min-width: 640px) and (max-width: 1023px) {
+  .ideas-tooltip {
+    width: auto !important;
+    max-width: 600px !important;
+  }
+}

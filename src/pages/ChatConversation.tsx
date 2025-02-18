@@ -1,8 +1,25 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+// /home/project/src/pages/ChatConversation.tsx
+
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
-import { Loader2, AlertCircle, User } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  User,
+  Lightbulb,
+  Send,
+  RotateCcw,
+  MessageSquare,
+} from 'lucide-react';
 import { throttle } from 'lodash';
 import ReactMarkdown from 'react-markdown';
 
@@ -14,11 +31,97 @@ interface Message {
   error?: string;
 }
 
+/**
+ * A small portal wrapper to render children into document.body.
+ * - We measure the anchor position and place the tooltip below it.
+ * - This approach ensures the tooltip is never clipped by a parent’s overflow.
+ */
+function TooltipPortal({
+  open,
+  anchorRef,
+  children,
+}: {
+  open: boolean;
+  anchorRef: React.RefObject<HTMLDivElement>;
+  children: React.ReactNode;
+}) {
+  const [styles, setStyles] = useState<React.CSSProperties>({ display: 'none' });
+  const [mounted, setMounted] = useState(false);
+
+  // In SSR environments (Next.js), 'document' won't exist on first render
+  // So we only do measurements/portals once on the client
+  useEffect(() => {
+    setMounted(typeof document !== 'undefined');
+  }, []);
+
+  // Position the tooltip. We use layoutEffect to measure anchorRef in the browser.
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    if (!open) {
+      setStyles({ display: 'none' });
+      return;
+    }
+    const anchorEl = anchorRef.current;
+    if (!anchorEl) {
+      console.warn('[TooltipPortal] anchorRef is null; cannot position tooltip.');
+      setStyles({ display: 'none' });
+      return;
+    }
+
+    const rect = anchorEl.getBoundingClientRect();
+    const isDesktop = window.innerWidth >= 768;
+
+    if (!isDesktop) {
+      // On mobile, align the tooltip’s right edge to anchor’s right edge.
+      // We'll also clamp the width so it doesn't overflow the viewport.
+      setStyles({
+        position: 'absolute',
+        top: `${rect.bottom + window.scrollY + 8}px`,
+        left: `${rect.right + window.scrollX - 280}px`,
+        zIndex: 99999,
+        display: 'block',
+        minWidth: '280px',
+        maxWidth: 'calc(100vw - 2rem)',
+      });
+    } else {
+      // On desktop, center the tooltip horizontally beneath the anchor
+      const tooltipWidth = 380;
+      const leftPos =
+        rect.left + window.scrollX + rect.width / 2 - tooltipWidth / 2;
+
+      setStyles({
+        position: 'absolute',
+        top: `${rect.bottom + window.scrollY + 8}px`,
+        left: `${leftPos}px`,
+        zIndex: 99999,
+        display: 'block',
+        width: `${tooltipWidth}px`,
+      });
+    }
+  }, [open, anchorRef, mounted]);
+
+  if (!mounted) {
+    // If we’re on the server (or no document yet), don’t render anything
+    return null;
+  }
+
+  // Render the tooltip into document.body so it won’t be clipped.
+  return createPortal(
+    <div
+      className="ideas-tooltip bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-gray-700 text-sm"
+      style={styles}
+    >
+      {open && children}
+    </div>,
+    document.body
+  );
+}
+
 export default function ChatConversation() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // User data
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -27,11 +130,15 @@ export default function ChatConversation() {
   const [userWebsite, setUserWebsite] = useState<string | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState(true);
 
-  // For showing a "thinking" indicator
+  // "Thinking" indicator
   const [isThinking, setIsThinking] = useState(false);
 
-  // **NEW**: Keep track if we've already done the onboarding init call
+  // Track if we've already done the onboarding init call
   const [hasFiredOnboardingInit, setHasFiredOnboardingInit] = useState(false);
+
+  // "Ideas" tooltip state
+  const [showIdeas, setShowIdeas] = useState(false);
+  const ideasRef = useRef<HTMLDivElement>(null);
 
   const location = useLocation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,12 +146,10 @@ export default function ChatConversation() {
   const lastMessageTimestamp = useRef<number>(0);
   const THROTTLE_DELAY = 2000; // 2 seconds
 
-  /**
-   * If we landed here via Onboarding (source=onboarding&trigger=auto),
-   * we want to send "onboarding_init" exactly once.
-   */
+  // Check if we came via onboarding
   const params = new URLSearchParams(location.search);
-  const isOnboarding = params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
+  const isOnboarding =
+    params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
 
   /**
    * Scroll to bottom whenever messages change
@@ -71,18 +176,16 @@ export default function ChatConversation() {
       try {
         setIsUserDataLoading(true);
         const {
-          data: { user }
+          data: { user },
         } = await supabase.auth.getUser();
 
         if (!user) {
-          // Possibly redirect if no user
           setIsUserDataLoading(false);
           return;
         }
 
         setUserEmail(user.email);
 
-        // Grab additional data from 'profiles'
         const { data: profile } = await supabase
           .from('profiles')
           .select('avatar_url, display_name, services, website')
@@ -104,20 +207,16 @@ export default function ChatConversation() {
   }, []);
 
   /**
-   * Once user data is loaded, do a one‐time init if from onboarding.
+   * One-time init if from onboarding
    */
   useEffect(() => {
-    // If user data is still loading, or we've already run the onboarding init, skip
     if (isUserDataLoading || hasFiredOnboardingInit) return;
-
-    // We only do the onboarding init once in this component’s lifecycle
     setHasFiredOnboardingInit(true);
 
     const initializeChat = async () => {
       try {
-        // Are we coming from onboarding?
         if (isOnboarding && userEmail) {
-          console.log('[ChatConversation Debug] Onboarding → sending "onboarding_init" to /ai-data');
+          console.log('[ChatConversation Debug] Onboarding → sending "onboarding_init"');
           setIsThinking(true);
 
           const response = await sendChatMessage(
@@ -128,7 +227,6 @@ export default function ChatConversation() {
             userWebsite
           );
 
-          // Show the AI response
           setMessages([
             {
               content: response.response,
@@ -137,8 +235,6 @@ export default function ChatConversation() {
               status: 'sent',
             },
           ]);
-        } else {
-          // Normal chat visit - do nothing automatically
         }
       } catch (error) {
         console.error('[ChatConversation Debug] Failed to initialize chat:', error);
@@ -155,7 +251,7 @@ export default function ChatConversation() {
     userServices,
     userWebsite,
     isUserDataLoading,
-    hasFiredOnboardingInit
+    hasFiredOnboardingInit,
   ]);
 
   /**
@@ -182,11 +278,12 @@ export default function ChatConversation() {
           userWebsite
         );
 
-        // Mark user message as 'sent' & add AI response
         setMessages((prev) => {
-          // Update the last user message from "sending" → "sent"
           const updated = [...prev];
-          const userMsgIndex = updated.findIndex((m) => !m.isBot && m.status === 'sending');
+          // find the user's sending message to update its status
+          const userMsgIndex = updated.findIndex(
+            (m) => !m.isBot && m.status === 'sending'
+          );
           if (userMsgIndex !== -1) {
             updated[userMsgIndex] = { ...updated[userMsgIndex], status: 'sent' };
           }
@@ -204,7 +301,9 @@ export default function ChatConversation() {
         console.error('[ChatConversation Debug] Error sending message:', error);
         setMessages((prev) => {
           const updated = [...prev];
-          const userMsgIndex = updated.findIndex((m) => !m.isBot && m.status === 'sending');
+          const userMsgIndex = updated.findIndex(
+            (m) => !m.isBot && m.status === 'sending'
+          );
           if (userMsgIndex !== -1) {
             updated[userMsgIndex] = {
               ...updated[userMsgIndex],
@@ -236,11 +335,9 @@ export default function ChatConversation() {
     };
 
     setMessages((prev) => [...prev, userMsg]);
-
     setMessage('');
     setIsLoading(true);
 
-    // Throttled call
     throttledSendMessage(message.trim());
   };
 
@@ -255,16 +352,50 @@ export default function ChatConversation() {
     }
   };
 
-  // Cleanup throttling on unmount
+  /**
+   * Cleanup throttling on unmount
+   */
   useEffect(() => {
     return () => {
       throttledSendMessage.cancel();
     };
   }, [throttledSendMessage]);
 
+  /**
+   * Clicking outside the "Ideas" button closes the tooltip
+   */
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ideasRef.current && !ideasRef.current.contains(e.target as Node)) {
+        setShowIdeas(false);
+      }
+    }
+    if (showIdeas) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showIdeas]);
+
+  /**
+   * Prevent accidental back swipes (trackpads)
+   */
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   if (isUserDataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDEEF0' }}>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
           <p className="text-sm text-gray-600">Initializing chat...</p>
@@ -273,168 +404,256 @@ export default function ChatConversation() {
     );
   }
 
+  // OPTIONAL: enforce a 1000-char limit
+  const maxChars = 1000;
+  const charCount = message.length;
+
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 flex justify-center">
-      <div className="w-full max-w-2xl">
-        {/* 
-          If there are no messages yet:
-            - If from onboarding => show "Welcome to the platform, {Name}"
-            - Else => show "Ask SpeakerDrive"
-        */}
-        {messages.length === 0 && (
-          <div className="space-y-2">
-            {isOnboarding ? (
-              <h1 className="text-4xl font-bold">
-                <span>Welcome to the platform, </span>
-                <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
-                  {userDisplayName || 'New User'}
-                </span>
-              </h1>
-            ) : (
-              <h1 className="text-4xl font-bold">
-                <span className="bg-gradient-to-r from-[#0066FF] to-[#00B341] bg-clip-text text-transparent">
-                  Ask SpeakerDrive
-                </span>
-              </h1>
-            )}
-          </div>
-        )}
+    <div className="min-h-screen bg-gray-100">
+      {/* Hide scrollbars in this component */}
+      <style>
+        {`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}
+      </style>
 
-        {/* Chat Messages */}
-        <div className="mt-6 mb-6 flex flex-col gap-6">
-          {messages.map((msg, index) => (
-            <div key={index} className="flex items-start gap-4 w-fit max-w-full">
-              <div className="flex-shrink-0">
-                {msg.isBot ? (
-                  <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                    <img
-                      src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                      alt="AI"
-                      className="w-7 h-7"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt="User"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src = 'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                        }}
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="prose prose-sm max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words font-[450] tracking-[-0.01em] whitespace-pre-wrap">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-                {msg.status === 'error' && msg.error && (
-                  <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
-                    <AlertCircle className="w-4 h-4" />
-                    <p>{msg.error}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Thinking indicator */}
-        {isThinking && (
-          <div className="flex items-start gap-4 w-fit max-w-full mb-6">
-            <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                <img
-                  src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                  alt="AI"
-                  className="w-7 h-7"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col items-start gap-1 px-4 py-2 bg-gray-100 rounded-lg">
-              {/* bouncing dots */}
-              <div className="flex gap-1">
-                <div
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <div
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <div
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: '300ms' }}
-                />
-              </div>
-              {/* Extra text if brand-new user from onboarding */}
-              {isOnboarding && messages.length === 0 && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Processing your account, stay on the page while we load your chat...
-                </p>
+      {/* 
+        WRAP everything in a container so chat messages 
+        align with the same column as the chat bubble. 
+      */}
+      <div className="mx-auto w-full max-w-2xl px-4">
+        <div className="relative h-full w-full overflow-y-auto no-scrollbar">
+          {/* If no messages, show the welcome header */}
+          {messages.length === 0 && (
+            <div className="text-center mt-4 space-y-2">
+              {isOnboarding ? (
+                <h1 className="text-4xl md:text-5xl font-bold">
+                  <span>Welcome to the platform, </span>
+                  <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                    {userDisplayName || 'New User'}
+                  </span>
+                </h1>
+              ) : (
+                <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
+                  <MessageSquare className="w-9 h-9 text-[#0066FF]" />
+                  <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                    Ask SpeakerDrive
+                  </span>
+                </h1>
               )}
+
+              <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
+                <span>What can I help you work on today?</span>
+                <div
+                  className="relative inline-flex items-center"
+                  ref={ideasRef}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('[ChatConversation Debug] Toggling tooltip');
+                      setShowIdeas((prev) => !prev);
+                    }}
+                    className="flex items-center text-base md:text-lg text-blue-600 underline"
+                  >
+                    <Lightbulb className="w-5 h-5 mr-1" />
+                    Ideas
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Message input */}
-        <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08),0_8px_48px_rgba(0,0,0,0.04)] overflow-hidden">
-          <div className="p-6 pb-8">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Try asking: 'What strategies can help me win more client projects?'"
-              className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-              disabled={isLoading || isUserDataLoading}
-            />
-          </div>
-
-          <div className="border-t border-gray-100">
-            <div className="px-6 py-3 flex justify-end items-center">
-              <button
-                onClick={handleSend}
-                disabled={!message.trim() || isLoading}
-                className={`
-                  px-4 py-2 rounded-lg text-sm font-medium
-                  ${!message.trim() || isLoading
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-[#00B341] text-white hover:bg-[#009E3A] transition-colors'
-                  }
-                `}
+          {/* Chat messages */}
+          <div className="mt-6 mb-6 flex flex-col gap-6">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-4 w-fit max-w-full"
               >
-                {isLoading ? 'Sending...' : 'Send'}
-              </button>
+                <div className="flex-shrink-0">
+                  {msg.isBot ? (
+                    <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                      <img
+                        src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                        alt="AI"
+                        className="w-7 h-7"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
+                      {userAvatar ? (
+                        <img
+                          src={userAvatar}
+                          alt="User"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src =
+                              'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                          }}
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words whitespace-pre-wrap tracking-[-0.01em]">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                  {msg.status === 'error' && msg.error && (
+                    <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
+                      <AlertCircle className="w-4 h-4" />
+                      <p>{msg.error}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* MOBILE CHAT INPUT (fixed) */}
+          <div className="block md:hidden fixed bottom-4 left-4 right-4 px-4">
+            <div className="bg-white rounded-3xl shadow-lg p-4">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => {
+                  if (e.target.value.length <= maxChars) {
+                    setMessage(e.target.value);
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message here. Press 'Enter' to start a new line..."
+                className="w-full min-h-[60px] resize-none text-sm placeholder-gray-400 focus:outline-none"
+                disabled={isLoading || isUserDataLoading}
+              />
+              {/* Softer gradient divider */}
+              <div className="mt-3 h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent" />
+              <div className="mt-2 flex items-center justify-between">
+                {/* Character counter + refresh icon */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
+                    {charCount}/{maxChars}
+                  </span>
+                  <RotateCcw
+                    onClick={() => setMessage('')}
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+                  />
+                </div>
+                {/* Send button */}
+                <button
+                  onClick={handleSend}
+                  disabled={!message.trim() || isLoading}
+                  className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${
+                    !message.trim() || isLoading
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#0066FF] text-white hover:bg-[#009E3A] active:bg-[#00B341] transition-colors'
+                  }`}
+                >
+                  <Send
+                    className={`w-4 h-4 mr-2 ${
+                      !message.trim() || isLoading ? 'text-gray-400' : 'text-white'
+                    }`}
+                  />
+                  {isLoading ? 'Sending...' : 'Send'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[#64748B] text-xs mt-8 pl-2">
-          <svg
-            className="w-3.5 h-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-          <Link to="/settings" className="underline hover:text-[#00B341] transition-colors">
-            Update your settings
-          </Link>
-          <span className="text-[#64748B]">to keep our conversations tailored to you</span>
+        {/* DESKTOP CHAT INPUT (pinned at bottom of window, centered) */}
+        <div className="hidden md:block absolute bottom-20 inset-x-0 pointer-events-none z-50">
+          <div className="mx-auto w-full max-w-2xl pointer-events-auto px-4">
+            <div className="bg-white rounded-3xl shadow-lg p-4">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => {
+                  if (e.target.value.length <= maxChars) {
+                    setMessage(e.target.value);
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message here. Press 'Enter' to start a new line..."
+                className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
+                disabled={isLoading || isUserDataLoading}
+              />
+              {/* Softer gradient divider */}
+              <div className="mt-3 h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent" />
+              <div className="mt-2 flex items-center justify-between">
+                {/* Character counter + refresh icon */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
+                    {charCount}/{maxChars}
+                  </span>
+                  <RotateCcw
+                    onClick={() => setMessage('')}
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+                  />
+                </div>
+                {/* Send button */}
+                <button
+                  onClick={handleSend}
+                  disabled={!message.trim() || isLoading}
+                  className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${
+                    !message.trim() || isLoading
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#0066FF] text-white hover:bg-[#009E3A] active:bg-[#00B341] transition-colors'
+                  }`}
+                >
+                  <Send
+                    className={`w-4 h-4 mr-2 ${
+                      !message.trim() || isLoading ? 'text-gray-400' : 'text-white'
+                    }`}
+                  />
+                  {isLoading ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* 
+        The tooltip styles for a consistent look. 
+        We rely on inline positioning from the Portal’s measurement logic.
+      */}
+      <style>
+        {`
+          .ideas-tooltip {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+                        0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border-radius: 8px;
+          }
+        `}
+      </style>
+
+      {/* 
+        Render the portal so the tooltip appears outside any overflow. 
+        Toggling showIdeas triggers the Portal to appear.
+      */}
+      <TooltipPortal open={showIdeas} anchorRef={ideasRef}>
+        <p className="mb-2 font-semibold text-left">I can help with:</p>
+        <ul className="list-disc list-inside space-y-1 text-left">
+          <li>Strategies for winning more opportunities</li>
+          <li>Advice on growing your expert business</li>
+          <li>Questions about using SpeakerDrive features</li>
+          <li>Share feedback and feature ideas</li>
+          <li>Here to guide your success journey</li>
+        </ul>
+      </TooltipPortal>
     </div>
   );
 }

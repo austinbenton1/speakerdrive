@@ -144,9 +144,7 @@ export default function Layout() {
 
         {/* Mobile Menu Overlay */}
         <div 
-          className={`fixed inset-0 z-30 ${
-            showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'
-          }`}
+          className={`fixed inset-0 z-30 ${showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'}`}
         >
           {/* Backdrop */}
           <div 
@@ -165,7 +163,12 @@ export default function Layout() {
           </div>
         </div>
 
-        <main className="flex-1 overflow-auto">
+        {/* 
+          MAIN CONTENT AREA 
+          Updated to "relative flex-1 overflow-hidden" so it won't produce a scrollbar
+          We'll let the chat page handle its own scrolling
+        */}
+        <main className="relative flex-1 overflow-hidden">
           <Outlet />
         </main>
       </div>

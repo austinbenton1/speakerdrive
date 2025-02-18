@@ -34,3 +34,11 @@
     max-width: 1200px;
   }
 }
+
+/* -------- OVERRIDE FOR IDEAS TOOLTIP ON XL -------- */
+@media screen and (min-width: 1536px) {
+  .ideas-tooltip {
+    width: auto !important;
+    max-width: 600px !important;
+  }
+}
