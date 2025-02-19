@@ -136,3 +136,8 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* ===== OVERRIDE: allow scrolling on main container ===== */
+body div.flex.h-screen.bg-gray-100.overflow-hidden {
+  overflow: visible !important;  /* or overflow-y: auto !important; */
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { User, Shield, Image, Users, ChevronDown, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useProfile } from '../hooks/useProfile';
@@ -15,6 +15,11 @@ export default function Layout() {
   const { isAdmin } = useAdminRole();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const location = useLocation();
+
+  // Determine if the current route is a chat page.
+  // Adjust this condition as needed.
+  const isChatPage = location.pathname.includes('chat');
 
   useEffect(() => {
     if (!loading && error) {
@@ -32,38 +37,38 @@ export default function Layout() {
 
   const getDisplayName = () => {
     if (profile.display_name) {
-      // For mobile, return only the first name
       const fullName = profile.display_name;
       return {
         full: fullName,
-        first: fullName.split(' ')[0]
+        first: fullName.split(' ')[0],
       };
     }
-
-    // If no name is available, format the email
     const [username] = profile.email.split('@');
     const formattedName = username
       .split(/[._-]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    
     return {
       full: formattedName,
-      first: formattedName.split(' ')[0]
+      first: formattedName.split(' ')[0],
     };
   };
 
   const displayName = getDisplayName();
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    // Use "min-h-screen" for chat pages so the container can expand as needed.
+    <div
+      className={`flex ${isChatPage ? 'min-h-screen' : 'h-screen'} bg-gray-100`}
+      style={{ overflow: isChatPage ? 'visible' : 'hidden' }}
+    >
       <div className="hidden sm:block">
         <Sidebar profile={profile} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6 relative z-20">
           {/* Mobile Menu Button */}
-          <button 
+          <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="sm:hidden p-2 rounded-md hover:bg-gray-100"
           >
@@ -73,15 +78,15 @@ export default function Layout() {
           {/* Logo - Mobile Only */}
           <div className="sm:hidden absolute left-1/2 transform -translate-x-1/2">
             <Link to="/dashboard">
-              <img 
+              <img
                 src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png"
-                alt="SpeakerDrive" 
+                alt="SpeakerDrive"
                 className="h-6 w-auto"
               />
             </Link>
           </div>
 
-          {/* Admin Menu - Desktop Only, Left Aligned */}
+          {/* Admin Menu - Desktop Only */}
           <div className="hidden sm:flex sm:flex-1 items-center">
             {isAdmin && (
               <div className="relative">
@@ -135,40 +140,44 @@ export default function Layout() {
                 }}
               />
               <div className="flex flex-col">
-                <span className="hidden sm:block text-sm font-medium text-gray-700">{displayName.full}</span>
-                <span className="sm:hidden text-sm font-medium text-gray-700">{displayName.first}</span>
+                <span className="hidden sm:block text-sm font-medium text-gray-700">
+                  {displayName.full}
+                </span>
+                <span className="sm:hidden text-sm font-medium text-gray-700">
+                  {displayName.first}
+                </span>
               </div>
             </div>
           </div>
         </header>
 
         {/* Mobile Menu Overlay */}
-        <div 
-          className={`fixed inset-0 z-30 ${showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        <div
+          className={`fixed inset-0 z-30 ${
+            showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
         >
-          {/* Backdrop */}
-          <div 
+          <div
             className={`absolute inset-0 bg-gray-600 transition-opacity duration-300 ${
               showMobileMenu ? 'opacity-50' : 'opacity-0'
             }`}
             onClick={() => setShowMobileMenu(false)}
           />
-          {/* Sidebar Container */}
-          <div 
+          <div
             className={`absolute inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
               showMobileMenu ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            <Sidebar profile={profile} isMobile={true} onNavigate={() => setShowMobileMenu(false)} />
+            <Sidebar
+              profile={profile}
+              isMobile={true}
+              onNavigate={() => setShowMobileMenu(false)}
+            />
           </div>
         </div>
 
-        {/* 
-          MAIN CONTENT AREA 
-          Updated to "relative flex-1 overflow-hidden" so it won't produce a scrollbar
-          We'll let the chat page handle its own scrolling
-        */}
-        <main className="relative flex-1 overflow-hidden">
+        {/* Main Content */}
+        <main className={`relative flex-1 ${isChatPage ? 'overflow-auto' : 'overflow-hidden'}`}>
           <Outlet />
         </main>
       </div>

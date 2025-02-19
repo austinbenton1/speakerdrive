@@ -1,5 +1,3 @@
-// /home/project/src/pages/ChatConversation.tsx
-
 import React, {
   useState,
   useEffect,
@@ -32,9 +30,7 @@ interface Message {
 }
 
 /**
- * A small portal wrapper to render children into document.body.
- * - We measure the anchor position and place the tooltip below it.
- * - This approach ensures the tooltip is never clipped by a parent’s overflow.
+ * Standard portal-based tooltip for "Ideas" button
  */
 function TooltipPortal({
   open,
@@ -48,13 +44,10 @@ function TooltipPortal({
   const [styles, setStyles] = useState<React.CSSProperties>({ display: 'none' });
   const [mounted, setMounted] = useState(false);
 
-  // In SSR environments (Next.js), 'document' won't exist on first render
-  // So we only do measurements/portals once on the client
   useEffect(() => {
     setMounted(typeof document !== 'undefined');
   }, []);
 
-  // Position the tooltip. We use layoutEffect to measure anchorRef in the browser.
   useLayoutEffect(() => {
     if (!mounted) return;
     if (!open) {
@@ -62,18 +55,12 @@ function TooltipPortal({
       return;
     }
     const anchorEl = anchorRef.current;
-    if (!anchorEl) {
-      console.warn('[TooltipPortal] anchorRef is null; cannot position tooltip.');
-      setStyles({ display: 'none' });
-      return;
-    }
+    if (!anchorEl) return;
 
     const rect = anchorEl.getBoundingClientRect();
     const isDesktop = window.innerWidth >= 768;
 
     if (!isDesktop) {
-      // On mobile, align the tooltip’s right edge to anchor’s right edge.
-      // We'll also clamp the width so it doesn't overflow the viewport.
       setStyles({
         position: 'absolute',
         top: `${rect.bottom + window.scrollY + 8}px`,
@@ -84,11 +71,9 @@ function TooltipPortal({
         maxWidth: 'calc(100vw - 2rem)',
       });
     } else {
-      // On desktop, center the tooltip horizontally beneath the anchor
       const tooltipWidth = 380;
       const leftPos =
         rect.left + window.scrollX + rect.width / 2 - tooltipWidth / 2;
-
       setStyles({
         position: 'absolute',
         top: `${rect.bottom + window.scrollY + 8}px`,
@@ -100,12 +85,8 @@ function TooltipPortal({
     }
   }, [open, anchorRef, mounted]);
 
-  if (!mounted) {
-    // If we’re on the server (or no document yet), don’t render anything
-    return null;
-  }
+  if (!mounted) return null;
 
-  // Render the tooltip into document.body so it won’t be clipped.
   return createPortal(
     <div
       className="ideas-tooltip bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-gray-700 text-sm"
@@ -132,44 +113,29 @@ export default function ChatConversation() {
 
   // "Thinking" indicator
   const [isThinking, setIsThinking] = useState(false);
-
-  // Track if we've already done the onboarding init call
   const [hasFiredOnboardingInit, setHasFiredOnboardingInit] = useState(false);
 
-  // "Ideas" tooltip state
+  // Tooltip
   const [showIdeas, setShowIdeas] = useState(false);
   const ideasRef = useRef<HTMLDivElement>(null);
 
   const location = useLocation();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lastMessageTimestamp = useRef<number>(0);
-  const THROTTLE_DELAY = 2000; // 2 seconds
-
-  // Check if we came via onboarding
   const params = new URLSearchParams(location.search);
+
+  // For scrolling + text area
+  const messagesWrapperRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Throttle
+  const lastMessageTimestamp = useRef<number>(0);
+  const THROTTLE_DELAY = 2000;
+
+  // Check if from onboarding
   const isOnboarding =
     params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
 
   /**
-   * Scroll to bottom whenever messages change
-   */
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  /**
-   * Auto-resize textarea
-   */
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [message]);
-
-  /**
-   * Fetch the current user's data from Supabase
+   * Fetch user data from Supabase
    */
   useEffect(() => {
     const fetchUserData = async () => {
@@ -197,7 +163,7 @@ export default function ChatConversation() {
         if (profile?.services) setUserServices(profile.services);
         if (profile?.website) setUserWebsite(profile.website);
       } catch (error) {
-        console.error('[ChatConversation Debug] Error fetching user data:', error);
+        console.error('[ChatConversation] Error fetching user data:', error);
       } finally {
         setIsUserDataLoading(false);
       }
@@ -207,16 +173,16 @@ export default function ChatConversation() {
   }, []);
 
   /**
-   * One-time init if from onboarding
+   * One-time onboarding init
    */
   useEffect(() => {
     if (isUserDataLoading || hasFiredOnboardingInit) return;
     setHasFiredOnboardingInit(true);
 
     const initializeChat = async () => {
-      try {
-        if (isOnboarding && userEmail) {
-          console.log('[ChatConversation Debug] Onboarding → sending "onboarding_init"');
+      if (isOnboarding && userEmail) {
+        try {
+          console.log('[ChatConversation] Onboarding → sending "onboarding_init"');
           setIsThinking(true);
 
           const response = await sendChatMessage(
@@ -235,11 +201,11 @@ export default function ChatConversation() {
               status: 'sent',
             },
           ]);
+        } catch (error) {
+          console.error('[ChatConversation] Failed to initialize chat:', error);
+        } finally {
+          setIsThinking(false);
         }
-      } catch (error) {
-        console.error('[ChatConversation Debug] Failed to initialize chat:', error);
-      } finally {
-        setIsThinking(false);
       }
     };
 
@@ -255,15 +221,14 @@ export default function ChatConversation() {
   ]);
 
   /**
-   * Throttled user message sending
+   * Throttled send message
    */
   const throttledSendMessage = useCallback(
     throttle(async (messageContent: string) => {
       if (!userEmail) return;
-
       const now = Date.now();
       if (now - lastMessageTimestamp.current < THROTTLE_DELAY) {
-        console.log('[ChatConversation Debug] Message throttled - too soon');
+        console.log('[ChatConversation] Throttled – too soon');
         return;
       }
       lastMessageTimestamp.current = now;
@@ -279,26 +244,25 @@ export default function ChatConversation() {
         );
 
         setMessages((prev) => {
+          // first finalize the user's "sending" message
           const updated = [...prev];
-          // find the user's sending message to update its status
           const userMsgIndex = updated.findIndex(
             (m) => !m.isBot && m.status === 'sending'
           );
           if (userMsgIndex !== -1) {
             updated[userMsgIndex] = { ...updated[userMsgIndex], status: 'sent' };
           }
-          return [
-            ...updated,
-            {
-              content: response.response,
-              isBot: true,
-              timestamp: new Date(),
-              status: 'sent',
-            },
-          ];
+          // then push the bot response
+          updated.push({
+            content: response.response,
+            isBot: true,
+            timestamp: new Date(),
+            status: 'sent',
+          });
+          return updated;
         });
       } catch (error: any) {
-        console.error('[ChatConversation Debug] Error sending message:', error);
+        console.error('[ChatConversation] Error sending message:', error);
         setMessages((prev) => {
           const updated = [...prev];
           const userMsgIndex = updated.findIndex(
@@ -342,8 +306,7 @@ export default function ChatConversation() {
   };
 
   /**
-   * SHIFT+ENTER => new line
-   * ENTER => send
+   * SHIFT+ENTER => new line, ENTER => send
    */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -353,12 +316,34 @@ export default function ChatConversation() {
   };
 
   /**
-   * Cleanup throttling on unmount
+   * Auto-scroll so new messages appear above the bubble
    */
   useEffect(() => {
-    return () => {
-      throttledSendMessage.cancel();
-    };
+    if (!messagesWrapperRef.current) return;
+    const container = messagesWrapperRef.current;
+    // The bubble offset: how many px from the bottom we want to "spare"
+    const bubbleOffset = 720;
+    container.scrollTo({
+      top: container.scrollHeight - bubbleOffset,
+      behavior: 'smooth',
+    });
+  }, [messages]);
+
+  /**
+   * Auto-resize the textarea
+   */
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [message]);
+
+  /**
+   * Cleanup throttle on unmount
+   */
+  useEffect(() => {
+    return () => throttledSendMessage.cancel();
   }, [throttledSendMessage]);
 
   /**
@@ -379,15 +364,14 @@ export default function ChatConversation() {
   }, [showIdeas]);
 
   /**
-   * Prevent accidental back swipes (trackpads)
+   * Prevent accidental back swipes
    */
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
     };
     window.history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', handlePopState);
-
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
@@ -404,232 +388,176 @@ export default function ChatConversation() {
     );
   }
 
-  // OPTIONAL: enforce a 1000-char limit
   const maxChars = 1000;
   const charCount = message.length;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Hide scrollbars in this component */}
-      <style>
-        {`
-          .no-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-          .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-        `}
-      </style>
+    <div className="relative bg-gray-100">
+      {/* SCROLLABLE AREA for messages (naturally grows, no forced screen height) */}
+      <div
+        ref={messagesWrapperRef}
+        className="mx-auto w-full max-w-2xl px-4 pt-4 overflow-y-auto"
+        style={{
+          // Enough bottom padding so the bubble won't overlap
+          paddingBottom: '700px',
+          minHeight: '100vh', 
+        }}
+      >
+        {/* If no messages, show welcome */}
+        {messages.length === 0 && (
+          <div className="text-center space-y-2">
+            {isOnboarding ? (
+              <h1 className="text-4xl md:text-5xl font-bold">
+                <span>Welcome to the platform, </span>
+                <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                  {userDisplayName || 'New User'}
+                </span>
+              </h1>
+            ) : (
+              <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
+                <MessageSquare className="w-9 h-9 text-[#0066FF]" />
+                <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                  Ask SpeakerDrive
+                </span>
+              </h1>
+            )}
 
-      {/* 
-        WRAP everything in a container so chat messages 
-        align with the same column as the chat bubble. 
-      */}
-      <div className="mx-auto w-full max-w-2xl px-4">
-        <div className="relative h-full w-full overflow-y-auto no-scrollbar">
-          {/* If no messages, show the welcome header */}
-          {messages.length === 0 && (
-            <div className="text-center mt-4 space-y-2">
-              {isOnboarding ? (
-                <h1 className="text-4xl md:text-5xl font-bold">
-                  <span>Welcome to the platform, </span>
-                  <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
-                    {userDisplayName || 'New User'}
-                  </span>
-                </h1>
-              ) : (
-                <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
-                  <MessageSquare className="w-9 h-9 text-[#0066FF]" />
-                  <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
-                    Ask SpeakerDrive
-                  </span>
-                </h1>
-              )}
-
-              <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
-                <span>What can I help you work on today?</span>
-                <div
-                  className="relative inline-flex items-center"
-                  ref={ideasRef}
+            <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
+              <span>What can I help you work on today?</span>
+              <div className="relative inline-flex items-center" ref={ideasRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowIdeas((prev) => !prev)}
+                  className="flex items-center text-base md:text-lg text-blue-600 underline"
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      console.log('[ChatConversation Debug] Toggling tooltip');
-                      setShowIdeas((prev) => !prev);
-                    }}
-                    className="flex items-center text-base md:text-lg text-blue-600 underline"
-                  >
-                    <Lightbulb className="w-5 h-5 mr-1" />
-                    Ideas
-                  </button>
+                  <Lightbulb className="w-5 h-5 mr-1" />
+                  Ideas
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chat messages */}
+        <div className="mt-6 mb-6 flex flex-col gap-6">
+          {messages.map((msg, index) => (
+            <div key={index} className="flex items-start gap-4 w-fit max-w-full">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                {msg.isBot ? (
+                  <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                    <img
+                      src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                      alt="AI"
+                      className="w-7 h-7"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt="User"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src =
+                            'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                        }}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Message content */}
+              <div className="flex-1 min-w-0">
+                <div className="prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words whitespace-pre-wrap tracking-[-0.01em]">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
+                {msg.status === 'error' && msg.error && (
+                  <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
+                    <AlertCircle className="w-4 h-4" />
+                    <p>{msg.error}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Thinking bubble if isThinking is true */}
+          {isThinking && (
+            <div className="flex items-start gap-4 w-fit max-w-full">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="inline-block px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
+                  Thinking...
+                </p>
               </div>
             </div>
           )}
-
-          {/* Chat messages */}
-          <div className="mt-6 mb-6 flex flex-col gap-6">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-4 w-fit max-w-full"
-              >
-                <div className="flex-shrink-0">
-                  {msg.isBot ? (
-                    <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                      <img
-                        src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                        alt="AI"
-                        className="w-7 h-7"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
-                      {userAvatar ? (
-                        <img
-                          src={userAvatar}
-                          alt="User"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src =
-                              'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                          }}
-                        />
-                      ) : (
-                        <User className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words whitespace-pre-wrap tracking-[-0.01em]">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                  {msg.status === 'error' && msg.error && (
-                    <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
-                      <AlertCircle className="w-4 h-4" />
-                      <p>{msg.error}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* MOBILE CHAT INPUT (fixed) */}
-          <div className="block md:hidden fixed bottom-4 left-4 right-4 px-4">
-            <div className="bg-white rounded-3xl shadow-lg p-4">
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => {
-                  if (e.target.value.length <= maxChars) {
-                    setMessage(e.target.value);
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here. Press 'Enter' to start a new line..."
-                className="w-full min-h-[60px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-                disabled={isLoading || isUserDataLoading}
-              />
-              {/* Softer gradient divider */}
-              <div className="mt-3 h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent" />
-              <div className="mt-2 flex items-center justify-between">
-                {/* Character counter + refresh icon */}
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
-                    {charCount}/{maxChars}
-                  </span>
-                  <RotateCcw
-                    onClick={() => setMessage('')}
-                    className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
-                  />
-                </div>
-                {/* Send button */}
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || isLoading}
-                  className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${
-                    !message.trim() || isLoading
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#0066FF] text-white hover:bg-[#009E3A] active:bg-[#00B341] transition-colors'
-                  }`}
-                >
-                  <Send
-                    className={`w-4 h-4 mr-2 ${
-                      !message.trim() || isLoading ? 'text-gray-400' : 'text-white'
-                    }`}
-                  />
-                  {isLoading ? 'Sending...' : 'Send'}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
+      </div>
 
-        {/* DESKTOP CHAT INPUT (pinned at bottom of window, centered) */}
-        <div className="hidden md:block absolute bottom-20 inset-x-0 pointer-events-none z-50">
-          <div className="mx-auto w-full max-w-2xl pointer-events-auto px-4">
-            <div className="bg-white rounded-3xl shadow-lg p-4">
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => {
-                  if (e.target.value.length <= maxChars) {
-                    setMessage(e.target.value);
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here. Press 'Enter' to start a new line..."
-                className="w-full min-h-[100px] resize-none text-sm placeholder-gray-400 focus:outline-none"
-                disabled={isLoading || isUserDataLoading}
-              />
-              {/* Softer gradient divider */}
-              <div className="mt-3 h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent" />
-              <div className="mt-2 flex items-center justify-between">
-                {/* Character counter + refresh icon */}
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
-                    {charCount}/{maxChars}
-                  </span>
-                  <RotateCcw
-                    onClick={() => setMessage('')}
-                    className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
-                  />
-                </div>
-                {/* Send button */}
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || isLoading}
-                  className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${
-                    !message.trim() || isLoading
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#0066FF] text-white hover:bg-[#009E3A] active:bg-[#00B341] transition-colors'
-                  }`}
-                >
-                  <Send
-                    className={`w-4 h-4 mr-2 ${
-                      !message.trim() || isLoading ? 'text-gray-400' : 'text-white'
-                    }`}
-                  />
-                  {isLoading ? 'Sending...' : 'Send'}
-                </button>
+      {/* FLOATING BUBBLE ~ 25% from bottom */}
+      <div className="absolute bottom-1/4 left-0 right-0 z-50">
+        <div className="mx-auto w-full max-w-2xl px-4">
+          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => {
+                if (e.target.value.length <= maxChars) {
+                  setMessage(e.target.value);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message here. Press 'Enter' to start a new line..."
+              className="w-full min-h-[80px] resize-none text-sm placeholder-gray-400 focus:outline-none"
+              disabled={isLoading || isUserDataLoading}
+            />
+            <div className="mt-4 flex items-center justify-between">
+              {/* character counter + reset */}
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
+                  {charCount}/{maxChars}
+                </span>
+                <RotateCcw
+                  onClick={() => setMessage('')}
+                  className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+                />
               </div>
+
+              {/* Send button */}
+              <button
+                onClick={handleSend}
+                disabled={!message.trim() || isLoading}
+                className={`inline-flex items-center px-6 py-2 rounded-md text-sm font-medium ${
+                  !message.trim() || isLoading
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#0066FF] text-white hover:bg-[#009E3A] active:bg-[#00B341] transition-colors'
+                }`}
+              >
+                <Send
+                  className={`w-4 h-4 mr-2 ${
+                    !message.trim() || isLoading ? 'text-gray-400' : 'text-white'
+                  }`}
+                />
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 
-        The tooltip styles for a consistent look. 
-        We rely on inline positioning from the Portal’s measurement logic.
-      */}
+      {/* Tooltip styling */}
       <style>
         {`
           .ideas-tooltip {
@@ -640,10 +568,7 @@ export default function ChatConversation() {
         `}
       </style>
 
-      {/* 
-        Render the portal so the tooltip appears outside any overflow. 
-        Toggling showIdeas triggers the Portal to appear.
-      */}
+      {/* Portal for "Ideas" */}
       <TooltipPortal open={showIdeas} anchorRef={ideasRef}>
         <p className="mb-2 font-semibold text-left">I can help with:</p>
         <ul className="list-disc list-inside space-y-1 text-left">

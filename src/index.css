@@ -1,13 +1,34 @@
+/* Import breakpoint-specific styles */
+@import './breakpoints/mobile.css';
+@import './breakpoints/tablet.css';
+@import './breakpoints/desktop.css';
+@import './breakpoints/large.css';
+@import './breakpoints/xlarge.css';
+
+/* Base styles */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Global variables */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #64748b;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+}
+
+/* Base styles */
 @layer base {
   body {
     @apply antialiased text-gray-900;
   }
 }
 
+/* Component styles */
 @layer components {
   .btn-primary {
     @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors;
@@ -18,6 +39,7 @@
   }
 }
 
+/* Utility styles */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -45,113 +67,81 @@
     width: 8px;
     height: 8px;
   }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 150ms ease-out;
-  }
-
-  /* -----------------------------
-     ADD THESE TWO CLASSES BELOW
-     ----------------------------- */
-  /* Allows exactly 2 lines, then ellipses if text is too long */
-  .two-line-clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Single-line truncation with ellipses */
-  .one-line-truncate {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 }
 
-/* Keyframes for gradient, if needed */
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+/* Animation keyframes */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* TipTap Editor Styles */
-.ProseMirror {
-  > * + * {
-    margin-top: 1em;
-  }
-
-  h1 {
-    font-size: 1.25em;
-    font-weight: 600;
-    line-height: 1.3;
-    margin-top: 1em;
-    margin-bottom: 0.75em;
-    color: #111827;
-  }
-
-  h2 {
-    font-size: 1.125em;
-    font-weight: 600;
-    line-height: 1.3;
-    margin-top: 1em;
-    margin-bottom: 0.75em;
-    color: #111827;
-  }
-
-  p {
-    margin: 0.75em 0;
-    line-height: 1.6;
-    color: #4B5563;
-  }
-
-  ul {
-    padding-left: 1.25em;
-    list-style-type: disc;
-    margin: 0.75em 0;
-  }
-
-  li {
-    margin: 0.5em 0;
-    color: #4B5563;
-  }
-
-  &:focus {
-    outline: none;
-  }
-
-  &.ProseMirror-focused {
-    outline: none;
-  }
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-  color: #adb5bd;
-  content: attr(data-placeholder);
-  float: left;
-  height: 0;
-  pointer-events: none;
+@keyframes slide-down {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Base styles that apply before any media queries */
+html {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-gray-50;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Utility classes */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Animation classes */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ===== OVERRIDE: allow scrolling on main container ===== */
+body div.flex.h-screen.bg-gray-100.overflow-hidden {
+  /* This line changed from "overflow: visible" */
+  overflow-y: auto !important;
+  /* If you need horizontal scroll hidden, optionally do: 
+     overflow-x: hidden !important; 
+     up to you. */
 }
