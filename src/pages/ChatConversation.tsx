@@ -377,6 +377,23 @@ export default function ChatConversation() {
     };
   }, []);
 
+  const scrollToBottom = useCallback(() => {
+    if (messagesWrapperRef.current) {
+      const scrollContainer = messagesWrapperRef.current.closest('.overflow-auto');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, []);
+
+  // Auto-scroll when new messages are added
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isThinking, scrollToBottom]);
+
   if (isUserDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -392,122 +409,126 @@ export default function ChatConversation() {
   const charCount = message.length;
 
   return (
-    <div className="relative bg-gray-100">
-      {/* SCROLLABLE AREA for messages (naturally grows, no forced screen height) */}
-      <div
-        ref={messagesWrapperRef}
-        className="mx-auto w-full max-w-2xl px-4 pt-4 overflow-y-auto"
-        style={{
-          // Enough bottom padding so the bubble won't overlap
-          paddingBottom: '700px',
-          minHeight: '100vh', 
-        }}
-      >
-        {/* If no messages, show welcome */}
-        {messages.length === 0 && (
-          <div className="text-center space-y-2">
-            {isOnboarding ? (
-              <h1 className="text-4xl md:text-5xl font-bold">
-                <span>Welcome to the platform, </span>
-                <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
-                  {userDisplayName || 'New User'}
-                </span>
-              </h1>
-            ) : (
-              <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
-                <MessageSquare className="w-9 h-9 text-[#0066FF]" />
-                <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
-                  Ask SpeakerDrive
-                </span>
-              </h1>
+    <div className="flex flex-col h-[calc(100vh-64px)]">
+      {/* Messages Container */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-2xl mx-auto px-4">
+          {/* Messages */}
+          <div 
+            ref={messagesWrapperRef}
+            className="space-y-4 py-4"
+          >
+            {/* If no messages, show welcome */}
+            {messages.length === 0 && (
+              <div className="text-center space-y-2">
+                {isOnboarding ? (
+                  <h1 className="text-4xl md:text-5xl font-bold">
+                    <span>Welcome to the platform, </span>
+                    <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                      {userDisplayName || 'New User'}
+                    </span>
+                  </h1>
+                ) : (
+                  <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
+                    <MessageSquare className="w-9 h-9 text-[#0066FF]" />
+                    <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                      Ask SpeakerDrive
+                    </span>
+                  </h1>
+                )}
+
+                <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
+                  <span>What can I help you work on today?</span>
+                  <div className="relative inline-flex items-center" ref={ideasRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowIdeas((prev) => !prev)}
+                      className="flex items-center text-base md:text-lg text-blue-600 underline"
+                    >
+                      <Lightbulb className="w-5 h-5 mr-1" />
+                      Ideas
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
-              <span>What can I help you work on today?</span>
-              <div className="relative inline-flex items-center" ref={ideasRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowIdeas((prev) => !prev)}
-                  className="flex items-center text-base md:text-lg text-blue-600 underline"
-                >
-                  <Lightbulb className="w-5 h-5 mr-1" />
-                  Ideas
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Chat messages */}
-        <div className="mt-6 mb-6 flex flex-col gap-6">
-          {messages.map((msg, index) => (
-            <div key={index} className="flex items-start gap-4 w-fit max-w-full">
-              {/* Avatar */}
-              <div className="flex-shrink-0">
-                {msg.isBot ? (
-                  <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                    <img
-                      src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
-                      alt="AI"
-                      className="w-7 h-7"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt="User"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src =
-                            'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                        }}
-                      />
+            {/* Chat messages */}
+            <div className="mt-6 mb-6 flex flex-col gap-6">
+              {messages.map((msg, index) => (
+                <div key={index} className={`flex items-start gap-4 w-fit max-w-full ${!msg.isBot ? 'ml-auto flex-row-reverse' : ''}`}>
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    {msg.isBot ? (
+                      <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                        <img
+                          src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69632642282678b099.png"
+                          alt="AI"
+                          className="w-7 h-7"
+                        />
+                      </div>
                     ) : (
-                      <User className="w-4 h-4 text-white" />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
+                        {userAvatar ? (
+                          <img
+                            src={userAvatar}
+                            alt="User"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src =
+                                'https://www.gravatar.com/avatar/default?d=mp&s=200';
+                            }}
+                          />
+                        ) : (
+                          <User className="w-4 h-4 text-white" />
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Message content */}
-              <div className="flex-1 min-w-0">
-                <div className="prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed text-gray-900 break-words whitespace-pre-wrap tracking-[-0.01em]">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-                {msg.status === 'error' && msg.error && (
-                  <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
-                    <AlertCircle className="w-4 h-4" />
-                    <p>{msg.error}</p>
+                  {/* Message content */}
+                  <div className="flex-1 min-w-0">
+                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-4 rounded-2xl ${
+                      msg.isBot 
+                        ? 'text-gray-800 bg-gray-100 border border-gray-300'
+                        : 'text-blue-800 bg-blue-100'
+                    }`}>
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                    {msg.status === 'error' && msg.error && (
+                      <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
+                        <AlertCircle className="w-4 h-4" />
+                        <p>{msg.error}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Thinking bubble if isThinking is true */}
-          {isThinking && (
-            <div className="flex items-start gap-4 w-fit max-w-full">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="inline-block px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
-                  Thinking...
-                </p>
-              </div>
+              ))}
+
+              {/* Thinking bubble if isThinking is true */}
+              {isThinking && (
+                <div className="flex items-start gap-4 w-fit max-w-full">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="inline-block px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
+                      Thinking...
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
       {/* FLOATING BUBBLE ~ 25% from bottom */}
-      <div className="absolute bottom-1/4 left-0 right-0 z-50">
+      <div className="sticky left-0 right-0 z-50">
         <div className="mx-auto w-full max-w-2xl px-4">
           <div className="bg-white rounded-3xl shadow-lg p-6">
             <textarea
