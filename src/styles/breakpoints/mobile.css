@@ -129,6 +129,139 @@
     padding-left: 10px !important;
     padding-right: 10px !important;
   }
+
+  /* Fix extra space in chat container */
+  #root > div > div.flex-1.flex.flex-col.min-w-0.overflow-auto > div {
+    min-height: 0 !important;
+    height: auto !important;
+    flex: 1 1 auto !important;
+  }
+
+  #root > div > div.flex-1.flex.flex-col.min-w-0.overflow-auto {
+    min-height: 0 !important;
+    display: flex !important;
+    flex: 1 !important;
+  }
+
+  /* Chat container fixes */
+  .flex.flex-col.h-\[calc\(100vh-64px\)\] {
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(100vh - 64px) !important;
+    position: relative !important;
+  }
+
+  /* Messages scroll container */
+  .flex-1.overflow-auto {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    position: relative !important;
+  }
+
+  /* Max width container */
+  .max-w-2xl.mx-auto.px-4 {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Messages wrapper */
+  .space-y-4.py-4 {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Sticky input container */
+  .sticky.left-0.right-0.z-50 {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white !important;
+    padding-bottom: env(safe-area-inset-bottom) !important; /* For iOS devices with home indicator */
+  }
+
+  /* Ensure content is not hidden behind input container */
+  .flex-1.overflow-auto {
+    padding-bottom: calc(155px + env(safe-area-inset-bottom, 20px)) !important;
+  }
+
+  /* Adjust scroll container max height */
+  .mt-6.mb-6.flex.flex-col.gap-6 {
+    max-height: calc(100vh - 155px - env(safe-area-inset-bottom, 20px)) !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* Input container mobile styles */
+  .bg-white.rounded-3xl.shadow-lg.p-6 {
+    padding: 0.5rem !important; /* p-2 */
+    box-shadow: none !important;
+  }
+
+  /* Messages container specific fix */
+  .flex-1.overflow-auto {
+    overflow: hidden !important;
+    flex: none !important;
+    height: auto !important;
+  }
+
+  /* Messages wrapper fix */
+  .max-w-2xl.mx-auto.px-4 {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Messages container scrolling */
+  .mt-6.mb-6.flex.flex-col.gap-6 {
+    max-height: calc(100vh - 240px) !important; /* Account for header and input container */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+  }
+
+  /* Message bubble mobile styles */
+  .prose.prose-sm.max-w-full {
+    padding: 0.75rem !important; /* p-3 */
+    font-size: 0.875rem !important; /* text-sm */
+    line-height: 1.25rem !important;
+  }
+
+  /* Messages container scrolling */
+  .mt-6.mb-6.flex.flex-col.gap-6 {
+    max-height: calc(100vh - 240px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+  }
+
+  /* Messages wrapper for smooth scroll */
+  .space-y-4.py-4 {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Ensure proper scroll container */
+  .flex-1.overflow-auto {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Adjust main content area */
+  #root > div > div.flex-1.flex.flex-col.min-w-0.overflow-auto {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Ensure message content doesn't overflow */
+  .prose.prose-sm.max-w-full {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+
+  /* Adjust textarea height and spacing in mobile */
+  .min-h-\[80px\] {
+    min-height: 65px !important;
+    margin-top: 5px !important;
+  }
 }
 
 /* Email Composer mobile margins */
