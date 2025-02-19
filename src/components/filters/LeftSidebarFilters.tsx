@@ -143,9 +143,9 @@ export default function LeftSidebarFilters({
       <div className={`
         flex-1 overflow-y-auto
       `}>
-        <div className="p-2 pt-8">
+        <div className="p-2 pt-2">
           {/* Section Headers */}
-          <div className="mb-4">
+          <div className="mb-1">
             <h2 className={`
               px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide
             `}>
@@ -162,7 +162,7 @@ export default function LeftSidebarFilters({
           </div>
 
           {/* Event Filters */}
-          <div className="mb-6">
+          <div className="mb-1">
             <h2 className={`
               px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide
               ${isCollapsed ? 'sr-only' : ''}
@@ -254,7 +254,7 @@ export default function LeftSidebarFilters({
           </div>
 
           {/* Event Location */}
-          <div className="mb-6">
+          <div className="mb-1">
             <h2 className="px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide">
               Event Location
             </h2>
@@ -275,7 +275,7 @@ export default function LeftSidebarFilters({
           </div>
 
           {/* Organization Filters */}
-          <div className="mb-6">
+          <div className="mb-1">
             <h2 className="px-1.5 mb-3 text-[13px] font-semibold text-gray-700 uppercase tracking-wide">
               Organization Filters
             </h2>
@@ -345,7 +345,7 @@ export default function LeftSidebarFilters({
 
       {/* Views Section */}
       <div className={`
-        p-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm
+        pb-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm
       `}>
         <ViewsSection
           showAllEvents={showAllEvents}

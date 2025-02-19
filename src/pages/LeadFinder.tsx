@@ -45,7 +45,7 @@ export default function LeadFinder() {
   }
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {showGuide && (
         <QuickStartGuide onDismiss={() => setShowGuide(false)} />
       )}

@@ -57,12 +57,12 @@ export default function Layout() {
   const displayName = getDisplayName();
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <div className="hidden sm:block fixed inset-y-0 w-64">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      <div className="hidden sm:block h-screen sticky top-0">
         <Sidebar profile={profile} />
       </div>
-      <div className="flex-1 flex flex-col min-w-0 sm:ml-64">
-        <header className="bg-white border-b border-gray-200 h-16 flex-none flex items-center px-4 sm:px-6 relative z-20">
+      <div className="flex-1 flex flex-col min-w-0 overflow-auto">
+        <header className="bg-white border-b border-gray-200 h-16 flex-none flex items-center px-4 sm:px-6 relative z-20 sticky top-0">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -173,7 +173,7 @@ export default function Layout() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1">
           <Outlet />
         </main>
       </div>

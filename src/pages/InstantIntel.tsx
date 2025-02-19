@@ -38,7 +38,7 @@ export default function InstantIntel() {
   });
 
   return (
-    <div style={{ background: '#EDEEF0' }} className="p-4 sm:p-6 flex justify-center">
+    <div style={{ background: '#EDEEF0' }} className="min-h-screen p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-2xl">
         {/* Header section */}
         <div className="mb-8">

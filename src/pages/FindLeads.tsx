@@ -491,185 +491,192 @@ export default function FindLeads() {
 
   return (
     <div className="flex h-full bg-gray-50">
-      <LeftSidebarFilters
-        filters={filters}
-        openSections={openSections}
-        setFilters={setFilters}
-        setOpenSections={setOpenSections}
-        toggleSection={toggleSection}
-        handleUnlockTypeChange={(type) => {
-          // If type is undefined, clear the filter and set lead type to 'all'
-          if (!type) {
-            setFilters(prev => ({
-              ...prev,
-              unlockType: []
-            }));
-            setSelectedLeadType('all');
-            return;
-          }
-
-          // Handle unlock type selection
-          setFilters(prev => {
-            let newUnlockTypes: string[] = [];
-            
-            // Handle Contact Email selection
-            if (type === 'Unlock Contact Email') {
-              newUnlockTypes = ['Unlock Contact Email'];
-              // Set lead type to contacts
-              setSelectedLeadType('contacts');
-            }
-            // Handle Event Email or URL selection
-            else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
-              const currentTypes = prev.unlockType || [];
-              const isSelected = currentTypes.includes(type);
-              
-              // If already selected, remove it
-              if (isSelected) {
-                newUnlockTypes = currentTypes.filter(t => t !== type && t !== 'Unlock Contact Email');
-              } else {
-                // Add new selection, ensuring Contact Email is removed
-                newUnlockTypes = [
-                  ...currentTypes.filter(t => t !== 'Unlock Contact Email' && t !== type),
-                  type
-                ];
-              }
-              
-              // Set lead type based on remaining selections
-              if (newUnlockTypes.length > 0) {
-                setSelectedLeadType('events');
-              } else {
-                setSelectedLeadType('all');
-              }
+      <div className="sticky top-16 h-[calc(100vh-64px)]">
+        <LeftSidebarFilters
+          filters={filters}
+          openSections={openSections}
+          setFilters={setFilters}
+          setOpenSections={setOpenSections}
+          toggleSection={toggleSection}
+          handleUnlockTypeChange={(type) => {
+            // If type is undefined, clear the filter and set lead type to 'all'
+            if (!type) {
+              setFilters(prev => ({
+                ...prev,
+                unlockType: []
+              }));
+              setSelectedLeadType('all');
+              return;
             }
 
-            return {
-              ...prev,
-              unlockType: newUnlockTypes
-            };
-          });
-        }}
-        selectedUnlockType={filters.unlockType}
-        showAllEvents={showAllEvents}
-        onViewToggle={() => setShowAllEvents(!showAllEvents)}
-        showAll={showAll}
-        onLocationToggle={() => setShowAll(!showAll)}
-        totalCount={totalLeadsCount}
-        uniqueCount={uniqueLeadsCount}
-        usaCount={processedLeads.filter(lead => lead.region === 'United States').length}
-        selectedLeadType={selectedLeadType}
-      />
+            // Handle unlock type selection
+            setFilters(prev => {
+              let newUnlockTypes: string[] = [];
+              
+              // Handle Contact Email selection
+              if (type === 'Unlock Contact Email') {
+                newUnlockTypes = ['Unlock Contact Email'];
+                // Set lead type to contacts
+                setSelectedLeadType('contacts');
+              }
+              // Handle Event Email or URL selection
+              else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+                const currentTypes = prev.unlockType || [];
+                const isSelected = currentTypes.includes(type);
+                
+                // If already selected, remove it
+                if (isSelected) {
+                  newUnlockTypes = currentTypes.filter(t => t !== type && t !== 'Unlock Contact Email');
+                } else {
+                  // Add new selection, ensuring Contact Email is removed
+                  newUnlockTypes = [
+                    ...currentTypes.filter(t => t !== 'Unlock Contact Email' && t !== type),
+                    type
+                  ];
+                }
+                
+                // Set lead type based on remaining selections
+                if (newUnlockTypes.length > 0) {
+                  setSelectedLeadType('events');
+                } else {
+                  setSelectedLeadType('all');
+                }
+              }
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
-          {/* Lead Type Toggle */}
-          <div className="w-[700px] mb-6">
-            <div className="flex items-center gap-4">
-              <div className="inline-flex bg-white rounded-lg shadow-sm border border-gray-200/75 p-0.5">
-                {[
-                  { id: 'all' as const, label: 'All', icon: Filter, baseColor: 'gray' },
-                  { id: 'contacts' as const, label: 'Contacts', icon: Users, baseColor: 'blue' },
-                  { id: 'events' as const, label: 'Events', icon: Calendar, baseColor: 'emerald' }
-                ].map((type) => {
-                  const isSelected = selectedLeadType === type.id;
-                  return (
-                    <button
-                      key={type.id}
-                      onClick={() => handleLeadTypeChange(type.id)}
-                      className={`
-                        relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md
-                        transition-all duration-200
-                        ${isSelected
-                          ? type.id === 'events' 
-                            ? 'text-emerald-900 bg-emerald-100 shadow-sm border border-emerald-200'
-                            : type.id === 'contacts'
-                              ? 'text-blue-900 bg-blue-100 shadow-sm border border-blue-200'
-                              : 'text-gray-900 bg-gray-100 shadow-sm border border-gray-200'
-                          : `text-${type.baseColor}-700 hover:text-${type.baseColor}-800 hover:bg-${type.baseColor}-50/50 border border-transparent`
-                        }
-                      `}
-                    >
-                      <type.icon className={`w-3.5 h-3.5 ${
-                        isSelected 
-                          ? type.id === 'events'
-                            ? 'text-emerald-600'
-                            : type.id === 'contacts'
-                              ? 'text-blue-600'
-                              : 'text-gray-600'
-                          : `text-${type.baseColor}-500`
-                      }`} />
-                      {type.label}
-                      {isSelected && (
-                        <span className={`absolute -bottom-[1px] left-2 right-2 h-0.5 rounded-full ${
-                          type.id === 'events'
-                            ? 'bg-emerald-500'
-                            : type.id === 'contacts'
-                              ? 'bg-blue-500'
-                              : 'bg-gray-500'
-                        }`} />
-                      )}
-                    </button>
-                  );
-                })}
+              return {
+                ...prev,
+                unlockType: newUnlockTypes
+              };
+            });
+          }}
+          selectedUnlockType={filters.unlockType}
+          showAllEvents={showAllEvents}
+          onViewToggle={() => setShowAllEvents(!showAllEvents)}
+          showAll={showAll}
+          onLocationToggle={() => setShowAll(!showAll)}
+          totalCount={totalLeadsCount}
+          uniqueCount={uniqueLeadsCount}
+          usaCount={processedLeads.filter(lead => lead.region === 'United States').length}
+          selectedLeadType={selectedLeadType}
+        />
+      </div>
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          <div className="sticky top-0 z-10 bg-gray-50 pb-4">
+            <div className="flex items-center justify-between">
+              {/* Lead Type Toggle */}
+              <div className="w-[700px] mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="inline-flex bg-white rounded-lg shadow-sm border border-gray-200/75 p-0.5">
+                    {[
+                      { id: 'all' as const, label: 'All', icon: Filter, baseColor: 'gray' },
+                      { id: 'contacts' as const, label: 'Contacts', icon: Users, baseColor: 'blue' },
+                      { id: 'events' as const, label: 'Events', icon: Calendar, baseColor: 'emerald' }
+                    ].map((type) => {
+                      const isSelected = selectedLeadType === type.id;
+                      return (
+                        <button
+                          key={type.id}
+                          onClick={() => handleLeadTypeChange(type.id)}
+                          className={`
+                            relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md
+                            transition-all duration-200
+                            ${isSelected
+                              ? type.id === 'events' 
+                                ? 'text-emerald-900 bg-emerald-100 shadow-sm border border-emerald-200'
+                                : type.id === 'contacts'
+                                  ? 'text-blue-900 bg-blue-100 shadow-sm border border-blue-200'
+                                  : 'text-gray-900 bg-gray-100 shadow-sm border border-gray-200'
+                              : `text-${type.baseColor}-700 hover:text-${type.baseColor}-800 hover:bg-${type.baseColor}-50/50 border border-transparent`
+                            }
+                          `}
+                        >
+                          <type.icon className={`w-3.5 h-3.5 ${
+                            isSelected 
+                              ? type.id === 'events'
+                                ? 'text-emerald-600'
+                                : type.id === 'contacts'
+                                  ? 'text-blue-600'
+                                  : 'text-gray-600'
+                              : `text-${type.baseColor}-500`
+                          }`} />
+                          {type.label}
+                          {isSelected && (
+                            <span className={`absolute -bottom-[1px] left-2 right-2 h-0.5 rounded-full ${
+                              type.id === 'events'
+                                ? 'bg-emerald-500'
+                                : type.id === 'contacts'
+                                  ? 'bg-blue-500'
+                                  : 'bg-gray-500'
+                            }`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Location Toggle only */}
+                  <div className="flex items-center gap-2">
+                    <LocationToggle
+                      isUSAOnly={!showAll}
+                      onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <OpportunitiesFilter
+                    value={eventsFilter}
+                    onChange={setEventsFilter}
+                    onReset={handleCompleteReset}
+                    hasActiveFilters={hasActiveFilters}
+                    tags={opportunityTags}
+                    onAddTag={(tag) => setOpportunityTags([...opportunityTags, tag])}
+                    onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
+                  />
+                </div>
               </div>
+            </div>
 
-              {/* Location Toggle only */}
-              <div className="flex items-center gap-2">
-                <LocationToggle
-                  isUSAOnly={!showAll}
-                  onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
+            {hasActiveFilters && (
+              <div className="sticky top-[144px] z-10 bg-gray-50">
+                <SmartFiltersBar
+                  filters={filters}
+                  onRemoveFilter={(key, value) => {
+                    setFilters(prev => ({
+                      ...prev,
+                      [key]: Array.isArray(prev[key])
+                        ? (prev[key] as string[]).filter(v => v !== value)
+                        : typeof prev[key] === 'string' && prev[key] === value
+                          ? ''
+                          : prev[key]
+                    }));
+                  }}
+                  onClearAllFilters={handleResetFilters}
                 />
               </div>
-            </div>
+            )}
 
-            <div className="mt-4">
-              <OpportunitiesFilter
-                value={eventsFilter}
-                onChange={setEventsFilter}
-                onReset={handleCompleteReset}
-                hasActiveFilters={hasActiveFilters}
-                tags={opportunityTags}
-                onAddTag={(tag) => setOpportunityTags([...opportunityTags, tag])}
-                onRemoveTag={(tag) => setOpportunityTags(opportunityTags.filter(t => t !== tag))}
+            <div className="bg-white border border-gray-200 rounded-lg mt-6">
+              <LeadsTable 
+                leads={processedLeads}
+                loading={loading}
+                onResetFilters={handleResetFilters}
+                onLeadClick={handleLeadClick}
+                showAllEvents={showAllEvents}
+                uniqueCount={uniqueLeadsCount}
+                selectedLeadType={selectedLeadType}
+                filters={filters}
+                eventsFilter={eventsFilter}
+                opportunityTags={opportunityTags}
+                showAll={showAll}
+                totalLeads={totalLeadsCount}
+                allLeadsLoaded={allLeadsLoaded}
+                onSortChange={handleSortChange}
+                sortField={sortField}
+                sortDirection={sortDirection}
               />
             </div>
-          </div>
-          
-          {hasActiveFilters && (
-            <SmartFiltersBar
-              filters={filters}
-              onRemoveFilter={(key, value) => {
-                setFilters(prev => ({
-                  ...prev,
-                  [key]: Array.isArray(prev[key])
-                    ? (prev[key] as string[]).filter(v => v !== value)
-                    : typeof prev[key] === 'string' && prev[key] === value
-                      ? ''
-                      : prev[key]
-                }));
-              }}
-              onClearAllFilters={handleResetFilters}
-            />
-          )}
-
-          <div className="bg-white border border-gray-200 rounded-lg mt-6">
-            <LeadsTable 
-              leads={processedLeads}
-              loading={loading}
-              onResetFilters={handleResetFilters}
-              onLeadClick={handleLeadClick}
-              showAllEvents={showAllEvents}
-              uniqueCount={uniqueLeadsCount}
-              selectedLeadType={selectedLeadType}
-              filters={filters}
-              eventsFilter={eventsFilter}
-              opportunityTags={opportunityTags}
-              showAll={showAll}
-              totalLeads={totalLeadsCount}
-              allLeadsLoaded={allLeadsLoaded}
-              onSortChange={handleSortChange}
-              sortField={sortField}
-              sortDirection={sortDirection}
-            />
           </div>
         </div>
       </div>
