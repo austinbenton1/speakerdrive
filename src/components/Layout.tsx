@@ -57,16 +57,12 @@ export default function Layout() {
   const displayName = getDisplayName();
 
   return (
-    // Use "min-h-screen" for chat pages so the container can expand as needed.
-    <div
-      className={`flex ${isChatPage ? 'min-h-screen' : 'h-screen'} bg-gray-100`}
-      style={{ overflow: isChatPage ? 'visible' : 'hidden' }}
-    >
-      <div className="hidden sm:block">
+    <div className="flex h-screen bg-gray-100">
+      <div className="hidden sm:block fixed inset-y-0 w-64">
         <Sidebar profile={profile} />
       </div>
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6 relative z-20">
+      <div className="flex-1 flex flex-col min-w-0 sm:ml-64">
+        <header className="bg-white border-b border-gray-200 h-16 flex-none flex items-center px-4 sm:px-6 relative z-20">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -177,7 +173,7 @@ export default function Layout() {
         </div>
 
         {/* Main Content */}
-        <main className={`relative flex-1 ${isChatPage ? 'overflow-auto' : 'overflow-hidden'}`}>
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
