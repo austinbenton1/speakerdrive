@@ -422,34 +422,36 @@ export default function ChatConversation() {
             {messages.length === 0 && (
               <div className="text-center space-y-2">
                 {isOnboarding ? (
-                  <h1 className="text-4xl md:text-5xl font-bold">
+                  <h1 className="text-2xl md:text-4xl font-bold">
                     <span>Welcome to the platform, </span>
                     <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
                       {userDisplayName || 'New User'}
                     </span>
                   </h1>
                 ) : (
-                  <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-2">
-                    <MessageSquare className="w-9 h-9 text-[#0066FF]" />
+                  <h1 className="text-2xl md:text-4xl font-bold flex items-center justify-center gap-2">
+                    <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-[#0066FF]" />
                     <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
                       Ask SpeakerDrive
                     </span>
                   </h1>
                 )}
 
-                <div className="flex items-center justify-center gap-2 text-base md:text-lg text-gray-600">
-                  <span>What can I help you work on today?</span>
-                  <div className="relative inline-flex items-center" ref={ideasRef}>
-                    <button
-                      type="button"
-                      onClick={() => setShowIdeas((prev) => !prev)}
-                      className="flex items-center text-base md:text-lg text-blue-600 underline"
-                    >
-                      <Lightbulb className="w-5 h-5 mr-1" />
-                      Ideas
-                    </button>
+                {!isOnboarding && (
+                  <div className="flex items-center justify-center gap-2 text-xs md:text-base text-gray-600">
+                    <span>What can I help you work on today?</span>
+                    <div className="relative inline-flex items-center" ref={ideasRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowIdeas((prev) => !prev)}
+                        className="flex items-center text-xs md:text-base text-blue-600 underline"
+                      >
+                        <Lightbulb className="w-4 h-4 md:w-5 md:h-5 mr-1" />
+                        Ideas
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -469,18 +471,21 @@ export default function ChatConversation() {
                       </div>
                     ) : (
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
-                        {userAvatar ? (
-                          <img
-                            src={userAvatar}
-                            alt="User"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.onerror = null;
-                              target.src =
-                                'https://www.gravatar.com/avatar/default?d=mp&s=200';
-                            }}
-                          />
+                        {userAvatar && userAvatar.trim() ? (
+                          <>
+                            <User className="w-4 h-4 text-white fallback-icon hidden" />
+                            <img
+                              src={userAvatar}
+                              alt="User"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.style.display = 'none';
+                                target.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                              }}
+                            />
+                          </>
                         ) : (
                           <User className="w-4 h-4 text-white" />
                         )}
@@ -490,10 +495,10 @@ export default function ChatConversation() {
 
                   {/* Message content */}
                   <div className="flex-1 min-w-0">
-                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[17px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-4 rounded-2xl ${
+                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[15px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-4 rounded-2xl ${
                       msg.isBot 
-                        ? 'text-gray-800 bg-gray-100 border border-gray-300'
-                        : 'text-blue-800 bg-blue-100'
+                        ? 'text-gray-800'
+                        : 'text-blue-800'
                     }`}>
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
@@ -529,7 +534,7 @@ export default function ChatConversation() {
 
       {/* FLOATING BUBBLE ~ 25% from bottom */}
       <div className="sticky left-0 right-0 z-50">
-        <div className="mx-auto w-full max-w-2xl px-4">
+        <div className="mx-auto w-full max-w-2xl px-4 mb-[15px]">
           <div className="bg-white rounded-3xl shadow-lg p-6">
             <textarea
               ref={textareaRef}
@@ -541,10 +546,11 @@ export default function ChatConversation() {
               }}
               onKeyDown={handleKeyDown}
               placeholder="Type your message here. Press 'Enter' to start a new line..."
-              className="w-full min-h-[80px] resize-none text-base sm:text-sm placeholder-gray-400 focus:outline-none"
+              className="w-full min-h-[80px] resize-none text-base sm:text-sm placeholder-gray-400 focus:outline-none bg-transparent"
               disabled={isLoading || isUserDataLoading}
             />
-            <div className="mt-4 flex items-center justify-between">
+            <div className="hidden sm:block h-[1px] bg-gray-200 opacity-60 my-2"></div>
+            <div className="mt-2 flex items-center justify-between">
               {/* character counter + reset */}
               <div className="flex items-center gap-4">
                 <span className="text-xs text-gray-400 px-3 py-1 bg-gray-50 rounded-md">
