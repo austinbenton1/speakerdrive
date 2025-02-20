@@ -125,16 +125,30 @@ export default function Layout() {
           {/* User Profile */}
           <div className="flex items-center ml-auto">
             <div className="flex items-center space-x-3">
-              <img
-                src={globalAvatarUrl || profile.avatar_url}
-                alt={displayName.full}
-                className="h-8 w-8 rounded-full border border-gray-200 shadow-sm object-cover bg-white"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = minimalLogo;
-                }}
-              />
+              <div className="relative h-8 w-8">
+                {(globalAvatarUrl || profile.avatar_url) ? (
+                  <>
+                    <div className="absolute inset-0 rounded-full border border-gray-200 shadow-sm bg-gray-900 flex items-center justify-center hidden fallback-icon">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                    <img
+                      src={globalAvatarUrl || profile.avatar_url}
+                      alt={displayName.full}
+                      className="h-full w-full rounded-full border border-gray-200 shadow-sm object-cover bg-white"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.style.display = 'none';
+                        target.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="h-full w-full rounded-full border border-gray-200 shadow-sm bg-gray-900 flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                )}
+              </div>
               <div className="flex flex-col">
                 <span className="hidden sm:block text-sm font-medium text-gray-700">
                   {displayName.full}
