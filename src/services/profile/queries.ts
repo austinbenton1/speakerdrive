@@ -16,7 +16,8 @@ export async function fetchProfileData(userId: string) {
         quick_start_guide_tip,
         offering,
         random_lead_sort,
-        random_lead_sort_date
+        random_lead_sort_date,
+        is_onboarding
       `)
       .eq('id', userId)
       .single();

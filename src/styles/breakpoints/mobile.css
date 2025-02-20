@@ -186,6 +186,11 @@
     padding-bottom: calc(155px + env(safe-area-inset-bottom, 20px)) !important;
   }
 
+  /* Chat bubble text size for mobile */
+  .chat-message-content {
+    font-size: 17px !important;
+  }
+
   /* Adjust scroll container max height */
   .mt-6.mb-6.flex.flex-col.gap-6 {
     max-height: calc(100vh - 155px - env(safe-area-inset-bottom, 20px)) !important;

@@ -7,8 +7,9 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { sendChatMessage } from '../lib/api/chatbot';
 import { supabase } from '../lib/supabase';
+import { sendChatMessage } from '../lib/api/chatbot';
+import { useProfile } from '../hooks/useProfile';
 import {
   Loader2,
   AlertCircle,
@@ -102,6 +103,7 @@ export default function ChatConversation() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { profile, loading: profileLoading } = useProfile();
 
   // User data
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
@@ -131,8 +133,7 @@ export default function ChatConversation() {
   const THROTTLE_DELAY = 2000;
 
   // Check if from onboarding
-  const isOnboarding =
-    params.get('source') === 'onboarding' && params.get('trigger') === 'auto';
+  const isOnboarding = profile?.is_onboarding;
 
   /**
    * Fetch user data from Supabase
@@ -141,22 +142,15 @@ export default function ChatConversation() {
     const fetchUserData = async () => {
       try {
         setIsUserDataLoading(true);
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
 
-        if (!user) {
-          setIsUserDataLoading(false);
-          return;
-        }
+        // Refresh session first
+        await supabase.auth.refreshSession();
+
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        if (!user) return;
 
         setUserEmail(user.email);
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('avatar_url, display_name, services, website')
-          .eq('id', user.id)
-          .single();
 
         if (profile?.avatar_url) setUserAvatar(profile.avatar_url);
         if (profile?.display_name) setUserDisplayName(profile.display_name);
@@ -170,19 +164,18 @@ export default function ChatConversation() {
     };
 
     fetchUserData();
-  }, []);
+  }, [profile]);
 
   /**
    * One-time onboarding init
    */
   useEffect(() => {
-    if (isUserDataLoading || hasFiredOnboardingInit) return;
+    if (isUserDataLoading || profileLoading || hasFiredOnboardingInit) return;
     setHasFiredOnboardingInit(true);
 
     const initializeChat = async () => {
       if (isOnboarding && userEmail) {
         try {
-          console.log('[ChatConversation] Onboarding → sending "onboarding_init"');
           setIsThinking(true);
 
           const response = await sendChatMessage(
@@ -193,6 +186,7 @@ export default function ChatConversation() {
             userWebsite
           );
 
+          // Set the message
           setMessages([
             {
               content: response.response,
@@ -201,6 +195,17 @@ export default function ChatConversation() {
               status: 'sent',
             },
           ]);
+
+          // Update profile to mark onboarding as complete
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ is_onboarding: false })
+            .eq('id', profile.id);
+
+          if (updateError) {
+            console.error('[ChatConversation] Failed to update onboarding status:', updateError);
+            return;
+          }
         } catch (error) {
           console.error('[ChatConversation] Failed to initialize chat:', error);
         } finally {
@@ -217,6 +222,7 @@ export default function ChatConversation() {
     userServices,
     userWebsite,
     isUserDataLoading,
+    profileLoading,
     hasFiredOnboardingInit,
   ]);
 
@@ -458,7 +464,7 @@ export default function ChatConversation() {
             {/* Chat messages */}
             <div className="mt-6 mb-6 flex flex-col gap-6">
               {messages.map((msg, index) => (
-                <div key={index} className={`flex items-start gap-4 w-fit max-w-full ${!msg.isBot ? 'ml-auto flex-row-reverse' : ''}`}>
+                <div key={index} className="flex items-start gap-4 w-fit max-w-full">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
                     {msg.isBot ? (
@@ -495,11 +501,7 @@ export default function ChatConversation() {
 
                   {/* Message content */}
                   <div className="flex-1 min-w-0">
-                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[15px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-4 rounded-2xl ${
-                      msg.isBot 
-                        ? 'text-gray-800'
-                        : 'text-blue-800'
-                    }`}>
+                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[15px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-2 rounded-2xl text-gray-800 chat-message-content`}>
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                     {msg.status === 'error' && msg.error && (

@@ -10,6 +10,7 @@ export interface UserProfile {
   random_lead_sort: boolean | null;
   random_lead_sort_date: Date | null;
   website: string | null;
+  is_onboarding: boolean | null;
 }
 
 export interface ProfileUpdateData {
@@ -17,6 +18,7 @@ export interface ProfileUpdateData {
   services?: string;
   offering?: string | null;
   website?: string | null;
+  is_onboarding?: boolean | null;
 }
 
 export interface ProfileResponse {

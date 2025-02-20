@@ -10,6 +10,7 @@ interface Profile {
   avatar_url: string | null;
   user_type: 'Admin' | 'Client';
   services: string;
+  is_onboarding: boolean | null;
 }
 
 export function useProfile() {
