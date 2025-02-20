@@ -541,7 +541,7 @@ export default function ChatConversation() {
               }}
               onKeyDown={handleKeyDown}
               placeholder="Type your message here. Press 'Enter' to start a new line..."
-              className="w-full min-h-[80px] resize-none text-sm placeholder-gray-400 focus:outline-none"
+              className="w-full min-h-[80px] resize-none text-base sm:text-sm placeholder-gray-400 focus:outline-none"
               disabled={isLoading || isUserDataLoading}
             />
             <div className="mt-4 flex items-center justify-between">
