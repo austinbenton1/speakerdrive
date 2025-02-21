@@ -186,7 +186,7 @@
     padding-bottom: calc(155px + env(safe-area-inset-bottom, 20px)) !important;
   }
 
-  /* Chat bubble text size for mobile */
+  /* Chat message text size */
   .chat-message-content {
     font-size: 17px !important;
   }

@@ -125,7 +125,8 @@ export default function ChatConversation() {
   const params = new URLSearchParams(location.search);
 
   // For scrolling + text area
-  const messagesWrapperRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Throttle
@@ -196,16 +197,11 @@ export default function ChatConversation() {
             },
           ]);
 
-          // Update profile to mark onboarding as complete
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ is_onboarding: false })
-            .eq('id', profile.id);
+          // Silently update onboarding status
+          supabase.rpc('update_onboarding_status', { 
+            profile_id: profile.id 
+          }).then();
 
-          if (updateError) {
-            console.error('[ChatConversation] Failed to update onboarding status:', updateError);
-            return;
-          }
         } catch (error) {
           console.error('[ChatConversation] Failed to initialize chat:', error);
         } finally {
@@ -322,18 +318,41 @@ export default function ChatConversation() {
   };
 
   /**
-   * Auto-scroll so new messages appear above the bubble
+   * Auto-scroll to bottom when new messages arrive
    */
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, []);
+
+  // Set up intersection observer to handle scroll
   useEffect(() => {
-    if (!messagesWrapperRef.current) return;
-    const container = messagesWrapperRef.current;
-    // The bubble offset: how many px from the bottom we want to "spare"
-    const bubbleOffset = 720;
-    container.scrollTo({
-      top: container.scrollHeight - bubbleOffset,
-      behavior: 'smooth',
-    });
-  }, [messages]);
+    if (!scrollAreaRef.current || !messagesEndRef.current) return;
+
+    const options = {
+      root: scrollAreaRef.current,
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (!entry.isIntersecting) {
+        scrollToBottom();
+      }
+    }, options);
+
+    observer.observe(messagesEndRef.current);
+    return () => observer.disconnect();
+  }, [scrollToBottom]);
+
+  // Trigger scroll on new messages
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isThinking, scrollToBottom]);
 
   /**
    * Auto-resize the textarea
@@ -383,23 +402,6 @@ export default function ChatConversation() {
     };
   }, []);
 
-  const scrollToBottom = useCallback(() => {
-    if (messagesWrapperRef.current) {
-      const scrollContainer = messagesWrapperRef.current.closest('.overflow-auto');
-      if (scrollContainer) {
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: 'smooth',
-        });
-      }
-    }
-  }, []);
-
-  // Auto-scroll when new messages are added
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isThinking, scrollToBottom]);
-
   if (isUserDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -417,13 +419,10 @@ export default function ChatConversation() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Messages Container */}
-      <div className="flex-1 overflow-auto">
+      <div ref={scrollAreaRef} className="flex-1 overflow-auto">
         <div className="max-w-2xl mx-auto px-4">
           {/* Messages */}
-          <div 
-            ref={messagesWrapperRef}
-            className="space-y-4 py-4"
-          >
+          <div className="space-y-4 py-4">
             {/* If no messages, show welcome */}
             {messages.length === 0 && (
               <div className="text-center space-y-2">
@@ -529,6 +528,8 @@ export default function ChatConversation() {
                   </div>
                 </div>
               )}
+              {/* Invisible div for scroll anchoring */}
+              <div ref={messagesEndRef} style={{ height: 1 }} />
             </div>
           </div>
         </div>

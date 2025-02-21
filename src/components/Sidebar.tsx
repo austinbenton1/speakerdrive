@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Search, MessageSquare, 
   Settings, LogOut, ChevronDown, ChevronUp,
   Mail, Link as LinkIcon, Building2, Phone, Wrench,
-  Headphones, Sparkles, LineChart, Briefcase
+  Headphones, Sparkles, LineChart, Briefcase, BookOpen
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import minimalLogo from '../assets/speakerdrive-mini-v2.png';
@@ -40,6 +40,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
   const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
   const [isMinimized, setIsMinimized] = useState(location.pathname === '/find-leads');
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
 
   // Update minimized state when location changes
   useEffect(() => {
@@ -163,56 +164,85 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               Tools
             </div>
 
-            {/* Contact Tools */}
-            {contactTools.map((item) => (
+            {/* Resources Dropdown */}
+            <div>
               <button
-                key={item.path}
-                onClick={() => handleNavigate(item.path)}
+                onClick={() => !isMinimized && setIsResourcesOpen(prev => !prev)}
                 className={`
                   flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
-                  ${location.pathname === item.path
+                  ${location.pathname.startsWith('/resources') || isResourcesOpen
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }
                   ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                 `}
               >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
+                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                {(!isMinimized || isHovered) && (
+                  <>
+                    <span className="ml-2.5 flex-1">Resources</span>
+                    {isResourcesOpen ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </>
+                )}
               </button>
-            ))}
 
-            {/* Instant Intel */}
-            <button
-              onClick={() => handleNavigate('/chat')}
-              className={`
-                flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
-                ${location.pathname === '/chat'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }
-                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
-              `}
-            >
-              <LineChart className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Instant Intel</span>
-            </button>
+              {/* Dropdown Content */}
+              {isResourcesOpen && (!isMinimized || isHovered) && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {/* Contact Tools */}
+                  {contactTools.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => handleNavigate(item.path)}
+                      className={`
+                        flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+                        ${location.pathname === item.path
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="ml-2.5">{item.label}</span>
+                    </button>
+                  ))}
 
-            {/* Sales Coach */}
-            <button
-              onClick={() => handleNavigate('/chat/sales-coach')}
-              className={`
-                flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
-                ${location.pathname === '/chat/sales-coach'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }
-                ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
-              `}
-            >
-              <Headphones className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Sales Coach</span>
-            </button>
+                  {/* Instant Intel */}
+                  <button
+                    onClick={() => handleNavigate('/chat')}
+                    className={`
+                      flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+                      ${location.pathname === '/chat'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <LineChart className="w-4 h-4 flex-shrink-0" />
+                    <span className="ml-2.5">Instant Intel</span>
+                  </button>
+
+                  {/* Sales Coach */}
+                  <button
+                    onClick={() => handleNavigate('/chat/sales-coach')}
+                    className={`
+                      flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+                      ${location.pathname === '/chat/sales-coach'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <Headphones className="w-4 h-4 flex-shrink-0" />
+                    <span className="ml-2.5">Sales Coach</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
