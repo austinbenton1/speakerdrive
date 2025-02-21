@@ -158,13 +158,13 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
             </button>
           </div>
 
-          {/* Tools Section */}
+          {/* Toolkit Section */}
           <div className={`${isMobile ? 'mt-4' : ''}`}>
             <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? 'mb-2' : 'py-1'} ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
-              Tools
+              Toolkit
             </div>
 
-            {/* Resources Dropdown */}
+            {/* Tools Dropdown (formerly Resources) */}
             <div>
               <button
                 onClick={() => setIsResourcesOpen(prev => !prev)}
@@ -177,10 +177,10 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                   ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                 `}
               >
-                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                <Wrench className="w-4 h-4 flex-shrink-0" />
                 {(isMobile || !isMinimized || isHovered) && (
                   <>
-                    <span className="resources-text ml-3.5 flex-1">Resources</span>
+                    <span className="resources-text ml-3.5 flex-1">Tools</span>
                     {isResourcesOpen ? (
                       <ChevronUp className="w-4 h-4 ml-2" />
                     ) : (
