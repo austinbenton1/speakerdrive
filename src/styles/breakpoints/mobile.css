@@ -17,8 +17,8 @@
   }
 
   /* Ensure main content takes full width */
-  body div.flex.h-screen.bg-gray-100.overflow-hidden > div.flex-1,
-  .flex-1,
+  body div.flex.h-screen.bg-gray-100.overflow-hidden > div.flex-1:not(.resources-text),
+  .flex-1:not(.resources-text),
   main,
   .main-content {
     margin-left: 0 !important;

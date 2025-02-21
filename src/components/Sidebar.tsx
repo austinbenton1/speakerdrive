@@ -109,7 +109,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
+                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
               </button>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               `}
             >
               <Search className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Find Leads</span>
+              <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Find Leads</span>
             </button>
           </div>
 
@@ -154,20 +154,20 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               `}
             >
               <MessageSquare className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Ask SpeakerDrive</span>
+              <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Ask SpeakerDrive</span>
             </button>
           </div>
 
           {/* Tools Section */}
-          <div>
-            <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? '' : 'py-1'} ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
+          <div className={`${isMobile ? 'mt-4' : ''}`}>
+            <div className={`px-1.5 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wide ${isMobile ? 'mb-2' : 'py-1'} ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>
               Tools
             </div>
 
             {/* Resources Dropdown */}
             <div>
               <button
-                onClick={() => !isMinimized && setIsResourcesOpen(prev => !prev)}
+                onClick={() => setIsResourcesOpen(prev => !prev)}
                 className={`
                   flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
                   ${location.pathname.startsWith('/resources') || isResourcesOpen
@@ -178,20 +178,20 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <BookOpen className="w-4 h-4 flex-shrink-0" />
-                {(!isMinimized || isHovered) && (
+                {(isMobile || !isMinimized || isHovered) && (
                   <>
-                    <span className="ml-2.5 flex-1">Resources</span>
+                    <span className="resources-text ml-3.5 flex-1">Resources</span>
                     {isResourcesOpen ? (
-                      <ChevronUp className="w-4 h-4" />
+                      <ChevronUp className="w-4 h-4 ml-2" />
                     ) : (
-                      <ChevronDown className="w-4 h-4" />
+                      <ChevronDown className="w-4 h-4 ml-2" />
                     )}
                   </>
                 )}
               </button>
 
               {/* Dropdown Content */}
-              {isResourcesOpen && (!isMinimized || isHovered) && (
+              {isResourcesOpen && (isMobile || !isMinimized || isHovered) && (
                 <div className="ml-4 mt-1 space-y-1">
                   {/* Contact Tools */}
                   {contactTools.map((item) => (
@@ -207,7 +207,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                       `}
                     >
                       <item.icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="ml-2.5">{item.label}</span>
+                      <span className="ml-3.5">{item.label}</span>
                     </button>
                   ))}
 
@@ -223,7 +223,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                     `}
                   >
                     <LineChart className="w-4 h-4 flex-shrink-0" />
-                    <span className="ml-2.5">Instant Intel</span>
+                    <span className="ml-3.5">Instant Intel</span>
                   </button>
 
                   {/* Sales Coach */}
@@ -238,7 +238,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                     `}
                   >
                     <Headphones className="w-4 h-4 flex-shrink-0" />
-                    <span className="ml-2.5">Sales Coach</span>
+                    <span className="ml-3.5">Sales Coach</span>
                   </button>
                 </div>
               )}
@@ -263,7 +263,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <Briefcase className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
+                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
               </button>
             </div>
 
@@ -283,14 +283,14 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                   `}
                 >
                   <Settings className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
+                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
                   className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
+                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
                 </button>
               </div>
             </div>
@@ -314,7 +314,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <Briefcase className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
+                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
               </button>
             </div>
 
@@ -334,14 +334,14 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                   `}
                 >
                   <Settings className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
+                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
                   className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-2.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
+                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
                 </button>
               </div>
             </div>
