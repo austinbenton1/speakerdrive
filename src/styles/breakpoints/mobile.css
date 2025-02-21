@@ -231,8 +231,8 @@
   /* Message bubble mobile styles */
   .prose.prose-sm.max-w-full {
     padding: 0.75rem !important; /* p-3 */
-    font-size: 0.875rem !important; /* text-sm */
-    line-height: 1.25rem !important;
+    font-size: 1.0625rem !important; /* 17px */
+    line-height: 1.5rem !important;
   }
 
   /* Messages container scrolling */
