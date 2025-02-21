@@ -197,10 +197,6 @@ export default function ChatConversation() {
             },
           ]);
 
-          // Silently update onboarding status
-          supabase.rpc('update_onboarding_status', { 
-            profile_id: profile.id 
-          }).then();
 
         } catch (error) {
           console.error('[ChatConversation] Failed to initialize chat:', error);
