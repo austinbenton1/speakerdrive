@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MoreVertical, Mail, Phone, MapPin } from 'lucide-react';
+import { MoreVertical, Mail, Phone, MapPin, ChevronRight } from 'lucide-react';
 import type { Lead } from '../../types';
 
 interface LeadListMobileProps {
@@ -12,26 +12,6 @@ export default function LeadListMobile({ leads, onLeadClick }: LeadListMobilePro
 
   return (
     <div className="lead-list-card">
-      <div className="card-header">
-        <h5 className="card-title">Leads List</h5>
-        <div className="dropdown" onClick={(e) => e.stopPropagation()}>
-          <button 
-            className="btn p-0" 
-            type="button"
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <MoreVertical className="w-5 h-5 text-gray-400" />
-          </button>
-          {showDropdown && (
-            <div className="dropdown-menu">
-              <button className="dropdown-item" onClick={() => {}}>Featured Leads</button>
-              <button className="dropdown-item" onClick={() => {}}>Filter by Tags</button>
-              <button className="dropdown-item" onClick={() => {}}>Show All</button>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="card-body">
         <ul>
           {leads.map((lead) => (
@@ -40,8 +20,8 @@ export default function LeadListMobile({ leads, onLeadClick }: LeadListMobilePro
               onClick={() => onLeadClick(lead)}
             >
               <div className="avatar">
-                {lead.avatar ? (
-                  <img src={lead.avatar} alt={lead.name} />
+                {lead.image_url ? (
+                  <img src={lead.image_url} alt={lead.name} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     {lead.name?.charAt(0) || 'L'}
@@ -67,6 +47,7 @@ export default function LeadListMobile({ leads, onLeadClick }: LeadListMobilePro
                 {lead.phone && <Phone className="w-4 h-4 text-gray-400" />}
                 {lead.location && <MapPin className="w-4 h-4 text-gray-400" />}
               </div>
+              <ChevronRight className="chevron-icon w-5 h-5 text-gray-400 ml-4" />
             </li>
           ))}
         </ul>

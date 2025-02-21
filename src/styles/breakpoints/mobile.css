@@ -272,6 +272,63 @@
     min-height: 65px !important;
     margin-top: 5px !important;
   }
+
+  /* FindLeads page mobile padding override */
+  .flex-1.min-w-0 > div.p-8 {
+    padding: 1rem 0; /* py-4 equivalent */
+  }
+
+  /* Lead type toggle container mobile styles */
+  .flex.items-center.justify-between > div.w-\[700px\].mb-6 {
+    margin-bottom: 0;
+    padding-left: 1rem; /* px-4 */
+    padding-right: 1rem; /* px-4 */
+    width: 100%;
+  }
+
+  /* Hide lead type toggle in mobile view */
+  .flex.items-center.justify-between > div > div.flex.items-center.gap-4 > div.flex.items-center.gap-2 {
+    display: none;
+  }
+
+  /* Hide empty reset button container in mobile */
+  .shrink-0.w-\[116px\]:empty {
+    display: none;
+  }
+
+  /* Hide lead stats in mobile view */
+  .lead-list-card .lead-stats {
+    display: none;
+  }
+
+  /* Remove border from list items in mobile view */
+  .lead-list-card ul li {
+    border-bottom: none;
+  }
+
+  /* Remove margin from lead name in mobile view */
+  .lead-list-card .lead-name {
+    margin-bottom: 0;
+  }
+
+  /* Add top padding to lead list container */
+  .lead-list-card > div > div {
+    padding-top: 0.5rem;
+  }
+
+  /* Chevron icon styles */
+  .lead-list-card li {
+    position: relative;
+  }
+
+  .lead-list-card li .chevron-icon {
+    transition: all 0.2s ease;
+  }
+
+  .lead-list-card li:hover .chevron-icon {
+    color: #0EA5E9; /* Primary color (blue) */
+    transform: translateX(2px);
+  }
 }
 
 /* Lead List Mobile Styles */
@@ -281,14 +338,6 @@
     border-radius: 0.5rem;
     box-shadow: 0 2px 6px 0 rgba(67, 89, 113, 0.12);
     margin: 0;
-  }
-
-  .lead-list-card .card-header {
-    padding: 1rem;
-    border-bottom: 1px solid rgba(67, 89, 113, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
   }
 
   .lead-list-card .card-body {
@@ -361,7 +410,6 @@
     align-items: center;
     padding: 0.75rem 0;
     cursor: pointer;
-    border-bottom: 1px solid rgba(67, 89, 113, 0.1);
   }
 
   .lead-list-card li:last-child {
