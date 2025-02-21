@@ -10,7 +10,6 @@ import { supabase } from '../lib/supabase';
 import { useRandomSort } from '../hooks/useRandomSort';
 import LeadsTable from '../components/leads/LeadsTable';
 import LeadListMobile from '../components/leads/LeadListMobile';
-import '../styles/components/LeadListMobile.css';
 import LeftSidebarFilters from '../components/filters/LeftSidebarFilters';
 import OpportunitiesFilter from '../components/filters/OpportunitiesFilter';
 import LocationToggle from '../components/common/LocationToggle';

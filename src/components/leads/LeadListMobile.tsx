@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { MoreVertical, Mail, Phone, MapPin } from 'lucide-react';
 import type { Lead } from '../../types';
-import '../../styles/components/LeadListMobile.css';
 
 interface LeadListMobileProps {
   leads: Lead[];
