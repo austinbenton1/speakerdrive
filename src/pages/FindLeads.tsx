@@ -498,7 +498,7 @@ export default function FindLeads() {
       <div className="flex-1 flex">
         {/* Left Sidebar - Hidden in mobile */}
         {!isMobile && (
-          <div className="w-80 border-r border-gray-200 bg-white py-6 flex-shrink-0">
+          <div className="border-r border-gray-200 bg-white py-6 flex-shrink-0">
             <LeftSidebarFilters
               filters={filters}
               setFilters={setFilters}

@@ -308,7 +308,9 @@
 
   /* Remove margin from lead name in mobile view */
   .lead-list-card .lead-name {
-    margin-bottom: 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #566a7f;
   }
 
   /* Add top padding to lead list container */
@@ -420,7 +422,6 @@
     font-size: 0.9375rem;
     font-weight: 500;
     color: #566a7f;
-    margin-bottom: 0.125rem;
   }
 
   .lead-list-card .lead-title {
