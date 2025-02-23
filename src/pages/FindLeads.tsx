@@ -494,12 +494,12 @@ export default function FindLeads() {
   };
 
   return (
-    <div className="flex h-full bg-gray-50">
-      <div className="flex-1 flex">
-        {/* Left Sidebar - Hidden in mobile */}
+    <div className="flex h-[calc(100vh-64px)] bg-gray-50">
+      <div className="flex-1 flex overflow-y-auto">
+        {/* Left Sidebar - Hidden in mobile */} 
         {!isMobile && (
-          <div className="border-r border-gray-200 bg-white py-6 flex-shrink-0">
-            <LeftSidebarFilters
+          <div className="border-r border-gray-200 bg-white py-6 flex-shrink-0 sticky top-0">
+     <LeftSidebarFilters
               filters={filters}
               setFilters={setFilters}
               openSections={openSections}
