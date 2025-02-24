@@ -52,23 +52,25 @@ export function useProfile() {
     try {
       setLoading(true);
       setError(null);
-
-      if (!user?.id) {
+  
+      // Get session directly from Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+  
+      if (!session?.user?.id) {
+        console.log('No session user ID found');
         setProfile(null);
         return;
       }
-
+  
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single();
-
+  
       if (fetchError) throw fetchError;
       
-      // Parse services from any format to string
       const parsedServices = parseServices(data.services);
-      
       const parsedData = {
         ...data,
         services: parsedServices
@@ -76,6 +78,7 @@ export function useProfile() {
       
       setProfile(parsedData);
     } catch (err) {
+      console.error('Error in fetchProfile:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch profile');
     } finally {
       setLoading(false);

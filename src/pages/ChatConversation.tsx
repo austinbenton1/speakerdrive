@@ -138,30 +138,33 @@ export default function ChatConversation() {
 
   /**
    * Fetch user data from Supabase
-   */
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setIsUserDataLoading(true);
+   */useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      setIsUserDataLoading(true);
 
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        if (!user) return;
-
-        setUserEmail(user.email);
-        setUserAvatar(profile?.avatar_url ?? null);
-        setUserDisplayName(profile?.display_name ?? null);
-        setUserServices(profile?.services ?? []);
-        setUserWebsite(profile?.website ?? null);
-      } catch (error) {
-        console.error('[ChatConversation] Error fetching user data:', error);
-      } finally {
-        setIsUserDataLoading(false);
+      if (!profile) {
+        console.log('No profile data available');
+        return;
       }
-    };
 
+      setUserEmail(profile.email);
+      setUserAvatar(profile.avatar_url);
+      setUserDisplayName(profile.display_name);
+      setUserServices(profile.services ? profile.services : '');
+      setUserWebsite(profile.website ?? null);
+
+    } catch (error) {
+      console.error('[ChatConversation] Error fetching user data:', error);
+    } finally {
+      setIsUserDataLoading(false);
+    }
+  };
+
+  if (!profileLoading) {
     fetchUserData();
-  }, []); // Empty dependency array means it only runs once on mount
+  }
+}, [profile, profileLoading]);
 
   /**
    * One-time onboarding init
