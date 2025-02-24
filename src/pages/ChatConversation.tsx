@@ -144,19 +144,15 @@ export default function ChatConversation() {
       try {
         setIsUserDataLoading(true);
 
-        // Refresh session first
-        await supabase.auth.refreshSession();
-
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error) throw error;
         if (!user) return;
 
         setUserEmail(user.email);
-
-        if (profile?.avatar_url) setUserAvatar(profile.avatar_url);
-        if (profile?.display_name) setUserDisplayName(profile.display_name);
-        if (profile?.services) setUserServices(profile.services);
-        if (profile?.website) setUserWebsite(profile.website);
+        setUserAvatar(profile?.avatar_url ?? null);
+        setUserDisplayName(profile?.display_name ?? null);
+        setUserServices(profile?.services ?? []);
+        setUserWebsite(profile?.website ?? null);
       } catch (error) {
         console.error('[ChatConversation] Error fetching user data:', error);
       } finally {
@@ -165,7 +161,7 @@ export default function ChatConversation() {
     };
 
     fetchUserData();
-  }, [profile]);
+  }, []); // Empty dependency array means it only runs once on mount
 
   /**
    * One-time onboarding init
