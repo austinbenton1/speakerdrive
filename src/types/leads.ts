@@ -11,6 +11,8 @@ export interface RecordedLead {
   unlocked_at: string;
   unlocked: boolean;
   related_leads?: number;
+  lead_name?: string;
+  job_title?: string;
 }
 
 export interface Lead {

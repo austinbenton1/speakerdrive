@@ -52,14 +52,22 @@ export function useAvailableLeads() {
         setTotalLeads(data);
         
         // Pass setLeads as the callback for remaining leads
-        const initialLeads = await fetchAvailableLeads(user.id, (newLeads) => {
+        const initialLeads = await fetchAvailableLeads(user.id, (batchLeads) => {
           // Append new leads while preserving the order of existing leads
+          if (!Array.isArray(batchLeads)) {
+            console.error('Expected batchLeads to be an array but got:', typeof batchLeads);
+            return;
+          }
+          
           setLeads(prevLeads => {
             const existingLeadIds = new Set(prevLeads.map(lead => lead.id));
-            const newFilteredLeads = newLeads.filter(lead => !existingLeadIds.has(lead.id));
+            const newFilteredLeads = batchLeads.filter(lead => !existingLeadIds.has(lead.id));
             return [...prevLeads, ...newFilteredLeads];
           });
-          setAllLeadsLoaded(true);
+
+          if (batchLeads.length === 0) {
+            setAllLeadsLoaded(true);
+          }
         });
         setLeads(initialLeads);
         hasLoadedInitialBatch.current = true;

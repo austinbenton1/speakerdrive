@@ -107,7 +107,7 @@ export async function fetchAvailableLeads(
         .from('leads')
         .select(selectQuery)
         .order('id', { ascending: false })
-        .range(0, 199)  // First 200 records
+        .range(0, 399)  // First 400 records
     );
 
     if (initialError) throw initialError;
@@ -131,19 +131,30 @@ async function loadRemainingLeads(
   setLeads: (leads: Lead[]) => void
 ) {
   try {
-    const { data: remainingLeads, error: remainingError } = await retryableRequest(() =>
-      supabase
-        .from('leads')
-        .select(selectQuery)
-        .order('id', { ascending: false })
-        .range(200, 999999)  // Rest of the records
-    );
+    // Load remaining leads in batches of 400
+    let startRange = 400;
+    let hasMore = true;
 
-    if (remainingError) throw remainingError;
+    while (hasMore) {
+      const { data: batchLeads, error: batchError } = await retryableRequest(() =>
+        supabase
+          .from('leads')
+          .select(selectQuery)
+          .order('id', { ascending: false })
+          .range(startRange, startRange + 399)
+      );
 
-    // Combine leads while preserving initial leads order
-    const allLeads = [...initialLeads, ...(remainingLeads || [])];
-    setLeads(allLeads);
+      if (batchError) throw batchError;
+
+      if (!batchLeads || !Array.isArray(batchLeads) || batchLeads.length === 0) {
+        hasMore = false;
+        setLeads([]);  // Call with empty array to mark completion
+      } else {
+        // Call the setLeads callback with the batch leads array
+        setLeads(batchLeads);
+        startRange += 400;
+      }
+    }
   } catch (err) {
     console.error('Error loading remaining leads:', err);
   }

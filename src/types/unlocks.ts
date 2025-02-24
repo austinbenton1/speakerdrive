@@ -11,6 +11,8 @@ export interface UnlockedLead {
   focus: string | null;
   related_leads: number | null;
   pitch: string | null;
+  lead_name?: string;
+  job_title?: string;
 }
 
 export interface UnlockStatus {
