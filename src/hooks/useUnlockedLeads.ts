@@ -33,7 +33,8 @@ export function useUnlockedLeads() {
               focus,
               related_leads,
               lead_name,
-              job_title
+              job_title,
+              organization
             )
           `)
           .eq('user_id', session.user.id)
@@ -59,7 +60,8 @@ export function useUnlockedLeads() {
           related_leads: item.leads.related_leads,
           pitch: item.pitch,
           lead_name: item.leads.lead_name,
-          job_title: item.leads.job_title
+          job_title: item.leads.job_title,
+          organization: item.leads.organization
         })) || [];
 
         setLeads(formattedLeads);

@@ -13,6 +13,7 @@ export interface UnlockedLead {
   pitch: string | null;
   lead_name?: string;
   job_title?: string;
+  organization?: string;
 }
 
 export interface UnlockStatus {

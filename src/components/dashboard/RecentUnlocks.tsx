@@ -83,7 +83,7 @@ export default function RecentUnlocks() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex justify-left">
           <FilterTabs filter={filter} setFilter={setFilter} />
         </div>
       </div>

@@ -14,17 +14,17 @@ export default function StatCard({ stat }: StatCardProps) {
       <div className="flex items-center justify-between mb-4">
         <Icon className="w-6 h-6 text-gray-400" />
         {type === 'event' ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
             <Calendar className="w-3.5 h-3.5" />
             Event Leads
           </span>
         ) : type === 'contact' ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
             <Users className="w-3.5 h-3.5" />
             Contact Leads
           </span>
         ) : change ? (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
             trend === 'up' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
             {change}

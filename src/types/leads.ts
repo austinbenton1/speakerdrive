@@ -13,6 +13,7 @@ export interface RecordedLead {
   related_leads?: number;
   lead_name?: string;
   job_title?: string;
+  organization?: string;
 }
 
 export interface Lead {

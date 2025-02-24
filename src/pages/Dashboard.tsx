@@ -36,7 +36,7 @@ export default function Dashboard() {
     <div className="p-4 sm:p-6 lg:p-8 min-w-0">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Track your leads, opportunities and engagement metrics</p>
+        <p className="text-gray-600">Track your leads and opportunities</p>
       </div>
 
       <div className="mb-6 sm:mb-8">

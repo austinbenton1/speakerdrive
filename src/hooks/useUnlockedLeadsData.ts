@@ -32,7 +32,8 @@ export function useUnlockedLeadsData() {
             unlock_value,
             related_leads,
             lead_name,
-            job_title
+            job_title,
+            organization
           )
         `)
         .eq('user_id', userId)
@@ -64,7 +65,8 @@ export function useUnlockedLeadsData() {
           unlocked: item.unlocked,
           related_leads: item.leads.related_leads,
           lead_name: item.leads.lead_name,
-          job_title: item.leads.job_title
+          job_title: item.leads.job_title,
+          organization: item.leads.organization
         })) || [];
 
         setRecordedLeads(transformedLeads);

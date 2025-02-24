@@ -624,6 +624,7 @@ export default function FindLeads() {
                   <LeadListMobile 
                     leads={processedLeads}
                     onLeadClick={handleLeadClick}
+                    loading={loading}
                   />
                 ) : (
                   <LeadsTable 

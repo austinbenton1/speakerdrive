@@ -90,7 +90,7 @@ export default function UnlockedLeadsMobile({ leads }: UnlockedLeadsMobileProps)
                   {/* Lead Name and Type */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-gray-900">
+                      <h3 className="text-sm font-medium text-gray-900" style={{ marginBottom: '1.25px' }}>
                         {(() => {
                           const displayName = lead.lead_type === 'Unlock Contact Email'
                             ? `${lead.lead_name || ''}${lead.job_title ? `, ${lead.job_title}` : ''}`
@@ -103,16 +103,17 @@ export default function UnlockedLeadsMobile({ leads }: UnlockedLeadsMobileProps)
                     {/* Lead Focus */}
                     {lead.focus && (
                       <div>
-                        <p className="text-xs text-gray-600">
-                          {lead.focus.length > 40 
-                            ? `${lead.focus.slice(0, 40)}...` 
-                            : lead.focus}
+                        <p className="text-xs text-gray-600" style={{ marginBottom: '1.25px' }}>
+                        {lead.lead_type === 'Unlock Contact Email' 
+                          ? (lead.event_name || 'No Event').slice(0, 40) + (lead.event_name?.length > 40 ? '...' : '')
+                          : (lead.organization || 'No Organization').slice(0, 40) + (lead.organization?.length > 40 ? '...' : '')
+                        }
                         </p>
-                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium ${styles.bg} ${styles.text}`}>
-                          <styles.icon className="h-3 w-3 mr-1" />
-                          {lead.lead_type.replace('Unlock ', '')}
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                        <div className="flex items-center gap-1 text-xs text-gray-600" style={{ marginBottom: '1.25px' }}>
+                          <span className={`mr-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ${styles.bg} ${styles.text}`}>
+                            <styles.icon className="h-3 w-3 mr-1" />
+                            {lead.lead_type.replace('Unlock ', '')}
+                          </span>
                           <Unlock className="h-3 w-3" />
                           {formatDate(lead.unlockDate)}
                           {/* Pitch Preview */}
@@ -121,6 +122,16 @@ export default function UnlockedLeadsMobile({ leads }: UnlockedLeadsMobileProps)
                               <MessageSquare className="ml-2 h-4 w-4 text-gray-400 text-green-600" />
                             </div>
                           )}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-600" style={{ marginBottom: '1.25px' }}>
+                          {lead.lead_type.includes('URL') ? (
+                            <Link className="h-3 w-3" />
+                          ) : (
+                            <Mail className="h-3 w-3" />
+                          )}
+                          {lead.unlock_value.length > 40 
+                            ? `${lead.unlock_value.slice(0, 40)}...` 
+                            : lead.unlock_value}
                         </div>
                       </div>
                     )}
