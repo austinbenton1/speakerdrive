@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Eye, Calendar, Users, Building2, MapPin, Tag, ExternalLink, Unlock, Layers, ArrowUpRight, MessageSquare } from 'lucide-react';
+import { Star, Eye, Calendar, Users, Building2, Tag, ExternalLink, Unlock, Layers, ArrowUpRight, MessageSquare } from 'lucide-react';
 import { formatDate } from '../../utils/date';
 import type { UnlockedLead } from '../../types/unlocks';
 import { Tooltip } from '../ui/Tooltip';
 import TablePagination from './TablePagination';
 import { usePagination } from '../../hooks/usePagination';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import UnlockedLeadsMobile from './UnlockedLeadsMobile';
 
 interface UnlockedLeadsListProps {
   leads: UnlockedLead[];
@@ -29,7 +31,7 @@ const LoadingRow = () => (
   </div>
 );
 
-export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
+const DesktopView = ({ leads }: UnlockedLeadsListProps) => {
   const navigate = useNavigate();
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -138,12 +140,6 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
                         <span>{lead.industry}</span>
                       </div>
                     )}
-                    {lead.subtext && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4" />
-                        <span>{lead.subtext}</span>
-                      </div>
-                    )}
                   </div>
 
                   {lead.focus && (
@@ -238,4 +234,16 @@ export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
       </div>
     </div>
   );
+};
+
+export default function UnlockedLeadsList({ leads }: UnlockedLeadsListProps) {
+  const breakpoint = useBreakpoint();
+  
+  // Show mobile view for mobile and tablet breakpoints
+  if (breakpoint === 'mobile' || breakpoint === 'tablet') {
+    return <UnlockedLeadsMobile leads={leads} />;
+  }
+
+  // Show desktop view for desktop breakpoint
+  return <DesktopView leads={leads} />;
 }

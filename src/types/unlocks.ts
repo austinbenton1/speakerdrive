@@ -5,7 +5,7 @@ export interface UnlockedLead {
   industry: string;
   image: string;
   unlockDate: Date;
-  lead_type: 'Event' | 'Contact';
+  lead_type: 'Unlock Contact Email' | 'Unlock Event Email' | 'Unlock Event URL';
   keywords: string | null;
   unlock_value: string | null;
   focus: string | null;
