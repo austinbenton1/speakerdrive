@@ -10,7 +10,7 @@ export interface DashboardStat {
   change?: string;
   trend?: 'up' | 'down';
   icon: LucideIcon;
-  type?: 'event' | 'contact';
+  type?: 'event' | 'contact' | 'visited' | 'unlocked';
 }
 
 export function calculateMonthlyVisits(leads: RecordedLead[]): number {
@@ -45,16 +45,14 @@ export function calculateDashboardStats(leads: RecordedLead[]): DashboardStat[] 
     {
       name: 'Total Visited Leads This Month',
       value: monthlyVisits.toString(),
-      change: '+10.3%',
-      trend: 'up',
       icon: Eye,
+      type: 'visited'
     },
     {
       name: 'Total Leads Unlocked This Month',
       value: monthlyUnlockedLeads.toString(),
-      change: '+12.5%',
-      trend: 'up',
       icon: Unlock,
+      type: 'unlocked'
     },
     {
       name: 'Event Leads Unlocked',

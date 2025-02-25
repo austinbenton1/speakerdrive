@@ -138,33 +138,41 @@ export default function ChatConversation() {
 
   /**
    * Fetch user data from Supabase
-   */useEffect(() => {
-  const fetchUserData = async () => {
-    try {
-      setIsUserDataLoading(true);
+   */
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsUserDataLoading(true);
 
-      if (!profile) {
-        console.log('No profile data available');
-        return;
+        if (!profile) {
+          console.log('No profile data available');
+          return;
+        }
+
+        // Check onboarding status first
+        if (profile.is_onboarding) {
+          // Handle onboarding user
+          console.log('User is in onboarding');
+          // You can add additional onboarding-specific logic here
+        }
+
+        setUserEmail(profile.email);
+        setUserAvatar(profile.avatar_url);
+        setUserDisplayName(profile.display_name);
+        setUserServices(profile.services ? profile.services : '');
+        setUserWebsite(profile.website ?? null);
+
+      } catch (error) {
+        console.error('[ChatConversation] Error fetching user data:', error);
+      } finally {
+        setIsUserDataLoading(false);
       }
+    };
 
-      setUserEmail(profile.email);
-      setUserAvatar(profile.avatar_url);
-      setUserDisplayName(profile.display_name);
-      setUserServices(profile.services ? profile.services : '');
-      setUserWebsite(profile.website ?? null);
-
-    } catch (error) {
-      console.error('[ChatConversation] Error fetching user data:', error);
-    } finally {
-      setIsUserDataLoading(false);
+    if (!profileLoading) {
+      fetchUserData();
     }
-  };
-
-  if (!profileLoading) {
-    fetchUserData();
-  }
-}, [profile, profileLoading]);
+  }, [profile, profileLoading]);
 
   /**
    * One-time onboarding init
@@ -174,12 +182,12 @@ export default function ChatConversation() {
     setHasFiredOnboardingInit(true);
 
     const initializeChat = async () => {
-      if (isOnboarding && userEmail) {
+      if (userEmail) {
         try {
           setIsThinking(true);
 
           const response = await sendChatMessage(
-            'onboarding_init',
+            isOnboarding ? 'onboarding_init' : 'welcome_init',
             userEmail,
             userDisplayName,
             userServices,
