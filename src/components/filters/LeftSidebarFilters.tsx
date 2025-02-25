@@ -24,6 +24,7 @@ interface LeftSidebarFiltersProps {
   isUSAOnly?: boolean;
   selectedLeadType: 'all' | 'contacts' | 'events';
   onLocationToggle?: () => void;
+  setSelectedLeadType: (type: 'all' | 'contacts' | 'events', shouldUpdate: boolean) => void;
 }
 
 export default function LeftSidebarFilters({
@@ -40,7 +41,8 @@ export default function LeftSidebarFilters({
   uniqueCount = 0,
   isUSAOnly = false,
   selectedLeadType,
-  onLocationToggle
+  onLocationToggle,
+  setSelectedLeadType
 }: LeftSidebarFiltersProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -153,10 +155,49 @@ export default function LeftSidebarFilters({
             </h2>
             <div>
               <UnlockTypeFilter
-                selectedTypes={filters.unlockType}
-                onTypeSelect={handleUnlockTypeChange}
+                selectedTypes={filters.unlockType || []}
+                onTypeSelect={(type) => {
+                  const currentTypes = filters.unlockType || [];
+                  let newTypes: string[] = [];
+
+                  // If clicking Contact Emails
+                  if (type === 'Unlock Contact Email') {
+                    if (currentTypes.includes(type)) {
+                      // If deselecting Contact Email, just remove it
+                      newTypes = currentTypes.filter(t => t !== type);
+                      // Reset to 'all' lead type when no unlock types selected
+                      setSelectedLeadType('all', false);
+                    } else {
+                      // If selecting Contact Email, remove Event types and add Contact
+                      newTypes = [type];
+                      // Switch to 'contacts' lead type
+                      setSelectedLeadType('contacts', false);
+                    }
+                  } 
+                  // If clicking Event buttons
+                  else if (type === 'Unlock Event Email' || type === 'Unlock Event URL') {
+                    // Remove Contact Email if present
+                    const withoutContact = currentTypes.filter(t => t !== 'Unlock Contact Email');
+                    
+                    if (currentTypes.includes(type)) {
+                      // If deselecting an Event type, just remove it
+                      newTypes = withoutContact.filter(t => t !== type);
+                      // If no event types left, reset to 'all' lead type
+                      if (newTypes.length === 0) {
+                        setSelectedLeadType('all', false);
+                      }
+                    } else {
+                      // If selecting an Event type, add it to other Event types (if any)
+                      newTypes = [...withoutContact, type];
+                      // Switch to 'events' lead type
+                      setSelectedLeadType('events', false);
+                    }
+                  }
+
+                  setFilters({ ...filters, unlockType: newTypes });
+                }}
                 isOpen={openSections.unlockType}
-                onToggle={() => toggleSection('unlockType')}
+                onToggle={() => setOpenSections({ ...openSections, unlockType: !openSections.unlockType })}
               />
             </div>
           </div>
@@ -175,7 +216,7 @@ export default function LeftSidebarFilters({
                 title="Event Format"
                 icon={Calendar}
                 isOpen={openSections.eventFormat}
-                onToggle={() => toggleSection('eventFormat')}
+                onToggle={() => setOpenSections({ ...openSections, eventFormat: !openSections.eventFormat })}
                 onUnselectAll={() => setFilters({ ...filters, eventFormat: [] })}
                 showUnselectAll={filters.eventFormat.length > 0}
               >
@@ -197,7 +238,7 @@ export default function LeftSidebarFilters({
                 title="Event Category"
                 icon={Building2}
                 isOpen={openSections.industry}
-                onToggle={() => toggleSection('industry')}
+                onToggle={() => setOpenSections({ ...openSections, industry: !openSections.industry })}
                 onUnselectAll={() => setFilters({ ...filters, industry: [] })}
                 showUnselectAll={filters.industry.length > 0}
               >
@@ -219,7 +260,7 @@ export default function LeftSidebarFilters({
                 title="Event Speakers"
                 icon={Search}
                 isOpen={openSections.pastSpeakers}
-                onToggle={() => toggleSection('pastSpeakers')}
+                onToggle={() => setOpenSections({ ...openSections, pastSpeakers: !openSections.pastSpeakers })}
               >
                 <div className="space-y-2">
                   {filters.pastSpeakers.length > 0 && (
@@ -268,7 +309,7 @@ export default function LeftSidebarFilters({
                 onStateChange={(state) => setFilters({ ...filters, state })}
                 onCityChange={(city) => setFilters({ ...filters, city })}
                 isOpen={openSections.location}
-                onToggle={() => toggleSection('location')}
+                onToggle={() => setOpenSections({ ...openSections, location: !openSections.location })}
                 isUSAOnly={isUSAOnly}
               />
             </div>
@@ -285,7 +326,7 @@ export default function LeftSidebarFilters({
                 title="Organization"
                 icon={Building2}
                 isOpen={openSections.moreFilters}
-                onToggle={() => toggleSection('moreFilters')}
+                onToggle={() => setOpenSections({ ...openSections, moreFilters: !openSections.moreFilters })}
               >
                 <div className="space-y-2">
                   {filters.organization.length > 0 && (
@@ -321,7 +362,7 @@ export default function LeftSidebarFilters({
                 title="Organization Type"
                 icon={Users}
                 isOpen={openSections.organizationType}
-                onToggle={() => toggleSection('organizationType')}
+                onToggle={() => setOpenSections({ ...openSections, organizationType: !openSections.organizationType })}
                 onUnselectAll={() => setFilters({ ...filters, organizationType: [] })}
                 showUnselectAll={filters.organizationType.length > 0}
               >

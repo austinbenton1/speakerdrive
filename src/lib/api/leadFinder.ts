@@ -101,12 +101,12 @@ export async function fetchAvailableLeads(
         related_leads
       `;
 
-    // First get initial batch sorted by dedup_value
+    // First get initial batch with random sort
     const { data: initialLeads, error: initialError } = await retryableRequest(() =>
       supabase
         .from('leads')
         .select(selectQuery)
-        .order('id', { ascending: false })
+        .order(finalSortConfig.field, { ascending: finalSortConfig.ascending })
         .range(0, 399)  // First 400 records
     );
 
@@ -140,7 +140,7 @@ async function loadRemainingLeads(
         supabase
           .from('leads')
           .select(selectQuery)
-          .order('id', { ascending: false })
+          .order(sortConfig.field, { ascending: sortConfig.ascending })
           .range(startRange, startRange + 399)
       );
 

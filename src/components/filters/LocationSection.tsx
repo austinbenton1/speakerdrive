@@ -1,7 +1,6 @@
 import React from 'react';
 import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import OutlinedToggle from '../common/OutlinedToggle';
-import UnlocksToggle from '../common/UnlocksToggle';
 
 interface LocationSectionProps {
   showAll: boolean;
@@ -61,7 +60,6 @@ export default function LocationSection({
               leftLabel="USA"
               rightLabel="All"
             />
-            <UnlocksToggle />
           </div>
           
           <div className="space-y-1">

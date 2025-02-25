@@ -124,7 +124,10 @@ export default function Layout() {
 
           {/* User Profile */}
           <div className="flex items-center ml-auto">
-            <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate('/settings/profile')}
+              className="flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="relative h-8 w-8">
                 {(globalAvatarUrl || profile.avatar_url) ? (
                   <>
@@ -149,7 +152,7 @@ export default function Layout() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col items-start">
                 <span className="hidden sm:block text-sm font-medium text-gray-700">
                   {displayName.full}
                 </span>
@@ -157,7 +160,7 @@ export default function Layout() {
                   {displayName.first}
                 </span>
               </div>
-            </div>
+            </button>
           </div>
         </header>
 

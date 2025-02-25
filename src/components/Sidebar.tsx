@@ -67,26 +67,26 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
   };
 
   return (
-    <div
+    <nav
       className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 ease-in-out ${
-        isMobile ? 'w-64' : isMinimized && !isHovered ? 'w-16' : 'w-64'
+        isMinimized && !isHovered ? 'w-16' : ''
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{
+        fontSize: '0.9375rem',
+        letterSpacing: '-0.01em',
+        width: isMinimized && !isHovered ? undefined : isMobile ? '210px' : '205px'
+      }}
     >
-      <div className="py-5 px-4">
+      <div className="py-5 px-3">  
         {!isMobile && isMinimized && !isHovered ? (
-          <img 
-            src={minimalLogo}
-            alt="SpeakerDrive"
-            className="h-8 w-8 mx-auto transition-all duration-300"
-          />
+          <img src={minimalLogo} alt="SpeakerDrive" className="w-8 h-8" />
         ) : (
-          <img 
-            src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/TT6h28gNIZXvItU0Dzmk/media/67180e69ea401b8de01a84c5.png" 
-            alt="SpeakerDrive" 
-            className="h-6 w-auto ml-2 transition-all duration-300"
-          />
+          <div className="flex items-center space-x-2">
+            <img src={minimalLogo} alt="SpeakerDrive" className="w-8 h-8" />
+            <span className="text-lg font-semibold truncate">SpeakerDrive</span>
+          </div>
         )}
       </div>
       
@@ -109,7 +109,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
+                <span className={`ml-3.5 truncate ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>{item.label}</span>
               </button>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               `}
             >
               <Search className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Find Leads</span>
+              <span className={`ml-3.5 truncate ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Find Leads</span>
             </button>
           </div>
 
@@ -154,7 +154,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
               `}
             >
               <MessageSquare className="w-4 h-4 flex-shrink-0" />
-              <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Ask SpeakerDrive</span>
+              <span className={`ml-3.5 truncate ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Ask SpeakerDrive</span>
             </button>
           </div>
 
@@ -180,7 +180,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 <Wrench className="w-4 h-4 flex-shrink-0" />
                 {(isMobile || !isMinimized || isHovered) && (
                   <>
-                    <span className="resources-text ml-3.5 flex-1">Tools</span>
+                    <span className="resources-text ml-3.5 flex-1 truncate">Tools</span>
                     {isResourcesOpen ? (
                       <ChevronUp className="w-4 h-4 ml-2" />
                     ) : (
@@ -207,7 +207,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                       `}
                     >
                       <item.icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="ml-3.5">{item.label}</span>
+                      <span className="ml-3.5 truncate">{item.label}</span>
                     </button>
                   ))}
 
@@ -223,7 +223,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                     `}
                   >
                     <LineChart className="w-4 h-4 flex-shrink-0" />
-                    <span className="ml-3.5">Instant Intel</span>
+                    <span className="ml-3.5 truncate">Instant Intel</span>
                   </button>
 
                   {/* Sales Coach */}
@@ -238,7 +238,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                     `}
                   >
                     <Headphones className="w-4 h-4 flex-shrink-0" />
-                    <span className="ml-3.5">Sales Coach</span>
+                    <span className="ml-3.5 truncate">Sales Coach</span>
                   </button>
                 </div>
               )}
@@ -248,13 +248,13 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
 
         {/* Bottom Fixed Section - Only for Desktop */}
         {!isMobile && (
-          <div className="px-2.5 py-2 mt-auto">
+          <div className="px-2.5 pb-3 mt-auto">
             {/* Unlocked Leads */}
             <div>
               <button
                 onClick={() => handleNavigate('/leads')}
                 className={`
-                  flex items-center w-full px-3 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
+                  flex items-center w-full px-2.5 py-2 rounded-lg text-[15px] transition-colors text-left font-semibold
                   ${location.pathname === '/leads'
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -263,14 +263,14 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                 `}
               >
                 <Briefcase className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
+                <span className={`ml-3 truncate ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
               </button>
             </div>
 
             {/* Settings and Logout */}
             <div>
-              <div className={`border-t border-gray-200 my-2`} />
-              <div className="space-y-1">
+              <div className={`border-t border-gray-200 my-1.5`} />
+              <div className="space-y-0.5">
                 <button
                   onClick={() => handleNavigate('/settings')}
                   className={`
@@ -279,18 +279,17 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                       ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }
-                    ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                   `}
                 >
                   <Settings className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
+                  <span className="ml-3.5 truncate">Settings</span>
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
                   className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
+                  <span className="ml-3.5 truncate">Logout</span>
                 </button>
               </div>
             </div>
@@ -299,7 +298,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
 
         {/* Mobile Bottom Section */}
         {isMobile && (
-          <div className="px-2.5 py-2">
+          <div className="px-2.5 pb-3">
             {/* Unlocked Leads */}
             <div>
               <button
@@ -310,18 +309,17 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }
-                  ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                 `}
               >
                 <Briefcase className="w-4 h-4 flex-shrink-0" />
-                <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Unlocked Leads</span>
+                <span className="ml-3.5 truncate">Unlocked Leads</span>
               </button>
             </div>
 
             {/* Settings and Logout */}
             <div>
-              <div className={`border-t border-gray-200 my-1`} />
-              <div className="space-y-1">
+              <div className={`border-t border-gray-200 my-1.5`} />
+              <div className="space-y-0.5">
                 <button
                   onClick={() => handleNavigate('/settings')}
                   className={`
@@ -330,24 +328,23 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
                       ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }
-                    ${!isMobile && isMinimized && !isHovered ? 'justify-center' : ''}
                   `}
                 >
                   <Settings className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Settings</span>
+                  <span className="ml-3.5 truncate">Settings</span>
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
                   className="flex items-center w-full px-3 py-2 rounded-lg text-[15px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left font-semibold"
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  <span className={`ml-3.5 ${!isMobile && isMinimized && !isHovered ? 'hidden' : ''}`}>Logout</span>
+                  <span className="ml-3.5 truncate">Logout</span>
                 </button>
               </div>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

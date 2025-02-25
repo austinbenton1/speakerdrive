@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useProfileData } from './profile/useProfileData';
 import { supabase } from '../lib/supabase';
 
@@ -74,6 +74,7 @@ function parseSortConfig(sortConfig: any): sortConfig is SortConfig {
 export function useRandomSort() {
   const { profile } = useProfileData();
   const hasCheckedRef = useRef(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   useEffect(() => {
     const checkAndUpdateSort = async () => {
@@ -87,35 +88,31 @@ export function useRandomSort() {
       const hasValidDate = profile.random_lead_sort_date && 
                           new Date(profile.random_lead_sort_date.replace('Z', '+00:00')).toISOString().slice(0, 13) === now.toISOString().slice(0, 13);
 
-      // If everything is valid, keep existing sort
+      // If everything is valid, use existing sort
       if (hasValidSort && hasValidDate) {
+        setSortConfig(profile.random_lead_sort);
         return;
       }
 
-      // Update directly with supabase to avoid any potential race conditions
+      // Generate new sort configuration
+      const newSortConfig = generateRandomSort();
+      
+      // Update database
       const { error } = await supabase
         .from('profiles')
         .update({
-          random_lead_sort: generateRandomSort(),
+          random_lead_sort: newSortConfig,
           random_lead_sort_date: now.toISOString().replace('Z', '+00:00')
         })
         .eq('id', profile.id);
 
-      if (error) {
-        console.error('Error updating sort:', error);
+      if (!error) {
+        setSortConfig(newSortConfig);
       }
     };
 
     checkAndUpdateSort();
   }, [profile]);
 
-  // Return the current sort config or generate a new one
-  const currentSort = profile?.random_lead_sort;
-  const isValidSort = parseSortConfig(currentSort);
-
-  return { 
-    sortConfig: isValidSort ? 
-      (typeof currentSort === 'string' ? JSON.parse(currentSort) : currentSort) 
-      : generateRandomSort()
-  };
+  return { sortConfig, isValid: !!sortConfig };
 }

@@ -2,7 +2,6 @@ import React, { useState, KeyboardEvent } from 'react';
 import { MapPin, Search, X } from 'lucide-react';
 import FilterSection from './FilterSection';
 import { usRegions } from '../../utils/constants';
-import UnlocksToggle from '../common/UnlocksToggle';
 
 // Split regions into primary and secondary
 const primaryRegions = ['United States', 'Virtual Only'];
@@ -87,24 +86,6 @@ export default function LocationFilter({
       onToggle={onToggle}
     >
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onRegionChange(isUsRegion ? '' : 'United States')}
-            className={`
-              inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-              transition-all duration-150 shadow-sm
-              hover:shadow hover:scale-[1.02] active:scale-[0.98]
-              ${isUsRegion
-                ? 'bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }
-            `}
-          >
-            <MapPin className="w-3 h-3" />
-            <span>{isUsRegion ? 'USA' : 'Worldwide'}</span>
-          </button>
-          <UnlocksToggle />
-        </div>
         {/* Region Selection */}
         <div>
           <label className="block text-sm text-gray-600 mb-1">Region</label>

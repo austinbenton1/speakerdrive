@@ -60,11 +60,13 @@ export function useLeadFilters() {
   };
 
   const toggleSection = (section: keyof OpenSections) => {
-    console.log('[useLeadFilters] toggleSection:', section);
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+    setOpenSections(prevState => {
+      // Create a new state object to ensure proper re-rendering
+      const newState = { ...prevState };
+      // Toggle the section state
+      newState[section] = !prevState[section];
+      return newState;
+    });
   };
 
   return {

@@ -13,13 +13,12 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 280px;
     border-right: 1px solid #e5e7eb;
   }
 
   /* Main content area */
   .main-content {
-    margin-left: 280px;
+    margin-left: 205px;  /* Match the exact sidebar width */
   }
 
   /* Tables and Grids */

@@ -110,10 +110,10 @@ export default function FindLeads() {
     organizationType: [],
     pastSpeakers: [],
     searchAll: '',
+    unlockType: [], // Initialize as empty array instead of undefined
     region: '',
     state: [],
-    city: [],
-    unlockType: []
+    city: []
   });
 
   // Persist showAll value to localStorage whenever it changes
@@ -179,7 +179,10 @@ export default function FindLeads() {
     }
   };
 
+  // Get random sort configuration from profile
   const { sortConfig } = useRandomSort();
+  
+  // These are now only for UI-triggered manual sorting
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
@@ -216,11 +219,9 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
-  // Start with available leads and apply all filters
+  // Process leads while preserving server-side sort unless manual sort is applied
   const processedLeads = useMemo(() => {
-    if (!availableLeads) return [];
-    
-    let results = availableLeads;
+    let results = [...availableLeads];
 
     // Remove unlocked leads if toggle is in 'Unlocks Hidden' state
     if (!showUnlocks) {
@@ -345,8 +346,8 @@ export default function FindLeads() {
       });
     }
 
-    // Apply sorting
-    if (sortField) {
+    // Only apply manual sorting if user has explicitly set it
+    if (sortField && sortDirection) {
       results.sort((a, b) => {
         const aValue = a[sortField as keyof typeof a];
         const bValue = b[sortField as keyof typeof b];
@@ -460,7 +461,7 @@ export default function FindLeads() {
       organizationType: [],
       pastSpeakers: [],
       searchAll: '',
-      unlockType: undefined,
+      unlockType: [], // Initialize as empty array instead of undefined
       region: '',
       state: [],
       city: []
@@ -499,11 +500,13 @@ export default function FindLeads() {
         {/* Left Sidebar - Hidden in mobile */} 
         {!isMobile && (
           <div className="border-r border-gray-200 bg-white py-6 flex-shrink-0 sticky top-0">
-     <LeftSidebarFilters
+            <LeftSidebarFilters
               filters={filters}
               setFilters={setFilters}
               openSections={openSections}
               setOpenSections={setOpenSections}
+              toggleSection={toggleSection}
+              handleUnlockTypeChange={handleUnlockTypeChange}
               onResetFilters={handleResetFilters}
               hasActiveFilters={hasActiveFilters}
               selectedLeadType={selectedLeadType}
