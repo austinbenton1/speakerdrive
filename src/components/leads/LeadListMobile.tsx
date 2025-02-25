@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MoreVertical, Mail, Phone, MapPin, ChevronRight, Link } from 'lucide-react';
 import type { Lead } from '../../types';
 import { useUnlockedLeadsData } from '../../hooks/useUnlockedLeadsData';
+import { supabase } from '../../lib/supabase';
 
 interface LeadListMobileProps {
   leads: Lead[];
@@ -73,6 +74,15 @@ export default function LeadListMobile({ leads, onLeadClick, loading = false }: 
                     if (isLoading) return;
                     setLoadingLeadId(lead.id);
                     try {
+                      // Get user session
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (session?.user) {
+                        // Fire and forget RPC call - no need to wait for response
+                        supabase.rpc('record_visit', {
+                          var_lead: lead.id,
+                          var_user: session.user.id
+                        });
+                      }
                       await onLeadClick(lead.id);
                     } finally {
                       setLoadingLeadId(null);
