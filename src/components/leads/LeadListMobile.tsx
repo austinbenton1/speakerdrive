@@ -74,15 +74,26 @@ export default function LeadListMobile({ leads, onLeadClick, loading = false }: 
                     if (isLoading) return;
                     setLoadingLeadId(lead.id);
                     try {
-                      // Get user session
+                      // Get current user from auth store
                       const { data: { session } } = await supabase.auth.getSession();
-                      if (session?.user) {
-                        // Fire and forget RPC call - no need to wait for response
-                        supabase.rpc('record_visit', {
+                      if (!session?.user) return;
+
+                      // Record the visit
+                      try {
+                        const { error } = await supabase.rpc('record_visit', {
                           var_lead: lead.id,
                           var_user: session.user.id
                         });
+
+                        if (error) {
+                          console.error('Failed to record visit:', error);
+                          // Continue with navigation even if recording fails
+                        }
+                      } catch (error) {
+                        console.error('Error recording visit:', error);
+                        // Continue with navigation even if recording fails
                       }
+
                       await onLeadClick(lead.id);
                     } finally {
                       setLoadingLeadId(null);
