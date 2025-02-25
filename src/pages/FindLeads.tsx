@@ -95,8 +95,12 @@ export default function FindLeads() {
     const savedPreference = localStorage.getItem('showAllEvents');
     return savedPreference ? JSON.parse(savedPreference) : false;
   });
-  
-  // Initialize showAll from localStorage, defaulting to false (USA only)
+
+  // Save showAllEvents preference when it changes
+  useEffect(() => {
+    localStorage.setItem('showAllEvents', JSON.stringify(showAllEvents));
+  }, [showAllEvents]);
+
   const [showAll, setShowAll] = useState(() => {
     const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);
     return savedPreference ? JSON.parse(savedPreference) : false;
@@ -519,6 +523,8 @@ export default function FindLeads() {
               setOpportunityTags={setOpportunityTags}
               showAll={showAll}
               setShowAll={setShowAll}
+              totalCount={totalLeadsCount}
+              uniqueCount={uniqueLeadsCount}
             />
           </div>
         )}
@@ -603,7 +609,7 @@ export default function FindLeads() {
               </div>
 
               {hasActiveFilters && (
-                <div className="sticky top-[144px] z-10 bg-gray-50">
+                <div className="top-[144px] z-10 bg-gray-50">
                   <SmartFiltersBar
                     filters={filters}
                     onRemoveFilter={(key, value) => {

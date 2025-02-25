@@ -17,8 +17,8 @@ interface LeftSidebarFiltersProps {
   toggleSection: (section: string) => void;
   handleUnlockTypeChange: (type: string | undefined) => void;
   selectedUnlockType?: string | null;
-  showAllEvents?: boolean;
-  onViewToggle?: () => void;
+  showAllEvents: boolean;
+  setShowAllEvents: (value: boolean) => void;
   totalCount?: number;
   uniqueCount?: number;
   isUSAOnly?: boolean;
@@ -35,8 +35,8 @@ export default function LeftSidebarFilters({
   toggleSection,
   handleUnlockTypeChange,
   selectedUnlockType,
-  showAllEvents = true,
-  onViewToggle,
+  showAllEvents,
+  setShowAllEvents,
   totalCount = 0,
   uniqueCount = 0,
   isUSAOnly = false,
@@ -133,6 +133,10 @@ export default function LeftSidebarFilters({
       }
     }
     onRegionChange(region);
+  };
+
+  const handleViewToggle = () => {
+    setShowAllEvents(!showAllEvents);
   };
 
   return (
@@ -390,7 +394,7 @@ export default function LeftSidebarFilters({
       `}>
         <ViewsSection
           showAllEvents={showAllEvents}
-          onToggle={onViewToggle}
+          onToggle={handleViewToggle}
           totalCount={totalCount}
           uniqueCount={uniqueCount}
           selectedLeadType={selectedLeadType}

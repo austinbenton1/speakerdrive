@@ -107,7 +107,7 @@ export async function fetchAvailableLeads(
         .from('leads')
         .select(selectQuery)
         .order(finalSortConfig.field, { ascending: finalSortConfig.ascending })
-        .range(0, 399)  // First 400 records
+        .range(0, 199)  // First 200 records
     );
 
     if (initialError) throw initialError;
@@ -132,7 +132,7 @@ async function loadRemainingLeads(
 ) {
   try {
     // Load remaining leads in batches of 400
-    let startRange = 400;
+    let startRange = 200;
     let hasMore = true;
 
     while (hasMore) {

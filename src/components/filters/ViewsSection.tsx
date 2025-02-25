@@ -17,7 +17,13 @@ export default function ViewsSection({
   uniqueCount,
   selectedLeadType
 }: ViewsSectionProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(true);  
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggle();
+  };
 
   return (
     <div>
@@ -57,7 +63,7 @@ export default function ViewsSection({
 
           <OutlinedToggle
             checked={showAllEvents}
-            onChange={onToggle}
+            onChange={handleToggle}
             leftLabel="Unique"
             rightLabel="All"
           />
