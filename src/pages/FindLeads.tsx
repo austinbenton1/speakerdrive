@@ -223,7 +223,6 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
-  // Process leads while preserving server-side sort unless manual sort is applied
   const processedLeads = useMemo(() => {
     let results = [...availableLeads];
 
@@ -301,7 +300,7 @@ export default function FindLeads() {
         // Past Speakers Filter
         if (filters.pastSpeakers.length > 0) {
           const matchesSpeaker = filters.pastSpeakers.some(speaker =>
-            lead.past_speakers?.toLowerCase().includes(speaker.toLowerCase())
+            lead.past_speakers_events?.toLowerCase()?.includes(speaker.toLowerCase())
           );
           if (!matchesSpeaker) return false;
         }
@@ -314,17 +313,58 @@ export default function FindLeads() {
           if (!matchesOrg) return false;
         }
 
-        return true;
-      });
-    }
-
-    // Apply region filter
-    if (filters.region) {
-      results = results.filter(lead => {
-        if (filters.region === 'Virtual Only') {
-          return lead.region === 'Virtual Only';
+        // Organization Type Filter
+        if (filters.organizationType.length > 0) {
+          const matchesOrgType = filters.organizationType.some(orgType =>
+            lead.organization_type?.toLowerCase().includes(orgType.toLowerCase())
+          );
+          if (!matchesOrgType) return false;
         }
-        return lead.region === filters.region;
+
+        // Past Speakers Filter
+        if (filters.pastSpeakers.length > 0) {
+          const matchesSpeaker = filters.pastSpeakers.some(speaker =>
+            lead.past_speakers_events?.toLowerCase()?.includes(speaker.toLowerCase())
+          );
+          if (!matchesSpeaker) return false;
+        }
+
+        // Search All Filter
+        if (filters.searchAll) {
+          const searchableText = [
+            lead.lead_name,
+            lead.event_name,
+            lead.keywords,
+            lead.subtext,
+            lead.organization,
+            lead.industry,
+            lead.past_speakers,
+            lead.focus,
+            lead.job_title
+          ].filter(Boolean).join(' ').toLowerCase();
+          if (!searchableText.includes(filters.searchAll.toLowerCase())) return false;
+        }
+
+        // Region Filter
+        if (filters.region) {
+          if (filters.region === 'Virtual Only') {
+            if (lead.region !== 'Virtual Only') return false;
+          } else {
+            if (lead.region !== filters.region) return false;
+          }
+        }
+
+        // State Filter
+        if (filters.state.length > 0) {
+          if (!filters.state.includes(lead.state)) return false;
+        }
+
+        // City Filter
+        if (filters.city.length > 0) {
+          if (!filters.city.includes(lead.city)) return false;
+        }
+
+        return true;
       });
     }
 
