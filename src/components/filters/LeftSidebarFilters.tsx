@@ -389,8 +389,7 @@ export default function LeftSidebarFilters({
       </div>
 
       {/* Views Section */}
-      <div className={`
-        pb-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm
+      <div className={`border-t border-gray-100 bg-white/95 backdrop-blur-sm
       `}>
         <ViewsSection
           showAllEvents={showAllEvents}

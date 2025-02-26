@@ -17,7 +17,7 @@ export default function ViewsSection({
   uniqueCount,
   selectedLeadType
 }: ViewsSectionProps) {
-  const [isExpanded, setIsExpanded] = React.useState(true);  
+  const [isExpanded, setIsExpanded] = React.useState(false);  
 
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -26,7 +26,7 @@ export default function ViewsSection({
   };
 
   return (
-    <div>
+    <div className="px-3 pt-3">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"

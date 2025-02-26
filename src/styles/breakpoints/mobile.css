@@ -88,7 +88,6 @@
   /* Center text content */
   .bg-white.rounded-xl.border.border-gray-200\/75.shadow-sm.p-6.h-\[200px\] .min-w-0.flex-1 {
     width: 100% !important;
-    text-align: center !important;
   }
 
   /* Adjust spacing */

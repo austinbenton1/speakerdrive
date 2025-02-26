@@ -38,9 +38,9 @@ export default function EmailComposerHeader({
         <div className="px-6 py-4">
           <div className="flex items-start justify-between">
             {/* Left: Image + Title/Subheader */}
-            <div className="flex items-start space-x-4">
+            <div className="flex items-start space-x-4 text-left">
               {/* Image */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 mr-4 sm:mr-0">
                 <img
                   src={lead.image}
                   alt={isContact ? (lead.leadName || lead.lead_name) : lead.eventName}
@@ -54,25 +54,13 @@ export default function EmailComposerHeader({
               {/* Title + unlockValue (with forced max-width) */}
               <div className="min-w-0 flex-1 max-w-sm">
                 {/* Title => up to 2 lines */}
-                <h2
-                  className="
-                    text-xl font-semibold text-gray-900 leading-6
-                    two-line-clamp break-words
-                  "
-                >
+                <h2 className="text-xl font-semibold text-gray-900 leading-6 two-line-clamp break-words text-left">
                   {headerTitle}
                 </h2>
 
                 {/* Subheader => single line */}
                 {lead.unlockValue && (
-                  <p
-                    className="
-                      mt-1 text-base font-medium text-gray-600
-                      flex items-center gap-1.5
-                      one-line-truncate
-                      max-w-sm
-                    "
-                  >
+                  <p className="mt-1 text-base font-medium text-gray-600 flex items-center gap-1.5 one-line-truncate max-w-sm">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
                     {lead.unlockValue}
                   </p>
