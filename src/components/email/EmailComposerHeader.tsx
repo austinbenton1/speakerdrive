@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Copy, ExternalLink, Check } from 'lucide-react';
 
 interface EmailComposerHeaderProps {
   lead: {
@@ -20,6 +20,7 @@ export default function EmailComposerHeader({
   onClose,
 }: EmailComposerHeaderProps) {
   const isContact = lead.leadType === 'Contact';
+  const [copied, setCopied] = useState(false);
 
   // Build the main heading text
   const headerTitle = isContact
@@ -27,6 +28,39 @@ export default function EmailComposerHeader({
         lead.jobTitle ? `, ${lead.jobTitle}` : ''
       }`
     : lead.eventName || '';
+
+  // Truncate the title to 20 characters
+  const truncatedTitle = headerTitle.length > 20 
+    ? `${headerTitle.substring(0, 20)}...` 
+    : headerTitle;
+    
+  // Truncate organization to 20 characters
+  const truncatedOrganization = lead.organization && lead.organization.length > 30
+    ? `${lead.organization.substring(0, 30)}...`
+    : lead.organization || '';
+  
+  // Truncate unlock_value to 20 characters
+  const truncatedUnlockValue = lead.unlockValue && lead.unlockValue.length > 35
+    ? `${lead.unlockValue.substring(0, 35)}...`
+    : lead.unlockValue || '';
+
+  // Handle unlock value click
+  const handleUnlockValueClick = () => {
+    if (!lead.unlockValue) return;
+    
+    if (isContact) {
+      // Copy to clipboard for Contact type
+      navigator.clipboard.writeText(lead.unlockValue)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+        })
+        .catch(err => console.error('Failed to copy: ', err));
+    } else {
+      // Open in new tab for URL/Event type
+      window.open(lead.unlockValue, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="relative">
@@ -55,16 +89,22 @@ export default function EmailComposerHeader({
               <div className="min-w-0 flex-1 max-w-sm">
                 {/* Title => up to 2 lines */}
                 <h2 className="text-xl font-semibold text-gray-900 leading-6 two-line-clamp break-words text-left">
-                  {headerTitle}
+                  {truncatedTitle}
                 </h2>
 
                 {/* Subheader => single line */}
-                {lead.unlockValue && (
-                  <p className="mt-1 text-base font-medium text-gray-600 flex items-center gap-1.5 one-line-truncate max-w-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                    {lead.unlockValue}
+                  <p className="text-sm font-medium text-gray-600 flex items-center gap-1.5 one-line-truncate max-w-sm">
+                    {truncatedOrganization}
                   </p>
-                )}
+                  <p 
+                    className={`
+                      text-sm font-medium flex items-center gap-1.5 one-line-truncate max-w-sm cursor-pointer 
+                      ${isContact ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
+                    `}
+                    onClick={handleUnlockValueClick}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : isContact ? <Copy className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />} {truncatedUnlockValue}
+                  </p>
               </div>
             </div>
 

@@ -126,7 +126,6 @@
   /* Email Composer content padding */
   .fixed.inset-0.z-50.bg-black\/50 > div > div > div.px-4 {
     padding-left: 10px !important;
-    padding-right: 10px !important;
   }
 
   /* Fix extra space in chat container */
@@ -353,6 +352,11 @@
   /* Adjust mobile nav items spacing */
   .nav-menu.mobile-nav-menu .nav-item {
     padding: 0.75rem 1rem;
+  }
+
+  /* Mobile padding for email composer footer */
+  .mobile-footer-padding {
+    padding-bottom: 64px !important;
   }
 }
 

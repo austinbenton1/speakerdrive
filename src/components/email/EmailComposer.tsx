@@ -510,15 +510,31 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const handleCopyOutreach = async () => {
     setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(htmlContent);
-      setToastMessage('Outreach message (HTML) copied to clipboard');
+      // Use the Clipboard API to copy both plain text and HTML
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([document.querySelector('.ProseMirror')?.textContent || ''], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' })
+        })
+      ]);
+      
+      setToastMessage('Outreach message copied');
       setToastType('success');
       setShowToast(true);
     } catch (error) {
       console.error(error);
-      setToastMessage('Failed to copy message');
-      setToastType('error');
-      setShowToast(true);
+      // Fallback to basic clipboard API if the advanced one fails
+      try {
+        await navigator.clipboard.writeText(htmlContent);
+        setToastMessage('Outreach message copied (formatting may be limited)');
+        setToastType('success');
+        setShowToast(true);
+      } catch (fallbackError) {
+        console.error(fallbackError);
+        setToastMessage('Failed to copy message');
+        setToastType('error');
+        setShowToast(true);
+      }
     } finally {
       setIsCopying(false);
     }
@@ -595,10 +611,10 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           />
 
           {/* MAIN BODY (fills space above footer) */}
-          <div className="px-4 flex-1 flex flex-col min-h-0">
+          <div className="px-4 flex-1 flex flex-col h-full overflow-y-auto">
             {/* BEFORE: choose channel */}
             {showInputs && !isPreviewMode && !showMessage && (
-              <div>
+              <div className="overflow-y-auto">
                 <div className="mb-2 border-b border-gray-200 pb-2">
                   <p className="mb-3 text-sm font-medium text-gray-700">
                     Outreach Channel

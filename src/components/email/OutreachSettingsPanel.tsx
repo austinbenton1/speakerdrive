@@ -85,7 +85,7 @@ export default function OutreachSettingsPanel({
               onChange={(e) => setIsPitching(e.target.checked)}
             />
             <label className="text-sm font-medium text-gray-900">
-              I&apos;m Pitching
+              Position Message For
             </label>
           </div>
 
@@ -147,7 +147,7 @@ export default function OutreachSettingsPanel({
               onChange={(e) => setShowMyContext(e.target.checked)}
             />
             <label className="text-sm font-medium text-gray-900">
-              My Context
+              My Profile
             </label>
           </div>
 

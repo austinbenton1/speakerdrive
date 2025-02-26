@@ -439,29 +439,35 @@ export default function EmailComposerFooter({
           {/* Divider */}
           <div className="h-5 w-px bg-gray-300 flex-shrink-0" />
 
-          {/* (Copy button removed from here) */}
-
           {/* Download */}
-          <button
-            onClick={() => {
-              /* do nothing for now */
-            }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            title="Download"
-          >
-            <Download size={16} className="text-gray-600" />
-          </button>
+          <div className="relative group">
+            <button
+              onClick={() => {
+                /* do nothing for now */
+              }}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 cursor-not-allowed"
+            >
+              <Download size={16} className="text-gray-500" />
+            </button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+              Coming soon!
+            </div>
+          </div>
 
           {/* Export to CRM */}
-          <button
-            onClick={() => {
-              /* do nothing for now */
-            }}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
-            title="Export to CRM"
-          >
-            <UserPlus size={16} className="text-gray-600" />
-          </button>
+          <div className="relative group">
+            <button
+              onClick={() => {
+                /* do nothing for now */
+              }}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0 cursor-not-allowed"
+            >
+              <UserPlus size={16} className="text-gray-500" />
+            </button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+              Coming soon!
+            </div>
+          </div>
         </div>
       </div>
     </div>
