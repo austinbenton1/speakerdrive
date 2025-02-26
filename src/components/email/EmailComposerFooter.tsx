@@ -335,7 +335,7 @@ export default function EmailComposerFooter({
             )}
 
             {/* “Preview” button if not generating */}
-            {!isGenerating && showInputs && (
+            {/* {!isGenerating && showInputs && (
               <button
                 onClick={togglePreviewMode}
                 className={`
@@ -350,7 +350,7 @@ export default function EmailComposerFooter({
                 <Eye className="w-3 h-3" />
                 Preview
               </button>
-            )}
+            )} */}
           </div>
         )}
       </div>
