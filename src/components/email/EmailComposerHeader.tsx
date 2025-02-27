@@ -19,7 +19,8 @@ export default function EmailComposerHeader({
   lead,
   onClose,
 }: EmailComposerHeaderProps) {
-  const isContact = lead.leadType === 'Contact';
+  const isURL = lead.unlockType === 'Unlock Event URL';
+  const isContact = lead.leadType === 'Unlock Contact Email';
   const [copied, setCopied] = useState(false);
 
   // Build the main heading text
@@ -48,7 +49,7 @@ export default function EmailComposerHeader({
   const handleUnlockValueClick = () => {
     if (!lead.unlockValue) return;
     
-    if (isContact) {
+    if (!isURL) {
       // Copy to clipboard for Contact type
       navigator.clipboard.writeText(lead.unlockValue)
         .then(() => {
@@ -66,7 +67,7 @@ export default function EmailComposerHeader({
     <div className="relative">
       <div
         className={`bg-gradient-to-b ${
-          isContact ? 'from-blue-50/30 to-white' : 'from-emerald-50/30 to-white'
+          isURL ? 'from-blue-50/30 to-white' : 'from-emerald-50/30 to-white'
         } border-b border-gray-200`}
       >
         <div className="px-6 py-4">
@@ -77,10 +78,10 @@ export default function EmailComposerHeader({
               <div className="flex-shrink-0 mr-4 sm:mr-0">
                 <img
                   src={lead.image}
-                  alt={isContact ? (lead.leadName || lead.lead_name) : lead.eventName}
+                  alt={!isContact ? (lead.leadName || lead.lead_name) : lead.eventName}
                   className={`
                     h-16 w-16 rounded-xl object-cover shadow-md
-                    ${isContact ? 'ring-2 ring-blue-100' : 'ring-2 ring-emerald-100'}
+                    ${!isContact ? 'ring-2 ring-blue-100' : 'ring-2 ring-emerald-100'}
                   `}
                 />
               </div>
@@ -99,11 +100,11 @@ export default function EmailComposerHeader({
                   <p 
                     className={`
                       text-sm font-medium flex items-center gap-1.5 one-line-truncate max-w-sm cursor-pointer 
-                      ${isContact ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
+                      ${isURL ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
                     `}
                     onClick={handleUnlockValueClick}
                   >
-                    {copied ? <Check className="h-4 w-4" /> : isContact ? <Copy className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />} {truncatedUnlockValue}
+                    {copied ? <Check className="h-4 w-4" /> : isURL ?  <ExternalLink className="h-4 w-4" />: <Copy className="h-4 w-4" />} {truncatedUnlockValue}
                   </p>
               </div>
             </div>

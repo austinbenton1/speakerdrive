@@ -79,13 +79,13 @@ const DesktopView = ({ leads }: UnlockedLeadsListProps) => {
           {paginatedLeads.map((lead) => {
             const LeadIcon = lead.lead_type === 'Event' ? Calendar : Users;
             const styles = {
-              bg: lead.lead_type === 'Contact' 
+              bg: lead.lead_type === 'Unlock Contact Email' 
                 ? 'bg-blue-50 border border-blue-100' 
                 : 'bg-emerald-50 border border-emerald-100',
-              text: lead.lead_type === 'Contact' 
+              text: lead.lead_type === 'Unlock Event Email' 
                 ? 'text-blue-600' 
                 : 'text-emerald-600',
-              dot: lead.lead_type === 'Contact'
+              dot: lead.lead_type === 'Unlock Event URL'
                 ? 'bg-blue-400'
                 : 'bg-emerald-400'
             };
@@ -128,8 +128,8 @@ const DesktopView = ({ leads }: UnlockedLeadsListProps) => {
                     <h3 className="text-sm font-medium text-gray-900 truncate">
                       {lead.event_name}
                     </h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles.bg} ${styles.text}`}>
-                      {lead.lead_type}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${styles.bg} ${styles.text}`}>
+                      {lead.lead_type.replace(/(Unlock)\s*/g, '')}
                     </span>
                   </div>
 

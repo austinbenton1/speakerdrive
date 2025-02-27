@@ -151,7 +151,7 @@ export default function LeadDetailHeader({
                           ) : (
                             <Link className="w-3 h-3 mr-1" />
                           )}
-                          {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
+                          {lead.unlockType.replace(/(Unlock)\s*/g, '')}
                         </span>
                       </span>
                       {/* Mobile-only centered pill */}
@@ -168,7 +168,7 @@ export default function LeadDetailHeader({
                           ) : (
                             <Link className="w-3 h-3 mr-1" />
                           )}
-                          {lead.unlockType.replace(/(Event|Contact)\s*/g, '')}
+                          {lead.unlockType.replace(/(Unlock)\s*/g, '')}
                         </span>
                       </div>
                     </div>

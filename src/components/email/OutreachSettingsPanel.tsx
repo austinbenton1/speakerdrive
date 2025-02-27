@@ -1,6 +1,7 @@
 import React from 'react';
 import { MinimalToggle } from '../ui/toggle';
 import { services } from '../../utils/constants';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import {
   Presentation,
   GraduationCap,
@@ -8,6 +9,9 @@ import {
   Briefcase,
   Users,
   Plus,
+  Mail,
+  Linkedin,
+  FileText,
 } from 'lucide-react';
 
 interface OutreachSettingsPanelProps {
@@ -25,10 +29,22 @@ interface OutreachSettingsPanelProps {
 
   parseProfileServices: (servicesStr: string | null) => string[];
 
-  showCustomization: boolean;
-  setShowCustomization: (val: boolean) => void;
-  customizationText: string;
-  setCustomizationText: (val: string) => void;
+  outreachChannel: 'email' | 'linkedin' | 'proposal';
+  setOutreachChannel: (channel: 'email' | 'linkedin' | 'proposal') => void;
+
+  emailWrittenFrom: 'myself' | 'team';
+  setEmailWrittenFrom: (value: 'myself' | 'team') => void;
+
+  linkedinMessageType: 'smart' | 'event';
+  setLinkedinMessageType: (value: 'smart' | 'event') => void;
+
+  proposalContentType: 'smart' | 'custom';
+  setProposalContentType: (value: 'smart' | 'custom') => void;
+
+  lead: {
+    eventName?: string;
+    [key: string]: any;
+  };
 }
 
 /**
@@ -55,11 +71,18 @@ export default function OutreachSettingsPanel({
   selectedService,
   setSelectedService,
   parseProfileServices,
-  showCustomization,
-  setShowCustomization,
-  customizationText,
-  setCustomizationText,
+  outreachChannel,
+  setOutreachChannel,
+  emailWrittenFrom,
+  setEmailWrittenFrom,
+  linkedinMessageType,
+  setLinkedinMessageType,
+  proposalContentType,
+  setProposalContentType,
+  lead,
 }: OutreachSettingsPanelProps) {
+  const { profile } = useUserProfile();
+
   // If user turned off advanced, skip entirely
   if (!showAdvanced) return null;
 
@@ -68,9 +91,10 @@ export default function OutreachSettingsPanel({
 
   const profileServices = parseProfileServices(profileServicesString || '');
   const truncatedContext = truncateContextSingleLine(profileOffering || '');
+  const displayName = profile?.display_name || 'User';
 
   return (
-    <div className="mb-4 border-b border-gray-200 pb-4">
+    <div className="mb-4 pb-4">
       {/* Tier 1: heading (no extra padding) */}
       <p className="text-sm font-medium text-gray-700 mb-3">Outreach Settings</p>
 
@@ -81,6 +105,7 @@ export default function OutreachSettingsPanel({
           <div className="flex items-center gap-2 mb-3 pl-3">
             <MinimalToggle
               className="scale-[0.35] -ml-1"
+              label="Position Message For"
               checked={isPitching}
               onChange={(e) => setIsPitching(e.target.checked)}
             />
@@ -169,41 +194,80 @@ export default function OutreachSettingsPanel({
           )}
         </div>
 
-        {/* Message Customization toggle */}
-        <div>
-          {/* Tier 2: Toggle row */}
-          <div className="flex items-center gap-2 mb-2 pl-3">
-            <MinimalToggle
-              className="scale-[0.35] mr-1"
-              checked={showCustomization}
-              onChange={(e) => setShowCustomization(e.target.checked)}
-            />
-            <label className="text-sm font-medium text-gray-900">
-              Message Customization
+        {/* Email Written From toggle (only show for email channel) */}
+        {outreachChannel === 'email' && (
+          <div>
+            <label className="pl-3 text-sm font-medium text-gray-900">
+              Email Written From
             </label>
-          </div>
-
-          {/* Tier 2: Helper text remains at same level as toggle */}
-          <p className="pl-3 text-sm text-gray-600">
-            Add override or customization instructions for your outreach message
-          </p>
-
-          {/* Tier 3: The text area */}
-          {showCustomization && (
-            <div className="pl-6 mt-2">
-              <textarea
-                value={customizationText}
-                onChange={(e) => setCustomizationText(e.target.value)}
-                placeholder="e.g. 'Focus on sustainability achievements' or 'Emphasize workshop experience'"
-                className={`
-                  w-full h-24 px-3 py-2 text-sm border border-gray-200 bg-white
-                  rounded-lg resize-none
-                  focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40
-                `}
-              />
+            <div className="flex items-center justify-between pl-3">
+              <div className="flex items-center gap-2">
+                <MinimalToggle
+                  checked={emailWrittenFrom === 'myself'}
+                  onChange={(e) => setEmailWrittenFrom(e.target.checked ? 'myself' : 'team')}
+                />
+                <span className="text-sm font-medium text-gray-600">
+                  {emailWrittenFrom === 'myself' ? 'Myself' : 'My Team/Manager'}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+            <div className="mt-2 text-sm text-gray-500 pl-10">
+              {emailWrittenFrom === 'myself' 
+                ? 'I would be excited to contribute...'
+                : `${displayName} would be a great fit...`}
+            </div>
+          </div>
+        )}
+
+        {/* LinkedIn Connection Message toggle (only show for linkedin channel) */}
+        {outreachChannel === 'linkedin' && (
+          <div>
+            <label className="pl-3 text-sm font-medium text-gray-900">
+              LinkedIn Connection Message
+            </label>
+            <div className="flex items-center justify-between pl-3">
+              <div className="flex items-center gap-2">
+                <MinimalToggle
+                  checked={linkedinMessageType === 'smart'}
+                  onChange={(e) => setLinkedinMessageType(e.target.checked ? 'smart' : 'event')}
+                />
+                <span className="text-sm font-medium text-gray-600">
+                  {linkedinMessageType === 'smart' ? 'Smart Personalization' : 'Event Focused'}
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 text-sm text-gray-500 pl-10">
+              {linkedinMessageType === 'smart' 
+                ? 'Crafted for the best fit, with a focus on personalization.'
+                : `References ${lead.eventName} in message.`}
+            </div>
+          </div>
+        )}
+
+        {/* Submission Content toggle (only show for proposal channel) */}
+        {outreachChannel === 'proposal' && (
+          <div>
+            <label className="pl-3 text-sm font-medium text-gray-900">
+              Submission Content
+            </label>
+            <div className="flex items-center justify-between pl-3">
+              <div className="flex items-center gap-2">
+                <MinimalToggle
+                  checked={proposalContentType === 'smart'}
+                  onChange={(e) => setProposalContentType(e.target.checked ? 'smart' : 'custom')}
+                />
+                <span className="text-sm font-medium text-gray-600">
+                  {proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus'}
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 text-sm text-gray-500 pl-10">
+              {proposalContentType === 'smart' 
+                ? "SpeakerDrive will analyze your expertise against this event's focus and position you as an ideal contributor."
+                : `Enter the specific topic or angle for ${lead.eventName || 'the event'}. We'll craft application elements to support this focus.`}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

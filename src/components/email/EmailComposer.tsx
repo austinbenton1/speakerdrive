@@ -308,15 +308,16 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
   // The “main” HTML content
   const [htmlContent, setHtmlContent] = useState<string>(lead.pitch || '');
-  const [outreachChannel, setOutreachChannel] = useState<MessageType>('email');
+  const [outreachChannel, setOutreachChannel] = useState<'email' | 'linkedin' | 'proposal'>('email');
+  const [emailWrittenFrom, setEmailWrittenFrom] = useState<'myself' | 'team'>('myself');
+  const [linkedinMessageType, setLinkedinMessageType] = useState<'smart' | 'event'>('smart');
+  const [proposalContentType, setProposalContentType] = useState<'smart' | 'custom'>('smart');
 
   // Toggles
   const [showAdvanced] = useState(true);
-  const [isPitching, setIsPitching] = useState(true);
-  const [selectedService, setSelectedService] = useState<string>(profile?.services || '');
-  const [showMyContext, setShowMyContext] = useState(true);
-  const [showCustomization, setShowCustomization] = useState(false);
-  const [customizationText, setCustomizationText] = useState('');
+  const [isPitching, setIsPitching] = useState(false);
+  const [showMyContext, setShowMyContext] = useState(true);  // Set to true by default
+  const [selectedService, setSelectedService] = useState(services[0].id);
 
   const [showInputs, setShowInputs] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
@@ -441,8 +442,15 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           display_name: profile.display_name,
         }),
         outreach_channel: outreachChannel,
-        ...(showCustomization && customizationText.trim() && {
-          message_customization: customizationText,
+        ...(outreachChannel === 'email' && {
+          email_written_from: emailWrittenFrom === 'myself' ? 'My Profile' : 'My Team/Manager'
+        }),
+        ...(outreachChannel === 'linkedin' && {
+          linkedin_message: linkedinMessageType === 'smart' ? 'Smart Personalization' : 'Event Focused'
+        }),
+        ...(outreachChannel === 'proposal' && {
+          proposal_content_type: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus',
+          submission_content: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus'
         }),
       };
 
@@ -658,10 +666,15 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   selectedService={selectedService}
                   setSelectedService={setSelectedService}
                   parseProfileServices={parseProfileServices}
-                  showCustomization={showCustomization}
-                  setShowCustomization={setShowCustomization}
-                  customizationText={customizationText}
-                  setCustomizationText={setCustomizationText}
+                  outreachChannel={outreachChannel}
+                  setOutreachChannel={setOutreachChannel}
+                  emailWrittenFrom={emailWrittenFrom}
+                  setEmailWrittenFrom={setEmailWrittenFrom}
+                  linkedinMessageType={linkedinMessageType}
+                  setLinkedinMessageType={setLinkedinMessageType}
+                  proposalContentType={proposalContentType}
+                  setProposalContentType={setProposalContentType}
+                  lead={lead}
                 />
               </div>
             )}
