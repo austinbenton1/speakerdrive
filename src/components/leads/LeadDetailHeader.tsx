@@ -135,10 +135,7 @@ export default function LeadDetailHeader({
                     </h1>
                     <div className="mt-3">
                       <span className="text-xl text-gray-600 leading-normal line-clamp-2">
-                        {lead.leadType === 'Contact' 
-                          ? `${lead.organization }`
-                          : lead.focus
-                        }
+                        {lead.organization}
                         <span className={`
                           hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium align-middle ml-2
                           ${lead.leadType === 'Contact'

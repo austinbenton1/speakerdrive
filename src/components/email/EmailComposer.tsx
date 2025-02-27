@@ -310,7 +310,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [htmlContent, setHtmlContent] = useState<string>(lead.pitch || '');
   const [outreachChannel, setOutreachChannel] = useState<'email' | 'linkedin' | 'proposal'>('email');
   const [emailWrittenFrom, setEmailWrittenFrom] = useState<'myself' | 'team'>('myself');
-  const [linkedinMessageType, setLinkedinMessageType] = useState<'smart' | 'event'>('smart');
+  const [linkedinNoteType, setLinkedinNoteType] = useState<'smart' | 'event'>('smart');
   const [proposalContentType, setProposalContentType] = useState<'smart' | 'custom'>('smart');
 
   // Toggles
@@ -446,7 +446,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           email_written_from: emailWrittenFrom === 'myself' ? 'My Profile' : 'My Team/Manager'
         }),
         ...(outreachChannel === 'linkedin' && {
-          linkedin_message: linkedinMessageType === 'smart' ? 'Smart Personalization' : 'Event Focused'
+          linkedin_note: linkedinNoteType === 'smart' ? 'Smart Personalization' : 'Event Focused'
         }),
         ...(outreachChannel === 'proposal' && {
           proposal_content_type: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus',
@@ -670,8 +670,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   setOutreachChannel={setOutreachChannel}
                   emailWrittenFrom={emailWrittenFrom}
                   setEmailWrittenFrom={setEmailWrittenFrom}
-                  linkedinMessageType={linkedinMessageType}
-                  setLinkedinMessageType={setLinkedinMessageType}
+                  linkedinNoteType={linkedinNoteType}
+                  setLinkedinNoteType={setLinkedinNoteType}
                   proposalContentType={proposalContentType}
                   setProposalContentType={setProposalContentType}
                   lead={lead}

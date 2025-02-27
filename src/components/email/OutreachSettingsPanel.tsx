@@ -35,8 +35,8 @@ interface OutreachSettingsPanelProps {
   emailWrittenFrom: 'myself' | 'team';
   setEmailWrittenFrom: (value: 'myself' | 'team') => void;
 
-  linkedinMessageType: 'smart' | 'event';
-  setLinkedinMessageType: (value: 'smart' | 'event') => void;
+  linkedinNoteType: 'smart' | 'event';
+  setLinkedinNoteType: (value: 'smart' | 'event') => void;
 
   proposalContentType: 'smart' | 'custom';
   setProposalContentType: (value: 'smart' | 'custom') => void;
@@ -75,8 +75,8 @@ export default function OutreachSettingsPanel({
   setOutreachChannel,
   emailWrittenFrom,
   setEmailWrittenFrom,
-  linkedinMessageType,
-  setLinkedinMessageType,
+  linkedinNoteType,
+  setLinkedinNoteType,
   proposalContentType,
   setProposalContentType,
   lead,
@@ -196,48 +196,48 @@ export default function OutreachSettingsPanel({
 
         {/* Email Written From toggle (only show for email channel) */}
         {outreachChannel === 'email' && (
-          <div>
-            <label className="pl-3 text-sm font-medium text-gray-900">
-              Email Written From
-            </label>
+          <div className="space-y-3">
             <div className="flex items-center justify-between pl-3">
               <div className="flex items-center gap-2">
                 <MinimalToggle
                   checked={emailWrittenFrom === 'myself'}
                   onChange={(e) => setEmailWrittenFrom(e.target.checked ? 'myself' : 'team')}
                 />
-                <span className="text-sm font-medium text-gray-600">
-                  {emailWrittenFrom === 'myself' ? 'Myself' : 'My Team/Manager'}
-                </span>
+                <label className="text-sm font-medium text-gray-900">
+                  Email Written From
+                </label>
               </div>
             </div>
-            <div className="mt-2 text-sm text-gray-500 pl-10">
+            <div className="mt-2 text-sm text-gray-500 pl-6 flex flex-col">
+              <span className="text-sm font-medium text-gray-600">
+                {emailWrittenFrom === 'myself' ? 'Myself' : 'My Team/Manager'}
+              </span>
               {emailWrittenFrom === 'myself' 
-                ? 'I would be excited to contribute...'
-                : `${displayName} would be a great fit...`}
+                ? "Written in the First person (e.g., 'I would be excited to contribute…')"
+                : `Written in the Third person (e.g., '${displayName} would be a great fit…')`}
             </div>
           </div>
         )}
 
-        {/* LinkedIn Connection Message toggle (only show for linkedin channel) */}
+        {/* LinkedIn Connection Note toggle (only show for linkedin channel) */}
         {outreachChannel === 'linkedin' && (
-          <div>
-            <label className="pl-3 text-sm font-medium text-gray-900">
-              LinkedIn Connection Message
-            </label>
+          <div className="space-y-3">
             <div className="flex items-center justify-between pl-3">
               <div className="flex items-center gap-2">
                 <MinimalToggle
-                  checked={linkedinMessageType === 'smart'}
-                  onChange={(e) => setLinkedinMessageType(e.target.checked ? 'smart' : 'event')}
+                  checked={linkedinNoteType === 'smart'}
+                  onChange={(e) => setLinkedinNoteType(e.target.checked ? 'smart' : 'event')}
                 />
-                <span className="text-sm font-medium text-gray-600">
-                  {linkedinMessageType === 'smart' ? 'Smart Personalization' : 'Event Focused'}
-                </span>
+                <label className="text-sm font-medium text-gray-900">
+                  LinkedIn Connection Note
+                </label>
               </div>
             </div>
-            <div className="mt-2 text-sm text-gray-500 pl-10">
-              {linkedinMessageType === 'smart' 
+            <div className="mt-2 text-sm text-gray-500 pl-6 flex flex-col">
+              <span className="text-sm font-medium text-gray-600">
+                {linkedinNoteType === 'smart' ? 'Smart Personalization' : 'Event Focused'}
+              </span>
+              {linkedinNoteType === 'smart' 
                 ? 'Crafted for the best fit, with a focus on personalization.'
                 : `References ${lead.eventName} in message.`}
             </div>
@@ -246,25 +246,33 @@ export default function OutreachSettingsPanel({
 
         {/* Submission Content toggle (only show for proposal channel) */}
         {outreachChannel === 'proposal' && (
-          <div>
-            <label className="pl-3 text-sm font-medium text-gray-900">
-              Submission Content
-            </label>
+          <div className="space-y-3">
             <div className="flex items-center justify-between pl-3">
               <div className="flex items-center gap-2">
                 <MinimalToggle
                   checked={proposalContentType === 'smart'}
                   onChange={(e) => setProposalContentType(e.target.checked ? 'smart' : 'custom')}
                 />
-                <span className="text-sm font-medium text-gray-600">
-                  {proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus'}
-                </span>
+                <label className="text-sm font-medium text-gray-900">
+                  Submission Content
+                </label>
               </div>
             </div>
-            <div className="mt-2 text-sm text-gray-500 pl-10">
+            <div className="mt-2 text-sm text-gray-500 pl-6 flex flex-col">
+              <span className="text-sm font-medium text-gray-600">
+                {proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus'}
+              </span>
               {proposalContentType === 'smart' 
                 ? "SpeakerDrive will analyze your expertise against this event's focus and position you as an ideal contributor."
-                : `Enter the specific topic or angle for ${lead.eventName || 'the event'}. We'll craft application elements to support this focus.`}
+                : `Enter the specific topic or angle for "${lead.eventName}". We'll craft application elements to support this focus.`}
+                {proposalContentType === 'custom' && (
+                  <textarea
+                    className="mt-2 w-full h-24 px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    placeholder-gray-400 resize-none"
+                    placeholder="Enter your focus or angle (e.g. 'AI in education' or 'Leadership strategies for tech teams')"
+                  />
+                )}
             </div>
           </div>
         )}
