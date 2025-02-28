@@ -79,10 +79,10 @@ const DesktopView = ({ leads }: UnlockedLeadsListProps) => {
           {paginatedLeads.map((lead) => {
             const LeadIcon = lead.lead_type === 'Event' ? Calendar : Users;
             const styles = {
-              bg: lead.lead_type === 'Unlock Contact Email' 
+              bg: lead.lead_type === 'Unlock Event Email' 
                 ? 'bg-blue-50 border border-blue-100' 
                 : 'bg-emerald-50 border border-emerald-100',
-              text: lead.lead_type === 'Unlock Event Email' 
+              text: lead.lead_type === 'Unlock Contact Email' 
                 ? 'text-blue-600' 
                 : 'text-emerald-600',
               dot: lead.lead_type === 'Unlock Event URL'
@@ -125,7 +125,7 @@ const DesktopView = ({ leads }: UnlockedLeadsListProps) => {
                 {/* Lead Info */}
                 <div className="flex-1 min-w-[500px]">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                    <h3 className="text-sm font-medium text-gray-900 truncate max-w-[370px]">
                       {lead.event_name}
                     </h3>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${styles.bg} ${styles.text}`}>

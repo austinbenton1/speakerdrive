@@ -30,9 +30,10 @@ export default function FindLeads() {
     const eventParam = searchParams.get('event');
     const organizationParam = searchParams.get('organization');
     const showUnlocksParam = searchParams.get('show_unlocks');
+    const eventDisplayParam = searchParams.get('event_display');
     
     // If we have URL parameters, set them as filters
-    if (eventParam || organizationParam || showUnlocksParam) {
+    if (eventParam || organizationParam || showUnlocksParam || eventDisplayParam) {
       // Add event to opportunity tags if present
       if (eventParam) {
         setOpportunityTags(prev => {
@@ -60,6 +61,11 @@ export default function FindLeads() {
       // Set show unlocks state if present
       if (showUnlocksParam) {
         // Do nothing since we're only using URL parameter now
+      }
+
+      // Set event display state if present
+      if (eventDisplayParam === 'all') {
+        setShowAllEvents(true);
       }
     }
 
@@ -91,15 +97,20 @@ export default function FindLeads() {
 
   const [eventsFilter, setEventsFilter] = useState('');
   const [selectedLeadType, setSelectedLeadType] = useState<'all' | 'contacts' | 'events'>('all');
-  const [showAllEvents, setShowAllEvents] = useState(() => {
-    const savedPreference = localStorage.getItem('showAllEvents');
-    return savedPreference ? JSON.parse(savedPreference) : false;
-  });
+  
+  // Only use URL parameter for showAllEvents
+  const showAllEvents = searchParams.get('event_display') === 'all';
 
-  // Save showAllEvents preference when it changes
-  useEffect(() => {
-    localStorage.setItem('showAllEvents', JSON.stringify(showAllEvents));
-  }, [showAllEvents]);
+  // Update URL when setting showAllEvents
+  const setShowAllEvents = (value: boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set('event_display', 'all');
+    } else {
+      newParams.delete('event_display');
+    }
+    setSearchParams(newParams);
+  };
 
   const [showAll, setShowAll] = useState(() => {
     const savedPreference = localStorage.getItem(LOCATION_PREFERENCE_KEY);

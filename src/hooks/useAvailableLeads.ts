@@ -17,6 +17,7 @@ export function useAvailableLeads() {
   const [error, setError] = useState<string | null>(null);
   const [totalLeads, setTotalLeads] = useState<number>(0);
   const [allLeadsLoaded, setAllLeadsLoaded] = useState(false);
+  const [isLoadingInitialBatch, setIsLoadingInitialBatch] = useState(true);
   const isInitialMount = useRef(true);
   const hasLoadedInitialBatch = useRef(false);
   const currentPage = useRef(1);
@@ -31,6 +32,7 @@ export function useAvailableLeads() {
 
         // Skip loading if we already have initial batch
         if (hasLoadedInitialBatch.current && leads.length > 0) {
+          setIsLoadingInitialBatch(false);
           return;
         }
 
@@ -41,6 +43,7 @@ export function useAvailableLeads() {
         }
 
         setLoading(true);
+        setIsLoadingInitialBatch(true);
         setError(null);
         setAllLeadsLoaded(false);
         
@@ -71,6 +74,7 @@ export function useAvailableLeads() {
         });
         setLeads(initialLeads);
         hasLoadedInitialBatch.current = true;
+        setIsLoadingInitialBatch(false);
       } catch (err) {
         console.error('Error loading available leads:', err);
         
@@ -82,11 +86,12 @@ export function useAvailableLeads() {
         }
       } finally {
         setLoading(false);
+        setIsLoadingInitialBatch(false);
       }
     };
 
     loadLeads();
   }, [isAuthenticated, user, navigate]);
 
-  return { leads, loading, error, totalLeads, allLeadsLoaded };
+  return { leads, loading, error, totalLeads, allLeadsLoaded, isLoadingInitialBatch };
 }

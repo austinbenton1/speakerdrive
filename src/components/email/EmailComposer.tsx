@@ -322,7 +322,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
   const [showInputs, setShowInputs] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // States for generating, copying, saving, etc.
   const [isGenerating, setIsGenerating] = useState(false);
@@ -611,7 +610,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
 
   if (!isOpen) return null;
 
-  const isAfterState = showMessage && !isPreviewMode && !isGenerating;
+  const isAfterState = showMessage && !isGenerating;
   const currentKeyElements = isAfterState
     ? messageOptions[selectedOptionIndex]?.keyElements || []
     : [];
@@ -634,7 +633,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           {/* MAIN BODY (fills space above footer) */}
           <div className="px-4 flex-1 flex flex-col h-full overflow-y-auto">
             {/* BEFORE: choose channel */}
-            {showInputs && !isPreviewMode && !showMessage && (
+            {showInputs && !showMessage && (
               <div className="overflow-y-auto">
                 <div className="mb-2 border-b border-gray-200 pb-2">
                   <p className="mb-3 text-sm font-medium text-gray-700">
@@ -694,19 +693,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
               </div>
             )}
 
-            {/* PREVIEW mode */}
-            {isPreviewMode && !showMessage && (
-              <div className="bg-white border border-gray-200 rounded-md shadow-sm">
-                <div className="p-4">
-                  <MessagePreview
-                    contentHTML={htmlContent}
-                    type={outreachChannel}
-                    lead={lead}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* AFTER: main Editor (75%) + Why This Works (25%) */}
             {isAfterState && (
               <div className="flex flex-col h-full min-h-0">
@@ -749,16 +735,13 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
             isGenerating={isGenerating}
             isSaving={isSaving}
             showInputs={showInputs}
-            isPreviewMode={isPreviewMode}
             input={htmlContent}
             leadPitch={lead.pitch}
             handleGenerate={handleGenerate}
             handleSavePitch={handleSavePitch}
-            togglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
             onBackToEditor={() => {
               setShowMessage(false);
               setShowInputs(true);
-              setIsPreviewMode(false);
             }}
             messageOptionsCount={messageOptions.length}
             selectedOptionIndex={selectedOptionIndex}

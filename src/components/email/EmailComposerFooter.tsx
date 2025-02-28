@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Wand2,
-  Eye,
+  HelpCircle,
   ArrowLeft,
   Save as SaveIcon,
   Download,
@@ -85,13 +85,11 @@ interface EmailComposerFooterProps {
   isCopying: boolean;
   isSaving: boolean;
   showInputs: boolean;
-  isPreviewMode: boolean;
   input: string;
   leadPitch?: string;
   handleGenerate: () => void;
   handleCopyOutreach: () => void;
   handleSavePitch: () => void;
-  togglePreviewMode: () => void;
   onBackToEditor: () => void;
   // For multiple message options
   messageOptionsCount?: number;
@@ -117,13 +115,11 @@ export default function EmailComposerFooter({
   isCopying,
   isSaving,
   showInputs,
-  isPreviewMode,
   input,
   leadPitch,
   handleGenerate,
-  handleCopyOutreach, // passed, but not used for a button
+  handleCopyOutreach,
   handleSavePitch,
-  togglePreviewMode,
   onBackToEditor,
   messageOptionsCount,
   selectedOptionIndex,
@@ -268,91 +264,72 @@ export default function EmailComposerFooter({
   // ─────────────────────────────────────────
 
   // If not in the AFTER state (or we're previewing), show “Generate”/“Preview” UI
-  if (!showMessage || isPreviewMode) {
+  if (!showMessage) {
     return (
       <div
         className="sticky bottom-0 bg-white border-t border-gray-200 flex flex-col rounded-bl-2xl"
         style={{ zIndex: 10 }}
       >
-        {/* If in PREVIEW but not AFTER => "Back to Editor" */}
-        {isPreviewMode && !showMessage && (
-          <div className="flex gap-3 px-4 py-2 border-b border-gray-200">
-            <button
-              onClick={onBackToEditor}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Back to Editor
-            </button>
-          </div>
-        )}
-
         {/* BEFORE => Generate + Preview */}
-        {!showMessage && (
-          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-b from-white to-gray-50/50">
-            {/* The “Generate Outreach” button */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-b from-white to-gray-50/50">
+          {/* The “Generate Outreach” button */}
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm hover:shadow-md
+              text-sm transition-all duration-200
+              ${
+                isGenerating
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-[#00B341] to-[#009938] hover:from-[#009938] hover:to-[#008530] text-white'
+              }
+            `}
+          >
+            {isGenerating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                <span className="font-medium">Generating...</span>
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4" />
+                <span className="font-medium">Generate Outreach</span>
+              </>
+            )}
+          </button>
+
+          {/* Loading area if generating */}
+          {isGenerating && (
+            <div className="flex flex-col items-start gap-1">
+              {/* Actual progress bar */}
+              <div className="relative w-48 h-2 bg-gray-300 rounded overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-blue-500 transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              {/* The dynamic text */}
+              <div className="whitespace-normal break-words flex-1 min-w-0 text-sm text-gray-700 font-medium mt-1">
+                {getLoadingMessage()}
+              </div>
+            </div>
+          )}
+
+          {/* Learn More button if not generating */}
+          {!isGenerating && showInputs && (
             <button
-              onClick={handleGenerate}
-              disabled={isGenerating}
+              onClick={() => window.open('https://learn.speakerdrive.com/getting-started/the-composer-crafting-your-outreach', '_blank')}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm hover:shadow-md
-                text-sm transition-all duration-200
-                ${
-                  isGenerating
-                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-[#00B341] to-[#009938] hover:from-[#009938] hover:to-[#008530] text-white'
-                }
+                inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                text-[#0066FF] hover:bg-blue-50/50
               `}
             >
-              {isGenerating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="font-medium">Generating...</span>
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4" />
-                  <span className="font-medium">Generate Outreach</span>
-                </>
-              )}
+              <HelpCircle className="w-3 h-3" />
+              Learn More
             </button>
-
-            {/* Loading area if generating */}
-            {isGenerating && (
-              <div className="flex flex-col items-start gap-1">
-                {/* Actual progress bar */}
-                <div className="relative w-48 h-2 bg-gray-300 rounded overflow-hidden">
-                  <div
-                    className="absolute left-0 top-0 h-full bg-blue-500 transition-all"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                {/* The dynamic text */}
-                <div className="whitespace-normal break-words flex-1 min-w-0 text-sm text-gray-700 font-medium mt-1">
-                  {getLoadingMessage()}
-                </div>
-              </div>
-            )}
-
-            {/* “Preview” button if not generating */}
-            {/* {!isGenerating && showInputs && (
-              <button
-                onClick={togglePreviewMode}
-                className={`
-                  inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                  ${
-                    isPreviewMode
-                      ? 'text-[#0066FF] border border-[#0066FF]/20 bg-blue-50/50 hover:bg-blue-50 shadow-[0_1px_2px_rgba(0,108,255,0.05)]'
-                      : 'text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm'
-                  }
-                `}
-              >
-                <Eye className="w-3 h-3" />
-                Preview
-              </button>
-            )} */}
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
