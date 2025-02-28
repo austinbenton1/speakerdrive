@@ -9,19 +9,24 @@ interface EmailComposerHeaderProps {
     eventName?: string;
     jobTitle?: string;
     image: string;
-    // Must match the name actually passed from parent
-    unlockValue?: string; 
+    unlockValue?: string;
+    info_url?: string;
+    infoUrl?: string;
   };
   onClose: () => void;
+  outreachChannel?: 'email' | 'linkedin' | 'proposal';
 }
 
 export default function EmailComposerHeader({
   lead,
   onClose,
+  outreachChannel = 'email'
 }: EmailComposerHeaderProps) {
   const isURL = lead.unlockType === 'Unlock Event URL';
   const isContact = lead.leadType === 'Unlock Contact Email';
   const [copied, setCopied] = useState(false);
+
+  console.log(lead);
 
   // Build the main heading text
   const headerTitle = isContact
@@ -40,26 +45,34 @@ export default function EmailComposerHeader({
     ? `${lead.organization.substring(0, 30)}...`
     : lead.organization || '';
   
-  // Truncate unlock_value to 20 characters
-  const truncatedUnlockValue = lead.unlockValue && lead.unlockValue.length > 35
-    ? `${lead.unlockValue.substring(0, 35)}...`
-    : lead.unlockValue || '';
+  // Get the appropriate value to display based on outreach channel
+  const valueToDisplay = outreachChannel === 'linkedin' 
+    ? (lead.info_url || lead.infoUrl) 
+    : lead.unlockValue;
+  
+  // Truncate the display value
+  const truncatedUnlockValue = valueToDisplay && valueToDisplay.length > 35
+    ? `${valueToDisplay.substring(0, 35)}...`
+    : valueToDisplay || '';
 
-  // Handle unlock value click
+  // Handle value click
   const handleUnlockValueClick = () => {
-    if (!lead.unlockValue) return;
+    const valueToCopy = outreachChannel === 'linkedin' 
+      ? (lead.info_url || lead.infoUrl) 
+      : lead.unlockValue;
+      
+    if (!valueToCopy) return;
     
-    if (!isURL) {
-      // Copy to clipboard for Contact type
-      navigator.clipboard.writeText(lead.unlockValue)
+    // Always copy for LinkedIn outreach, otherwise follow normal behavior
+    if (outreachChannel === 'linkedin' || !isURL) {
+      navigator.clipboard.writeText(valueToCopy)
         .then(() => {
           setCopied(true);
-          setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+          setTimeout(() => setCopied(false), 2000);
         })
         .catch(err => console.error('Failed to copy: ', err));
     } else {
-      // Open in new tab for URL/Event type
-      window.open(lead.unlockValue, '_blank', 'noopener,noreferrer');
+      window.open(valueToCopy, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -100,11 +113,12 @@ export default function EmailComposerHeader({
                   <p 
                     className={`
                       text-sm font-medium flex items-center gap-1.5 one-line-truncate max-w-sm cursor-pointer 
-                      ${isURL ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
+                      ${outreachChannel === 'linkedin' || !isURL ? 'text-blue-600 hover:text-blue-700' : 'text-green-600 hover:text-green-700'}
                     `}
                     onClick={handleUnlockValueClick}
                   >
-                    {copied ? <Check className="h-4 w-4" /> : isURL ?  <ExternalLink className="h-4 w-4" />: <Copy className="h-4 w-4" />} {truncatedUnlockValue}
+                    {copied ? <Check className="h-4 w-4" /> : (outreachChannel === 'linkedin' || !isURL) ? <Copy className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />} 
+                    {truncatedUnlockValue}
                   </p>
               </div>
             </div>

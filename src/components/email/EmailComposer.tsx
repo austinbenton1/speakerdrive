@@ -627,7 +627,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           <EmailComposerHeader
             lead={lead}
             onClose={onClose}
-            truncateText={truncateText}
+            outreachChannel={outreachChannel}
           />
 
           {/* MAIN BODY (fills space above footer) */}
