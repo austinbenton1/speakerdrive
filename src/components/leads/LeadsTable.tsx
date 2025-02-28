@@ -23,6 +23,7 @@ interface LeadsTableProps {
   showAll: boolean;
   totalLeads?: number;
   allLeadsLoaded?: boolean;
+  hasActiveFilters?: boolean;
 }
 
 const LoadingRow = () => (
@@ -55,7 +56,8 @@ export default function LeadsTable({
   opportunityTags,
   showAll,
   totalLeads,
-  allLeadsLoaded
+  allLeadsLoaded,
+  hasActiveFilters = false
 }: LeadsTableProps) {
   const { currentPage, setCurrentPage, pageSize, setPageSize, paginate } = usePagination(25);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -208,36 +210,29 @@ export default function LeadsTable({
             </div>
 
             {/* Content */}
-            {loading ? (
-              <div className="contents">
+            {loading && !hasActiveFilters ? (
+              <div className="p-4 space-y-4">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="contents">
-                    <div className="px-3 py-4 border-t border-gray-200 bg-white">
-                      <LoadingRow />
-                    </div>
-                    <div className="border-t border-gray-200" />
-                    <div className="border-t border-gray-200" />
-                    <div className="border-t border-gray-200" />
-                    <div className="border-t border-gray-200" />
-                  </div>
+                  <LoadingRow key={index} />
+                ))}
+              </div>
+            ) : leads.length > 0 ? (
+              <div className="contents">
+                {paginatedLeads.map(lead => (
+                  <LeadTableRow 
+                    key={lead.id} 
+                    lead={lead}
+                    onRowClick={handleRowClick}
+                  />
                 ))}
               </div>
             ) : (
-              paginatedLeads.length > 0 ? (
-                <div className="contents">
-                  {paginatedLeads.map(lead => (
-                    <LeadTableRow 
-                      key={lead.id} 
-                      lead={lead}
-                      onRowClick={handleRowClick}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  No leads found matching your criteria
-                </div>
-              )
+              <div className="p-8 text-center text-gray-500">
+                {loading && hasActiveFilters 
+                  ? "Loading leads - Please wait a moment"
+                  : "No leads found matching your criteria"
+                }
+              </div>
             )}
           </div>
         </div>

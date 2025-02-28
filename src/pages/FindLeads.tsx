@@ -685,6 +685,8 @@ export default function FindLeads() {
                     leads={processedLeads}
                     onLeadClick={handleLeadClick}
                     loading={loading}
+                    allLeadsLoaded={allLeadsLoaded}
+                    hasActiveFilters={hasActiveFilters}
                   />
                 ) : (
                   <LeadsTable 
@@ -701,6 +703,7 @@ export default function FindLeads() {
                     showAll={showAll}
                     totalLeads={totalLeadsCount}
                     allLeadsLoaded={allLeadsLoaded}
+                    hasActiveFilters={hasActiveFilters}
                     onSortChange={handleSortChange}
                     sortField={sortField}
                     sortDirection={sortDirection}

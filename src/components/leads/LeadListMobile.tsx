@@ -8,6 +8,8 @@ interface LeadListMobileProps {
   leads: Lead[];
   onLeadClick: (leadId: string) => Promise<void>;
   loading?: boolean;
+  allLeadsLoaded?: boolean;
+  hasActiveFilters?: boolean;
 }
 
 const LoadingRow = () => (
@@ -32,7 +34,13 @@ const LoadingRow = () => (
   </li>
 );
 
-export default function LeadListMobile({ leads, onLeadClick, loading = false }: LeadListMobileProps) {
+export default function LeadListMobile({ 
+  leads, 
+  onLeadClick, 
+  loading = false,
+  allLeadsLoaded = false,
+  hasActiveFilters = false 
+}: LeadListMobileProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingLeadId, setLoadingLeadId] = useState<string | null>(null);
   const { recordedLeads } = useUnlockedLeadsData();
@@ -56,8 +64,8 @@ export default function LeadListMobile({ leads, onLeadClick, loading = false }: 
     <div className="lead-list-card">
       <div className="card-body">
         <ul>
-          {loading ? (
-            // Show 5 loading rows when in loading state
+          {loading && !hasActiveFilters ? (
+            // Show loading skeleton only when no active filters
             Array.from({ length: 5 }).map((_, index) => (
               <LoadingRow key={index} />
             ))
@@ -147,7 +155,10 @@ export default function LeadListMobile({ leads, onLeadClick, loading = false }: 
             })
           ) : (
             <div className="p-5 text-center text-gray-500">
-              No leads found matching your criteria
+              {loading && hasActiveFilters 
+                ? "Loading leads - Please wait a moment"
+                : "No leads found matching your criteria"
+              }
             </div>
           )}
         </ul>
