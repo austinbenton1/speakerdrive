@@ -52,6 +52,12 @@ export default function LocationFilter({
     }
   }, [isUSAOnly, region, onRegionChange]);
 
+  // Effect to handle region selection
+  const handleRegionChange = (newRegion: string) => {
+    // Allow selecting any region, which will deselect United States
+    onRegionChange(newRegion === region ? '' : newRegion);
+  };
+
   // Filter states based on search
   const getFilteredStates = () => {
     if (!stateSearch) return Object.entries(usRegions);
@@ -95,8 +101,7 @@ export default function LocationFilter({
               {primaryRegions.map((r) => (
                 <button
                   key={r}
-                  onClick={() => onRegionChange(r === region ? '' : r)}
-                  disabled={r === 'United States' && isUSAOnly}
+                  onClick={() => handleRegionChange(r)}
                   className={`
                     flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm
                     transition-colors
@@ -104,7 +109,6 @@ export default function LocationFilter({
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
                     }
-                    ${r === 'United States' && isUSAOnly ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
                   <span>{r}</span>
@@ -127,13 +131,13 @@ export default function LocationFilter({
               </div>
             )}
 
-            {/* Secondary Regions - Only show if US is not selected */}
-            {!isUsRegion && !isUSAOnly && (
+            {/* Secondary Regions - Show regardless of US selection */}
+            {!isUSAOnly && (
               <div className="space-y-1.5">
                 {secondaryRegions.map((r) => (
                   <button
                     key={r}
-                    onClick={() => onRegionChange(r === region ? '' : r)}
+                    onClick={() => handleRegionChange(r)}
                     className={`
                       flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm
                       transition-colors

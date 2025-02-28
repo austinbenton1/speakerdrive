@@ -10,39 +10,51 @@ import { eventFormats, industries, organizationTypes } from '../../constants/fil
 import type { FilterOptions, OpenSections } from '../../types';
 
 interface LeftSidebarFiltersProps {
-  filters: FilterOptions;
-  openSections: OpenSections;
-  setFilters: (filters: FilterOptions) => void;
-  setOpenSections: (sections: OpenSections) => void;
-  toggleSection: (section: string) => void;
+  filters: any;
+  onFilterChange: (key: string, value: any) => void;
+  onRegionChange: (region: string) => void;
+  onStateChange: (states: string[]) => void;
+  onCityChange: (cities: string[]) => void;
+  isOpen: any;
+  onToggle: (section: string) => void;
+  isUSAOnly: boolean;
+  openSections: any;
+  setOpenSections: (sections: any) => void;
   handleUnlockTypeChange: (type: string | undefined) => void;
-  selectedUnlockType?: string | null;
   showAllEvents: boolean;
   setShowAllEvents: (value: boolean) => void;
   totalCount?: number;
   uniqueCount?: number;
-  isUSAOnly?: boolean;
   selectedLeadType: 'all' | 'contacts' | 'events';
-  onLocationToggle?: () => void;
   setSelectedLeadType: (type: 'all' | 'contacts' | 'events', shouldUpdate: boolean) => void;
+  eventsFilter: string;
+  setEventsFilter: (value: string) => void;
+  opportunityTags: string[];
+  setOpportunityTags: (tags: string[]) => void;
 }
 
 export default function LeftSidebarFilters({
   filters,
+  onFilterChange,
+  onRegionChange,
+  onStateChange,
+  onCityChange,
+  isOpen,
+  onToggle,
+  isUSAOnly,
   openSections,
-  setFilters,
   setOpenSections,
-  toggleSection,
   handleUnlockTypeChange,
-  selectedUnlockType,
   showAllEvents,
   setShowAllEvents,
   totalCount = 0,
   uniqueCount = 0,
-  isUSAOnly = false,
   selectedLeadType,
-  onLocationToggle,
-  setSelectedLeadType
+  setSelectedLeadType,
+  eventsFilter,
+  setEventsFilter,
+  opportunityTags,
+  setOpportunityTags
 }: LeftSidebarFiltersProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -70,10 +82,7 @@ export default function LeftSidebarFilters({
       e.preventDefault();
       const newSpeaker = speakerInput.trim();
       if (!filters.pastSpeakers.includes(newSpeaker)) {
-        setFilters({
-          ...filters,
-          pastSpeakers: [...filters.pastSpeakers, newSpeaker]
-        });
+        onFilterChange('pastSpeakers', [...filters.pastSpeakers, newSpeaker]);
       }
       setSpeakerInput('');
     }
@@ -84,52 +93,37 @@ export default function LeftSidebarFilters({
       e.preventDefault();
       const newOrg = organizationInput.trim();
       if (!filters.organization.includes(newOrg)) {
-        setFilters({
-          ...filters,
-          organization: [...filters.organization, newOrg]
-        });
+        onFilterChange('organization', [...filters.organization, newOrg]);
       }
       setOrganizationInput('');
     }
   };
 
   const removeSpeaker = (speaker: string) => {
-    setFilters({
-      ...filters,
-      pastSpeakers: filters.pastSpeakers.filter(s => s !== speaker)
-    });
+    onFilterChange('pastSpeakers', filters.pastSpeakers.filter(s => s !== speaker));
   };
 
   const removeOrganization = (org: string) => {
-    setFilters({
-      ...filters,
-      organization: filters.organization.filter(o => o !== org)
-    });
+    onFilterChange('organization', filters.organization.filter(o => o !== org));
   };
 
   // Update region filter based on isUSAOnly prop
   useEffect(() => {
     if (isUSAOnly && filters.region !== 'United States') {
-      setFilters({
-        ...filters,
-        region: 'United States'
-      });
+      onFilterChange('region', 'United States');
     } else if (!isUSAOnly && filters.region === 'United States') {
-      setFilters({
-        ...filters,
-        region: ''
-      });
+      onFilterChange('region', '');
     }
-  }, [isUSAOnly, setFilters]);
+  }, [isUSAOnly, onFilterChange]);
 
   const handleRegionChange = (region: string) => {
     // If selecting a non-USA region, ensure worldwide view is enabled
     if (region && region !== 'United States' && region !== 'Virtual Only') {
-      onLocationToggle?.();
+      onToggle('location');
     } else if (region === 'United States') {
       // If selecting USA, ensure USA-only view is enabled
-      if (!isUSAOnly && onLocationToggle) {
-        onLocationToggle();
+      if (!isUSAOnly && onToggle) {
+        onToggle('location');
       }
     }
     onRegionChange(region);
@@ -198,7 +192,7 @@ export default function LeftSidebarFilters({
                     }
                   }
 
-                  setFilters({ ...filters, unlockType: newTypes });
+                  onFilterChange('unlockType', newTypes);
                 }}
                 isOpen={openSections.unlockType}
                 onToggle={() => setOpenSections({ ...openSections, unlockType: !openSections.unlockType })}
@@ -221,19 +215,17 @@ export default function LeftSidebarFilters({
                 icon={Calendar}
                 isOpen={openSections.eventFormat}
                 onToggle={() => setOpenSections({ ...openSections, eventFormat: !openSections.eventFormat })}
-                onUnselectAll={() => setFilters({ ...filters, eventFormat: [] })}
+                onUnselectAll={() => onFilterChange('eventFormat', [])}
                 showUnselectAll={filters.eventFormat.length > 0}
               >
                 <MultiSelect
                   options={eventFormats}
                   selected={filters.eventFormat}
                   onChange={(format) => {
-                    setFilters({
-                      ...filters,
-                      eventFormat: filters.eventFormat.includes(format)
-                        ? filters.eventFormat.filter(f => f !== format)
-                        : [...filters.eventFormat, format],
-                    });
+                    onFilterChange('eventFormat', filters.eventFormat.includes(format)
+                      ? filters.eventFormat.filter(f => f !== format)
+                      : [...filters.eventFormat, format],
+                    );
                   }}
                 />
               </FilterSection>
@@ -243,19 +235,17 @@ export default function LeftSidebarFilters({
                 icon={Building2}
                 isOpen={openSections.industry}
                 onToggle={() => setOpenSections({ ...openSections, industry: !openSections.industry })}
-                onUnselectAll={() => setFilters({ ...filters, industry: [] })}
+                onUnselectAll={() => onFilterChange('industry', [])}
                 showUnselectAll={filters.industry.length > 0}
               >
                 <MultiSelect
                   options={industries}
                   selected={filters.industry}
                   onChange={(industry) => {
-                    setFilters({
-                      ...filters,
-                      industry: filters.industry.includes(industry)
-                        ? filters.industry.filter(i => i !== industry)
-                        : [...filters.industry, industry]
-                    });
+                    onFilterChange('industry', filters.industry.includes(industry)
+                      ? filters.industry.filter(i => i !== industry)
+                      : [...filters.industry, industry]
+                    );
                   }}
                 />
               </FilterSection>
@@ -306,12 +296,12 @@ export default function LeftSidebarFilters({
 
             <div className="space-y-1.5">
               <LocationFilter
-                region={filters.region || ''}
-                state={filters.state || []}
-                city={filters.city || []}
-                onRegionChange={(region) => setFilters({ ...filters, region })}
-                onStateChange={(state) => setFilters({ ...filters, state })}
-                onCityChange={(city) => setFilters({ ...filters, city })}
+                region={filters.region}
+                state={filters.state}
+                city={filters.city}
+                onRegionChange={onRegionChange}
+                onStateChange={onStateChange}
+                onCityChange={onCityChange}
                 isOpen={openSections.location}
                 onToggle={() => setOpenSections({ ...openSections, location: !openSections.location })}
                 isUSAOnly={isUSAOnly}
@@ -367,19 +357,17 @@ export default function LeftSidebarFilters({
                 icon={Users}
                 isOpen={openSections.organizationType}
                 onToggle={() => setOpenSections({ ...openSections, organizationType: !openSections.organizationType })}
-                onUnselectAll={() => setFilters({ ...filters, organizationType: [] })}
+                onUnselectAll={() => onFilterChange('organizationType', [])}
                 showUnselectAll={filters.organizationType.length > 0}
               >
                 <MultiSelect
                   options={organizationTypes}
                   selected={filters.organizationType}
                   onChange={(orgType) => {
-                    setFilters({
-                      ...filters,
-                      organizationType: filters.organizationType.includes(orgType)
-                        ? filters.organizationType.filter(t => t !== orgType)
-                        : [...filters.organizationType, orgType],
-                    });
+                    onFilterChange('organizationType', filters.organizationType.includes(orgType)
+                      ? filters.organizationType.filter(t => t !== orgType)
+                      : [...filters.organizationType, orgType],
+                    );
                   }}
                 />
               </FilterSection>

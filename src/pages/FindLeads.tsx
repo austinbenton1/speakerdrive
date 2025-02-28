@@ -234,6 +234,14 @@ export default function FindLeads() {
     opportunityTags
   ]);
 
+  // Handle filter changes
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   const processedLeads = useMemo(() => {
     let results = [...availableLeads];
 
@@ -549,6 +557,48 @@ export default function FindLeads() {
     setSortDirection(direction);
   };
 
+  // Handle region changes
+  const handleRegionChange = (newRegion: string) => {
+    // Update filters with new region
+    setFilters(prev => ({
+      ...prev,
+      region: newRegion
+    }));
+
+    // Sync location toggle based on region
+    if (newRegion === 'United States') {
+      setShowAll(false); // Switch to USA Only
+    } else {
+      setShowAll(true);  // Switch to Worldwide for any other region (including empty)
+    }
+  };
+
+  // Handle location toggle
+  const handleLocationToggle = () => {
+    const newShowAll = !showAll;
+    setShowAll(newShowAll);
+    
+    // If switching to USA Only, force United States region
+    if (!newShowAll) {
+      setFilters(prev => ({
+        ...prev,
+        region: 'United States'
+      }));
+    }
+  };
+
+  // Update showAll when region changes
+  useEffect(() => {
+    const isUSRegion = filters.region === 'United States';
+    if (isUSRegion && !showAll) {
+      // Region is US but toggle shows worldwide - sync it
+      setShowAll(false);
+    } else if (!isUSRegion && showAll === false) {
+      // Region is not US but toggle shows US only - sync it
+      setShowAll(true);
+    }
+  }, [filters.region]);
+
   return (
     <div className="flex h-[calc(100vh-64px)] bg-gray-50">
       <div className="flex-1 flex overflow-y-auto">
@@ -557,25 +607,26 @@ export default function FindLeads() {
           <div className="border-r border-gray-200 bg-white py-6 flex-shrink-0 sticky top-0">
             <LeftSidebarFilters
               filters={filters}
-              setFilters={setFilters}
+              onFilterChange={handleFilterChange}
+              onRegionChange={handleRegionChange}
+              onStateChange={(states) => setFilters(prev => ({ ...prev, state: states }))}
+              onCityChange={(cities) => setFilters(prev => ({ ...prev, city: cities }))}
+              isOpen={openSections}
+              onToggle={toggleSection}
+              isUSAOnly={!showAll}
               openSections={openSections}
               setOpenSections={setOpenSections}
-              toggleSection={toggleSection}
               handleUnlockTypeChange={handleUnlockTypeChange}
-              onResetFilters={handleResetFilters}
-              hasActiveFilters={hasActiveFilters}
-              selectedLeadType={selectedLeadType}
-              setSelectedLeadType={setSelectedLeadType}
               showAllEvents={showAllEvents}
               setShowAllEvents={setShowAllEvents}
+              totalCount={totalLeadsCount}
+              uniqueCount={uniqueLeadsCount}
+              selectedLeadType={selectedLeadType}
+              setSelectedLeadType={setSelectedLeadType}
               eventsFilter={eventsFilter}
               setEventsFilter={setEventsFilter}
               opportunityTags={opportunityTags}
               setOpportunityTags={setOpportunityTags}
-              showAll={showAll}
-              setShowAll={setShowAll}
-              totalCount={totalLeadsCount}
-              uniqueCount={uniqueLeadsCount}
             />
           </div>
         )}
@@ -640,7 +691,7 @@ export default function FindLeads() {
                     <div className="flex items-center gap-2">
                       <LocationToggle
                         isUSAOnly={!showAll}
-                        onChange={(isUSAOnly) => setShowAll(!isUSAOnly)}
+                        onChange={handleLocationToggle}
                       />
                     </div>
                   </div>
