@@ -478,7 +478,6 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      console.log('Raw result from composer:', result);
 
       let rawArray: any[] = [];
       if (Array.isArray(result)) {

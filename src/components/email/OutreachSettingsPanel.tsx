@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MinimalToggle } from '../ui/toggle';
 import { services } from '../../utils/constants';
 import { useUserProfile } from '../../hooks/useUserProfile';
@@ -98,6 +98,13 @@ export default function OutreachSettingsPanel({
   const truncatedContext = truncateContextSingleLine(profileOffering || '');
   const displayName = profile?.display_name || 'User';
 
+  // Force showMyContext to false if no profile content
+  useEffect(() => {
+    if (!truncatedContext && showMyContext) {
+      setShowMyContext(false);
+    }
+  }, [truncatedContext, showMyContext, setShowMyContext]);
+
   return (
     <div className="mb-4 pb-4">
       {/* Tier 1: heading (no extra padding) */}
@@ -174,18 +181,35 @@ export default function OutreachSettingsPanel({
             <MinimalToggle
               className="scale-[0.35] mr-1"
               checked={showMyContext}
-              onChange={(e) => setShowMyContext(e.target.checked)}
+              onChange={(e) => truncatedContext && setShowMyContext(e.target.checked)}
+              disabled={!truncatedContext}
             />
-            <label className="text-sm font-medium text-gray-900">
-              My Profile
+            <label className={`text-sm font-medium ${!truncatedContext ? 'text-gray-400' : 'text-gray-900'}`}>
+              My Profile 
             </label>
           </div>
 
           {/* Tier 3: Context snippet */}
-          {showMyContext && (
+          {showMyContext && truncatedContext && (
             <div className="pl-6">
               <p className="text-sm text-gray-600 flex-1 min-w-0">
-                {truncatedContext || 'Award-winning keynote speaker...'}
+                {truncatedContext}
+                <a
+                  href="/settings/profile?section=bio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline ml-1"
+                >
+                  Edit
+                </a>
+              </p>
+            </div>
+          )}
+
+          {!truncatedContext && (
+            <div className="pl-6">
+              <p className="text-sm text-gray-600 flex-1 min-w-0">
+                No profile content yet. Please create your bio.
                 <a
                   href="/settings/profile?section=bio"
                   target="_blank"

@@ -244,7 +244,7 @@ export default function ProfileForm({
             <div>
               <h3 className="text-sm font-medium text-gray-500" ref={bioRef}>Professional Bio</h3>
               <p className="mt-2 text-base text-gray-900 whitespace-pre-wrap">
-                {formData.offering || 'No bio provided'}
+                {formData.offering || 'No profile content yet. Please create your bio.'}
               </p>
             </div>
           </div>
