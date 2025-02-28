@@ -312,6 +312,7 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   const [emailWrittenFrom, setEmailWrittenFrom] = useState<'myself' | 'team'>('myself');
   const [linkedinNoteType, setLinkedinNoteType] = useState<'smart' | 'event'>('smart');
   const [proposalContentType, setProposalContentType] = useState<'smart' | 'custom'>('smart');
+  const [customFocus, setCustomFocus] = useState('');
 
   // Toggles
   const [showAdvanced] = useState(true);
@@ -417,6 +418,17 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
   // Generate from external API
   const handleGenerate = async () => {
     setIsGenerating(true);
+    // Validate custom focus requirement
+    if (outreachChannel === 'proposal' && 
+        proposalContentType === 'custom' && 
+        !customFocus.trim()) {
+      setToastMessage('Please enter your specific topic or focus area');
+      setToastType('error');
+      setShowToast(true);
+      setIsGenerating(false);
+      return;
+    }
+
     try {
       const contextData = {
         outreach_pathways: lead.outreachPathways || null,
@@ -449,8 +461,10 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           linkedin_note: linkedinNoteType === 'smart' ? 'Smart Personalization' : 'Event Focused'
         }),
         ...(outreachChannel === 'proposal' && {
-          proposal_content_type: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus',
-          submission_content: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus'
+          submission_content: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus',
+          ...(proposalContentType === 'custom' && {
+            custom_focus: customFocus
+          })
         }),
       };
 
@@ -674,6 +688,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
                   setLinkedinNoteType={setLinkedinNoteType}
                   proposalContentType={proposalContentType}
                   setProposalContentType={setProposalContentType}
+                  customFocus={customFocus}
+                  setCustomFocus={setCustomFocus}
                   lead={lead}
                 />
               </div>

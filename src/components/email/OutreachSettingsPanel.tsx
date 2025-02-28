@@ -41,6 +41,9 @@ interface OutreachSettingsPanelProps {
   proposalContentType: 'smart' | 'custom';
   setProposalContentType: (value: 'smart' | 'custom') => void;
 
+  customFocus: string;
+  setCustomFocus: (value: string) => void;
+
   lead: {
     eventName?: string;
     [key: string]: any;
@@ -79,6 +82,8 @@ export default function OutreachSettingsPanel({
   setLinkedinNoteType,
   proposalContentType,
   setProposalContentType,
+  customFocus,
+  setCustomFocus,
   lead,
 }: OutreachSettingsPanelProps) {
   const { profile } = useUserProfile();
@@ -270,7 +275,9 @@ export default function OutreachSettingsPanel({
                     className="mt-2 w-full h-24 px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                     placeholder-gray-400 resize-none"
-                    placeholder="Enter your focus or angle (e.g. 'AI in education' or 'Leadership strategies for tech teams')"
+                    placeholder="Enter your specific topic or focus area..."
+                    value={customFocus}
+                    onChange={(e) => setCustomFocus(e.target.value)}
                   />
                 )}
             </div>
