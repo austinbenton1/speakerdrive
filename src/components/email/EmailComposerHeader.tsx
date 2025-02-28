@@ -26,7 +26,6 @@ export default function EmailComposerHeader({
   const isContact = lead.leadType === 'Unlock Contact Email';
   const [copied, setCopied] = useState(false);
 
-  console.log(lead);
 
   // Build the main heading text
   const headerTitle = isContact

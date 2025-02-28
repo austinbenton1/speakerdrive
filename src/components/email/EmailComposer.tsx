@@ -457,7 +457,8 @@ export default function EmailComposer({ lead, isOpen, onClose }: EmailComposerPr
           email_written_from: emailWrittenFrom === 'myself' ? 'My Profile' : 'My Team/Manager'
         }),
         ...(outreachChannel === 'linkedin' && {
-          linkedin_note: linkedinNoteType === 'smart' ? 'Smart Personalization' : 'Event Focused'
+          linkedin_note: linkedinNoteType === 'smart' ? 'Smart Personalization' : 'Event Focused',
+          linked_in: lead.info_url || lead.infoUrl || null
         }),
         ...(outreachChannel === 'proposal' && {
           submission_content: proposalContentType === 'smart' ? 'Smart Match' : 'Custom Focus',
