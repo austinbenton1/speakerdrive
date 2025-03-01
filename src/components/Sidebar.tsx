@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import minimalLogo from '../assets/speakerdrive-mini-v2.png';
+import desktopLogo from '../assets/speakerdrive.webp';
 
 interface Profile {
   id: string;
@@ -84,8 +85,7 @@ export default function Sidebar({ isMobile, profile, onNavigate }: SidebarProps)
           <img src={minimalLogo} alt="SpeakerDrive" className="w-8 h-8" />
         ) : (
           <div className="flex items-center space-x-2">
-            <img src={minimalLogo} alt="SpeakerDrive" className="w-8 h-8" />
-            <span className="text-lg font-semibold truncate">SpeakerDrive</span>
+            <img src={desktopLogo} alt="SpeakerDrive" className="h-7" />
           </div>
         )}
       </div>
