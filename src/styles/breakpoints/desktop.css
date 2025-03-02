@@ -90,3 +90,10 @@
     max-width: 600px !important; /* or any preferred desktop max width */
   }
 }
+
+.prose p, .prose ol li p{
+  padding-top: 1.8rem;
+}
+.prose>p:first-child{
+  padding-top: 0;
+}

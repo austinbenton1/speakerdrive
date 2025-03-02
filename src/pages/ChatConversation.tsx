@@ -129,7 +129,6 @@ export default function ChatConversation() {
 
   // For scrolling + text area
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Throttle
@@ -357,40 +356,23 @@ export default function ChatConversation() {
   };
 
   /**
-   * Auto-scroll to bottom when new messages arrive
+   * Auto-scroll to bottom when new messages arrive or thinking state changes
    */
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'end'
-      });
-    }
+    requestAnimationFrame(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      }
+    });
   }, []);
 
-  // Set up intersection observer to handle scroll
+  // Scroll to bottom on new messages or thinking state
   useEffect(() => {
-    if (!scrollAreaRef.current || !messagesEndRef.current) return;
-
-    const options = {
-      root: scrollAreaRef.current,
-      threshold: 0
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      const [entry] = entries;
-      if (!entry.isIntersecting) {
-        scrollToBottom();
-      }
-    }, options);
-
-    observer.observe(messagesEndRef.current);
-    return () => observer.disconnect();
-  }, [scrollToBottom]);
-
-  // Trigger scroll on new messages
-  useEffect(() => {
-    scrollToBottom();
+    const timeoutId = setTimeout(scrollToBottom, 0);
+    return () => clearTimeout(timeoutId);
   }, [messages, isThinking, scrollToBottom]);
 
   /**
@@ -441,7 +423,7 @@ export default function ChatConversation() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Messages Container */}
-      <div ref={scrollAreaRef} className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto">
         <div className="max-w-2xl mx-auto px-4">
           {/* Messages */}
           <div className="space-y-4 py-4">
@@ -517,11 +499,11 @@ export default function ChatConversation() {
 
                   {/* Message content */}
                   <div className="flex-1 min-w-0">
-                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[15px] leading-relaxed break-words whitespace-pre-wrap tracking-[-0.01em] p-2 rounded-2xl text-gray-800 chat-message-content`}>
+                    <div className={`prose prose-sm max-w-full sm:max-w-[600px] text-[15px] leading-relaxed break-words tracking-[-0.01em] rounded-2xl text-gray-800 chat-message-content`}>
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                     {msg.status === 'error' && msg.error && (
-                      <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded-lg">
+                      <div className="mt-2 flex items-center gap-2 text-red-600 text-sm bg-red-50 rounded-lg">
                         <AlertCircle className="w-4 h-4" />
                         <p>{msg.error}</p>
                       </div>
@@ -546,7 +528,7 @@ export default function ChatConversation() {
                 </div>
               )}
               {/* Invisible div for scroll anchoring */}
-              <div ref={messagesEndRef} style={{ height: 1 }} />
+              <div ref={messagesEndRef} className="h-px" />
             </div>
           </div>
         </div>
