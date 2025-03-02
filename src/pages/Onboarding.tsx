@@ -310,11 +310,13 @@ export default function Onboarding() {
       wide
     >
       <div className="space-y-6">
-        {/* Single top-level error display */}
-        {stepError && (
-          <div className="p-3 rounded-md bg-red-50 flex items-center gap-2 text-red-700">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">{stepError}</p>
+        {/* Show error message if present */}
+        {(stepError || Object.keys(errors).length > 0) && (
+          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div>
+              {stepError || Object.values(errors)[0]?.message || 'Please check all required fields.'}
+            </div>
           </div>
         )}
 
@@ -614,6 +616,9 @@ export default function Onboarding() {
                   profile_url_type="website"
                   error={errors.website?.message}
                 />
+                {errors.website && (
+                  <p className="mt-1 text-sm text-red-600">{errors.website.message}</p>
+                )}
               </section>
 
               <div className="pt-4">

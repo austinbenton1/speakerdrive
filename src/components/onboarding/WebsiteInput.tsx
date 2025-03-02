@@ -1,8 +1,7 @@
 // /home/project/src/components/onboarding/WebsiteInput.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
-import { AlertCircle, Check, Globe } from 'lucide-react';
-import { isValidUrl } from '../../utils/validation';
+import React, { useState, useRef } from 'react';
+import { Globe } from 'lucide-react';
 
 interface WebsiteInputProps {
   value: string;
@@ -27,7 +26,7 @@ export default function WebsiteInput({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // If user clicks outside container, hide tooltip
-  useEffect(() => {
+  React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowTooltip(false);
@@ -65,15 +64,12 @@ export default function WebsiteInput({
     } else {
       newValue = '';
     }
+
     onChange({
       ...e,
-      target: { ...e.target, value: newValue },
+      target: { ...e.target, value: newValue }
     });
   };
-
-  // Show validation icons if there's any input
-  const showValidation = displayValue.trim().length > 0 || value.trim().length > 0;
-  const isValid = value ? isValidUrl(value) : false;
 
   return (
     <div ref={containerRef} className="relative">
@@ -97,7 +93,7 @@ export default function WebsiteInput({
             className="absolute bottom-full left-0 mb-2 w-72 p-4 rounded shadow-lg border border-gray-200 bg-white text-gray-800 text-sm z-20"
             style={{ lineHeight: '1.4' }}
           >
-            Don’t have a personal website? Then add any webpage that features you
+            Don't have a personal website? Then add any webpage that features you
             (company page, news article, etc.) to help personalize your account.
           </div>
         )}
@@ -112,7 +108,7 @@ export default function WebsiteInput({
             ${
               disabled
                 ? 'bg-gray-50/75 border-gray-200'
-                : showValidation && !isValid
+                : error
                 ? 'border-red-400'
                 : 'border-gray-200 hover:border-gray-300'
             }
@@ -137,7 +133,7 @@ export default function WebsiteInput({
             disabled={disabled}
             placeholder="example.com"
             className={`
-              flex-1 w-full h-10 pl-3 pr-3
+              flex-1 w-full h-10 px-3
               text-sm bg-transparent
               placeholder:text-gray-400
               focus:outline-none focus:ring-0
@@ -145,17 +141,6 @@ export default function WebsiteInput({
               ${disabled ? 'text-gray-500' : 'text-gray-900'}
             `}
           />
-
-          {/* Validation icon on right side if user typed something */}
-          {showValidation && (
-            <div className="px-3 flex items-center">
-              {isValid ? (
-                <Check className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-red-500" />
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

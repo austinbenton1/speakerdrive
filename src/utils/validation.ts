@@ -8,10 +8,25 @@ export const validatePassword = (password: string): string | undefined => {
   return undefined;
 };
 
-export const isValidUrl = (url: string): boolean => {
+export const isValidUrl = (url: string, isSubmission: boolean = false): boolean => {
   try {
     const urlObj = new URL(url);
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    // Basic validation for protocol
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return false;
+    }
+    
+    // Additional validation for form submission
+    if (isSubmission) {
+      // Get hostname (removes protocol and www)
+      const hostname = urlObj.hostname.replace(/^www\./, '');
+      // Check if hostname contains at least one dot
+      if (!hostname.includes('.')) {
+        return false;
+      }
+    }
+    
+    return true;
   } catch {
     return false;
   }

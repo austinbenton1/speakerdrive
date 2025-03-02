@@ -63,7 +63,20 @@ export const onboardingSchema = z
     profile_url_type: z.enum(['website', 'bureau', 'company', 'other']),
 
     // Website is now required:
-    website: z.string().min(2, 'Please enter a link or webpage'),
+    website: z.string()
+      .min(2, 'Please enter a link or webpage')
+      .refine((value) => {
+        try {
+          const urlObj = new URL(value);
+          if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+            return false;
+          }
+          const hostname = urlObj.hostname.replace(/^www\./, '');
+          return hostname.includes('.');
+        } catch {
+          return false;
+        }
+      }, 'Please enter a valid website URL with a domain (e.g., example.com)'),
   })
   .superRefine(({ account_type, company, company_role }, ctx) => {
     // For partner => require company & role

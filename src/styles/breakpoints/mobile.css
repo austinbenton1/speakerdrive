@@ -509,3 +509,11 @@
     max-width: 95vw !important;
   }
 }
+
+/* -------- ONBOARDING INPUT STYLES ON MOBILE -------- */
+@media screen and (max-width: 639px) {
+  .flex.items-center.w-full.rounded-lg.border.shadow-sm.bg-white.overflow-hidden input {
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+  }
+}
