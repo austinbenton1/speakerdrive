@@ -14,7 +14,7 @@ import {
   Loader2,
   AlertCircle,
   User,
-  Lightbulb,
+  HelpCircle,
   Send,
   RotateCcw,
   MessageSquare,
@@ -64,12 +64,14 @@ function TooltipPortal({
     if (!isDesktop) {
       setStyles({
         position: 'absolute',
-        top: `${rect.bottom + window.scrollY + 8}px`,
-        left: `${rect.right + window.scrollX - 280}px`,
+        bottom: `${window.innerHeight - rect.top + window.scrollY + 8}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 99999,
         display: 'block',
-        minWidth: '280px',
-        maxWidth: 'calc(100vw - 2rem)',
+        width: 'calc(100vw - 2rem)',
+        maxWidth: '280px',
+        margin: '0 auto',
       });
     } else {
       const tooltipWidth = 380;
@@ -77,7 +79,7 @@ function TooltipPortal({
         rect.left + window.scrollX + rect.width / 2 - tooltipWidth / 2;
       setStyles({
         position: 'absolute',
-        top: `${rect.bottom + window.scrollY + 8}px`,
+        bottom: `${window.innerHeight - rect.top + window.scrollY + 8}px`,
         left: `${leftPos}px`,
         zIndex: 99999,
         display: 'block',
@@ -90,9 +92,10 @@ function TooltipPortal({
 
   return createPortal(
     <div
-      className="ideas-tooltip bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-gray-700 text-sm"
+      className="ideas-tooltip bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-gray-700 text-sm md:mb-0 mb-4"
       style={styles}
     >
+      <div className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-4 h-4 rotate-45 bg-white border-b border-r border-gray-200 hidden lg:block"></div>
       {open && children}
     </div>,
     document.body
@@ -135,6 +138,40 @@ export default function ChatConversation() {
 
   // Check if from onboarding
   const isOnboarding = profile?.is_onboarding;
+
+  // Handle hover for desktop
+  const handleMouseEnter = () => {
+    if (window.innerWidth > 1023) {
+      setShowIdeas(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (window.innerWidth > 1023) {
+      setShowIdeas(false);
+    }
+  };
+
+  // Handle click for mobile/tablet
+  const handleClick = () => {
+    if (window.innerWidth <= 1023) {
+      setShowIdeas(prev => !prev);
+    }
+  };
+
+  // Close tooltip when clicking outside on mobile/tablet
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (window.innerWidth <= 1023 && 
+          ideasRef.current && 
+          !ideasRef.current.contains(event.target as Node)) {
+        setShowIdeas(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   /**
    * Fetch user data from Supabase
@@ -203,7 +240,6 @@ export default function ChatConversation() {
               status: 'sent',
             },
           ]);
-
 
         } catch (error) {
           console.error('[ChatConversation] Failed to initialize chat:', error);
@@ -375,23 +411,6 @@ export default function ChatConversation() {
   }, [throttledSendMessage]);
 
   /**
-   * Clicking outside the "Ideas" button closes the tooltip
-   */
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ideasRef.current && !ideasRef.current.contains(e.target as Node)) {
-        setShowIdeas(false);
-      }
-    }
-    if (showIdeas) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showIdeas]);
-
-  /**
    * Prevent accidental back swipes
    */
   useEffect(() => {
@@ -430,12 +449,17 @@ export default function ChatConversation() {
             {messages.length === 0 && (
               <div className="text-center space-y-2">
                 {isOnboarding ? (
-                  <h1 className="text-2xl md:text-4xl font-bold">
-                    <span>Welcome to the platform, </span>
-                    <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
-                      {userDisplayName || 'New User'}
-                    </span>
-                  </h1>
+                  <div>
+                    <h1 className="text-2xl md:text-4xl font-bold">
+                      <span>Welcome to the platform, </span>
+                      <span className="bg-gradient-to-r from-[#0066FF] to-[#80D078] bg-clip-text text-transparent">
+                        {userDisplayName || 'New User'}
+                      </span>
+                    </h1>
+                    <div className="flex items-center justify-center gap-2 text-xs md:text-base text-gray-600 pt-6">
+                      <span>Loading your account, wait a moment…</span>
+                    </div>
+                  </div>
                 ) : (
                   <h1 className="text-2xl md:text-4xl font-bold flex items-center justify-center gap-2">
                     <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-[#0066FF]" />
@@ -448,16 +472,6 @@ export default function ChatConversation() {
                 {!isOnboarding && (
                   <div className="flex items-center justify-center gap-2 text-xs md:text-base text-gray-600">
                     <span>What can I help you work on today?</span>
-                    <div className="relative inline-flex items-center" ref={ideasRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowIdeas((prev) => !prev)}
-                        className="flex items-center text-xs md:text-base text-blue-600 underline"
-                      >
-                        <Lightbulb className="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                        Ideas
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -566,6 +580,20 @@ export default function ChatConversation() {
                   onClick={() => setMessage('')}
                   className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
                 />
+                <div 
+                  className="relative inline-flex items-center" 
+                  ref={ideasRef}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    type="button"
+                    onClick={handleClick}
+                    className="flex items-center text-xs md:text-base text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <HelpCircle className="w-4 h-4 md:w-5 md:h-5 mr-1" />
+                  </button>
+                </div>
               </div>
 
               {/* Send button */}
